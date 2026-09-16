@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="640" viewBox="0 0 960 640" fill="none">
+  <g stroke="#99511f" stroke-width="1">
+    <!-- Machined flange: concentric bores, bolt circle and centre lines. -->
+    <g transform="translate(786 474)">
+      <circle r="132"/>
+      <circle r="116"/>
+      <circle r="66"/>
+      <circle r="48"/>
+      <circle r="94" stroke-dasharray="8 5 2 5"/>
+      <path d="M-160 0H160M0-160V160" stroke-dasharray="16 5 3 5"/>
+      <circle cx="94" r="9"/>
+      <circle cx="-94" r="9"/>
+      <circle cy="94" r="9"/>
+      <circle cy="-94" r="9"/>
+      <path d="M-140 142V166M140 142V166M-140 156H140M-145 161l10-10M135 161l10-10"/>
+      <path d="M94-100l54-54h40M-8 0H8M0-8V8"/>
+    </g>
+    <!-- Sectioned bracket with extension lines and dimension ticks. -->
+    <path d="M390 424h122v40h-82v112h-40zM400 424v142h30"/>
+    <path d="M390 414v-30M512 414v-30M390 396h122M385 401l10-10M507 401l10-10"/>
+    <path d="M378 424h-30M378 576h-30M360 424v152M355 429l10-10M355 581l10-10"/>
+    <path d="M390 440l10-10M390 460l10-10M390 480l10-10M390 500l10-10M390 520l10-10M390 540l10-10M390 560l10-10M404 576l10-10M424 576l6-6"/>
+    <!-- Orthographic alignment guides and registration crosses. -->
+    <path d="M546 330H960M546 606H960M654 312V640" stroke-dasharray="5 7"/>
+    <path d="M572 554h20m-10-10v20M300 590h20m-10-10v20M908 284h20m-10-10v20M592 226h20m-10-10v20"/>
+    <circle cx="582" cy="554" r="3"/>
+    <circle cx="918" cy="284" r="3"/>
+    <path d="M710 234h116l32 32v40H710zM730 250h68v40h-68z"/>
+    <path d="M698 234h-24M698 306h-24M684 234v72M679 239l10-10M679 311l10-10"/>
+  </g>
+</svg>

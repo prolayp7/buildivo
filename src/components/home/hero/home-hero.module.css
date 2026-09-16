@@ -1,0 +1,47 @@
+.backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at 100% 100%,
+    color-mix(in srgb, var(--color-orange-500) 12%, transparent) 0%,
+    color-mix(in srgb, var(--color-orange-500) 5%, transparent) 36%,
+    transparent 70%
+  );
+}
+
+/* Static engineering linework: no animation or extra client-side code. */
+.backdrop::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("/images/hero-engineering.svg") right bottom / 960px 640px no-repeat;
+  opacity: 0.19;
+  mask-image: radial-gradient(ellipse at 100% 100%, #000 15%, transparent 78%);
+}
+
+/* A faint drafting grid, fading out before it reaches the headline. */
+.backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, currentColor 1px, transparent 1px),
+    linear-gradient(to bottom, currentColor 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: right bottom;
+  color: color-mix(in srgb, var(--color-orange-700) 6%, transparent);
+  mask-image: radial-gradient(ellipse at 100% 100%, #000 0%, transparent 65%);
+}
+
+@media (max-width: 639px) {
+  .backdrop {
+    /* Keep the tint around the image below the copy on small screens. */
+    inset-block-start: 40%;
+  }
+
+  .backdrop::before {
+    background-size: 640px auto;
+    opacity: 0.14;
+  }
+}
