@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { DepartmentsMenu } from "@/components/layout/departments-menu";
+import { SearchBox } from "@/components/layout/search-box";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { MiniCart } from "@/components/layout/mini-cart";
 import { BuildivoLogo } from "@/components/layout/buildivo-logo";
@@ -24,14 +25,6 @@ export function SiteHeader({ departments, mainMenu }: { departments: Category[];
   // etc.) render as the bolder icon+label style already designed for them.
   const categoryLinks = mainMenu.filter((item) => item.href.startsWith("/c/"));
   const pageLinks = mainMenu.filter((item) => !item.href.startsWith("/c/"));
-
-  function handleSearch(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const query = new FormData(e.currentTarget).get("q");
-    if (typeof query === "string" && query.trim()) {
-      router.push(`/search?q=${encodeURIComponent(query.trim())}`);
-    }
-  }
 
   return (
     <header className="fixed left-0 right-0 top-0 z-50 flex flex-col">
@@ -91,26 +84,7 @@ export function SiteHeader({ departments, mainMenu }: { departments: Category[];
 
           <DepartmentsMenu departments={departments} />
 
-          <form onSubmit={handleSearch} className="hidden max-w-2xl flex-1 md:block" role="search">
-            <div className="relative flex w-full items-center">
-              <span aria-hidden className="material-symbols-outlined pointer-events-none absolute left-3.5 text-[20px] text-graphite-400">
-                search
-              </span>
-              <label htmlFor="site-search" className="sr-only">
-                Search products, SKUs and guides
-              </label>
-              <input
-                id="site-search"
-                name="q"
-                type="search"
-                className="h-11 w-full rounded-lg border border-border-default bg-surface-warm pl-10 pr-24 text-body-sm font-body-sm text-text-primary placeholder:text-text-disabled focus:border-orange-500 focus:bg-surface-white focus:outline-none"
-                placeholder="Search 45,000+ power tools, fixings, plumbing, SKUs, MPNs..."
-              />
-              <button type="submit" className="absolute right-1 rounded bg-orange-500 px-3 py-1.5 text-label-sm font-label-sm font-semibold text-text-inverse hover:bg-orange-600">
-                Search
-              </button>
-            </div>
-          </form>
+          <SearchBox departments={departments} />
 
           <button
             type="button"

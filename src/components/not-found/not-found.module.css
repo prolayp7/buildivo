@@ -1,0 +1,21 @@
+.hero {
+  background-color: #fafaf8;
+  background-image: radial-gradient(#dcded9 0.7px, transparent 0.7px);
+  background-size: 16px 16px;
+  border-bottom: 1px solid #eeefea;
+}
+.diagnostic {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.sign {
+  margin-top: -2px;
+  padding: 10px 34px;
+  border-radius: 999px;
+  background: linear-gradient(#343a3e, #141b22);
+  color: #ffad42;
+  font: 10px/1.7 monospace;
+  letter-spacing: 0.06em;
+  box-shadow: 0 5px 8px rgb(20 27 34 / 12%);
+}

@@ -39,7 +39,13 @@ export interface ApiBrand {
   title: string;
   slug: string;
   description: string | null;
+  shortDescription: string | null;
+  logo: string | null;
+  logoAlt: string | null;
+  metaTitle: string | null;
+  metaDescription: string | null;
   productCount?: number;
+  priceFrom?: number | null;
 }
 
 export interface ApiPriceTier {
@@ -88,6 +94,21 @@ export interface ApiProductBase {
   reviewSummary?: { average: number; count: number };
   variants?: ApiVariant[];
   faqs?: { id: number; question: string; answer: string }[];
+}
+
+export interface ApiFacets {
+  specifications: { title: string; values: { value: string; count: number }[] }[];
+  categories: { id: number; title: string; slug: string; count: number }[];
+  brands: { id: number; title: string; slug: string; count: number }[];
+  priceMin: number | null;
+  priceMax: number | null;
+}
+export interface ProductListMeta {
+  page: number;
+  perPage: number;
+  total: number;
+  totalPages: number;
+  facets: ApiFacets;
 }
 
 export interface ApiReview {

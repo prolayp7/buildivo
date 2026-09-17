@@ -6,7 +6,7 @@ import { ProductImage } from "@/components/commerce/product-image";
 import { TileCalculator } from "@/components/home/tile-calculator";
 import { BatteryMatcher } from "@/components/home/battery-matcher";
 import { HomeHero } from "@/components/home/hero/home-hero";
-import { fetchDepartments, fetchFeaturedProducts } from "@/lib/api";
+import { fetchDepartments, fetchFeaturedProducts, fetchVisibleHomepageSections } from "@/lib/api";
 
 export const metadata: Metadata = {
   title: "Buildivo — Pro-Grade Tools, Hardware & DIY Supplies",
@@ -103,16 +103,19 @@ const calculators = [
 ];
 
 export default async function HomePage() {
-  const [departments, featured] = await Promise.all([fetchDepartments(), fetchFeaturedProducts(4)]);
+  const [departments, featured, visibleSections] = await Promise.all([fetchDepartments(), fetchFeaturedProducts(4), fetchVisibleHomepageSections()]);
   return (
     <div className="flex flex-col">
-      <HomeHero />
+      {visibleSections.has("HERO") && <HomeHero />}
 
+      {visibleSections.has("TRUST_STRIP") && (
       <section className="bg-surface-warm">
         <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-4 sm:grid-cols-2 px-4 py-6 sm:px-margin-desktop lg:grid-cols-4">
           {trustBadges.map((badge) => (
             <div key={badge.title} className="flex min-h-16 items-center gap-2 rounded-lg bg-white p-3 shadow-[0_1px_2px_rgb(0_0_0/0.05)]">
-              <span aria-hidden className="material-symbols-outlined flex size-10 shrink-0 items-center justify-center rounded-lg bg-orange-100 text-[22px] text-orange-600">{badge.icon}</span>
+              <span aria-hidden className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-orange-100 text-orange-600">
+                <span className="material-symbols-outlined text-[22px]">{badge.icon}</span>
+              </span>
               <div>
                 <p className="text-[12px] leading-4 font-semibold text-graphite-900">{badge.title}</p>
                 <p className="text-label-sm font-label-sm text-text-secondary">{badge.caption}</p>
@@ -121,8 +124,10 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+      )}
 
-      <section className="mx-auto w-full max-w-[1600px] px-4 py-10 sm:px-margin-desktop">
+      {visibleSections.has("DEPARTMENTS") && (
+      <section id="departments" className="mx-auto w-full max-w-[1600px] scroll-mt-40 px-4 py-10 sm:px-margin-desktop">
         <div className="mb-space-lg flex items-center justify-between">
           <h2 className="text-headline-lg-mobile font-headline-lg-mobile font-bold text-graphite-900 sm:text-headline-lg sm:font-headline-lg">Shop by Department</h2>
           <Link href="/c/power-tools" className="text-label-lg font-label-lg font-semibold text-orange-600 hover:underline">
@@ -143,7 +148,9 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+      )}
 
+      {visibleSections.has("FEATURED_PRODUCTS") && (
       <section className="mx-auto w-full max-w-[1600px] px-4 py-10 sm:px-margin-desktop">
         <div className="mb-space-lg flex items-center justify-between">
           <h2 className="text-headline-lg-mobile font-headline-lg-mobile font-bold text-graphite-900 sm:text-headline-lg sm:font-headline-lg">Featured Pro Tools</h2>
@@ -157,7 +164,9 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+      )}
 
+      {visibleSections.has("PROJECT_KITS") && (
       <section className="w-full bg-white py-12 sm:py-16" id="project-kits" style={{ backgroundColor: "#ffffff" }}>
         <div className="mx-auto max-w-[1600px] px-4 sm:px-margin-desktop">
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
@@ -207,7 +216,9 @@ export default async function HomePage() {
         </div>
         </div>
       </section>
+      )}
 
+      {visibleSections.has("TRADE_CTA") && (
       <section className="relative isolate w-full overflow-hidden bg-[#080f18] text-[#9aabba]" style={{ backgroundImage: "radial-gradient(ellipse at 72% 0%, rgba(100, 139, 171, 0.08), transparent 58%), linear-gradient(115deg, #070e16 0%, #111f2c 48%, #0b1520 76%, #070e16 100%)" }}>
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[linear-gradient(155deg,transparent_15%,rgba(213,234,250,0.025)_34%,transparent_52%)]" />
         <DotPattern width={32} height={32} cr={1.3} glow className="text-[#b5d7ed]/35 [mask-image:radial-gradient(ellipse_at_65%_40%,black,transparent_75%)]" />
@@ -291,7 +302,9 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+      )}
 
+      {visibleSections.has("CALCULATORS") && (
       <section className="mx-auto w-full max-w-[1600px] px-4 py-10 sm:px-margin-desktop">
         <p className="mb-1 text-label-md font-label-md font-semibold uppercase tracking-wide text-orange-600">Jobsite Estimation Suite</p>
         <h2 className="mb-1 text-headline-lg-mobile font-headline-lg-mobile font-bold text-graphite-900 sm:text-headline-lg sm:font-headline-lg">
@@ -328,10 +341,13 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+      )}
 
+      {visibleSections.has("ECOSYSTEM_MATCHER") && (
       <section className="mx-auto w-full max-w-[1600px] px-4 pb-14 sm:px-margin-desktop">
         <BatteryMatcher />
       </section>
+      )}
     </div>
   );
 }

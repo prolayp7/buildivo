@@ -177,7 +177,7 @@ export function askProductQuestion(slug: string, input: { name: string; question
 // state (the wishlist/compare id lists live in localStorage via the cart
 // store) - can't go through lib/api.ts, which is server-only.
 
-import { toProduct, type ApiProductBase } from "./adapters";
+import { toProduct, type ApiProductBase, type ProductListMeta } from "./adapters";
 import type { Product } from "@/types";
 
 function apiOrigin(): string {
@@ -192,10 +192,42 @@ export async function fetchProductsByIds(ids: number[]): Promise<Product[]> {
   return ids.map((id) => byId.get(id)).filter((p): p is Product => Boolean(p));
 }
 
+// Category listing's filter/pagination fetcher - request() unwraps to just
+// `data`, discarding `meta` (facets, pagination), which a filtered/paginated
+// listing needs, so this fetches directly rather than going through it.
+export async function fetchProductsPage(queryString: string, signal?: AbortSignal): Promise<{ items: Product[]; meta: ProductListMeta }> {
+  const res = await fetch(apiUrl(`products?${queryString}`), { signal });
+  if (!res.ok) throw new Error(`Request failed (${res.status})`);
+  const body = (await res.json()) as { data: ApiProductBase[]; meta: ProductListMeta };
+  const origin = apiOrigin();
+  return { items: body.data.map((p) => toProduct(p, origin)), meta: body.meta };
+}
+
 export interface CompareResult {
   products: { id: number; title: string; slug: string; image: string | null; category: string; brand: string | null; vatRatePercent: string | null; price: string | null; salePrice: string | null }[];
   specifications: { key: string; values: (string | null)[] }[];
 }
 export function fetchCompareProducts(ids: number[]): Promise<CompareResult> {
   return request<CompareResult>(`products/compare?ids=${ids.join(",")}`);
+}
+
+/* ------------------------- Header search suggestions ------------------------- */
+
+export async function fetchProductSuggestions(q: string, signal?: AbortSignal): Promise<Product[]> {
+  const res = await request<ApiProductBase[]>(`products?q=${encodeURIComponent(q)}&perPage=5`, { signal });
+  return res.map((p) => toProduct(p, apiOrigin()));
+}
+
+export interface ApiBrandRef {
+  title: string;
+  slug: string;
+}
+// Brand names are static reference data, small enough to fetch once and
+// filter client-side per keystroke rather than round-tripping per keystroke.
+let brandsCache: Promise<ApiBrandRef[]> | null = null;
+export function fetchBrandsClient(): Promise<ApiBrandRef[]> {
+  if (!brandsCache) {
+    brandsCache = request<ApiBrandRef[]>("brands").catch((error) => { brandsCache = null; throw error; });
+  }
+  return brandsCache;
 }

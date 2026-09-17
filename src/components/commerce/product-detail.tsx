@@ -1,5 +1,6 @@
 "use client";
 
+import styles from "./product-detail.module.css";
 import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -58,17 +59,19 @@ export function ProductDetail({ product, related, productReviews }: ProductDetai
   }
 
   return (
-    <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-margin-desktop">
+    <div className={cn(styles.page, "mx-auto max-w-[1600px] px-4 py-6 sm:px-margin-desktop")} >
       <nav aria-label="Breadcrumb" className="mb-4 flex flex-wrap items-center gap-1 text-label-sm font-label-sm text-text-secondary">
         <Link href="/" className="hover:underline">Home</Link>
         <span aria-hidden>/</span>
-        <Link href={`/c/power-tools`} className="hover:underline">Power Tools</Link>
+        <Link href={`/c/${product.categorySlug}`} className="capitalize hover:underline">{product.categorySlug.replaceAll("-", " ")}</Link>
         <span aria-hidden>/</span>
         <span className="font-semibold text-text-primary">{product.name}</span>
       </nav>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[100px_minmax(0,480px)_1fr]">
-        <div className="order-2 flex gap-2 lg:order-1 lg:flex-col">
+      <div className={styles.layout}>
+        <div className={styles.media}>
+        <div className={styles.gallery}>
+        <div className={styles.thumbnails}>
           {Array.from({ length: imageCount }).map((_, i) => (
             <button
               key={i}
@@ -77,7 +80,7 @@ export function ProductDetail({ product, related, productReviews }: ProductDetai
               aria-label={`View image ${i + 1} of ${product.name}`}
               aria-current={activeImage === i}
               className={cn(
-                "h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2",
+                "size-full cursor-pointer overflow-hidden rounded-lg border bg-white",
                 activeImage === i ? "border-orange-500" : "border-border-default",
               )}
             >
@@ -86,11 +89,15 @@ export function ProductDetail({ product, related, productReviews }: ProductDetai
           ))}
         </div>
 
-        <div className="order-1 lg:order-2">
+        <div className={styles.imagePanel}>
+          <div className={styles.imageHeading}>
+            <div><span className={styles.brandBadge}>{product.brand}</span><StockBadge status={product.stock} /></div>
+            <span className={styles.model}>SKU: {product.sku}</span>
+          </div>
           <Dialog open={zoomOpen} onOpenChange={setZoomOpen}>
             <DialogTrigger asChild>
-              <button type="button" className="block w-full" aria-label="Open image zoom">
-                <ProductImage src={selectedImage} categorySlug={product.categorySlug} className="flex aspect-square w-full items-center justify-center rounded-xl bg-white object-contain p-4" iconClassName="text-[72px]" />
+              <button type="button" className={styles.zoomButton} aria-label="Open image zoom">
+                <ProductImage src={selectedImage} categorySlug={product.categorySlug} className={styles.mainImage} iconClassName="text-[72px]" />
               </button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
@@ -100,9 +107,15 @@ export function ProductDetail({ product, related, productReviews }: ProductDetai
               <ProductImage src={selectedImage} categorySlug={product.categorySlug} className="flex aspect-square w-full items-center justify-center rounded-xl bg-white object-contain p-4" iconClassName="text-[96px]" />
             </DialogContent>
           </Dialog>
+          <p className={styles.galleryCaption}>Model: {product.name} · Click image to zoom</p>
+        </div>
+        </div>
+        {product.specs.length > 0 && <dl className={styles.summarySpecs}>
+          {product.specs.slice(0, 4).map((spec) => <div key={spec.label}><dt>{spec.label}</dt><dd>{spec.value}</dd></div>)}
+        </dl>}
         </div>
 
-        <div className="order-3 flex flex-col gap-4">
+        <div className={styles.purchase}>
           <div>
             <div className="mb-1 flex items-center gap-2 text-label-sm font-label-sm font-semibold uppercase tracking-wide text-orange-600">
               {product.brand}
@@ -110,15 +123,16 @@ export function ProductDetail({ product, related, productReviews }: ProductDetai
                 <span key={b} className="rounded bg-graphite-900 px-2 py-0.5 text-text-inverse">{b}</span>
               ))}
             </div>
-            <h1 className="mb-2 text-headline-md font-headline-md font-bold text-graphite-900">{product.name}</h1>
-            <div className="flex items-center gap-3">
+            <h1 className={styles.title}>{product.name}</h1>
+            <div className="flex flex-wrap items-center gap-3">
               <Rating value={product.rating} count={product.reviewCount} />
               <span className="text-label-sm font-label-sm text-text-secondary">SKU: {product.sku}</span>
             </div>
           </div>
 
-          <div className="flex items-baseline gap-3">
-            <span className="text-headline-lg font-headline-lg font-bold text-orange-600">{formatPrice(price)}</span>
+          <div className={styles.pricePanel}>
+          <div className="flex flex-wrap items-baseline gap-3">
+            <span className={styles.price}>{formatPrice(price)}</span>
             {compareAt && compareAt > price && (
               <>
                 <span className="text-body-md font-body-md text-text-disabled line-through">{formatPrice(compareAt)}</span>
@@ -128,7 +142,8 @@ export function ProductDetail({ product, related, productReviews }: ProductDetai
               </>
             )}
           </div>
-          <p className="-mt-3 text-label-sm font-label-sm text-text-secondary">{formatPrice(price / (1 + product.vatRate))} ex. VAT</p>
+          <p className={styles.netPrice}><strong>{formatPrice(price / (1 + product.vatRate))} ex. VAT</strong><span>Price includes {Math.round(product.vatRate * 100)}% VAT</span></p>
+          </div>
 
           {product.tradePriceIncVat && (
             <div className="rounded-lg border border-graphite-700 bg-graphite-800 p-3 text-text-inverse">
@@ -164,23 +179,17 @@ export function ProductDetail({ product, related, productReviews }: ProductDetai
           )}
 
           {product.variants && product.variants.length > 0 && (
-            <div>
-              <Label htmlFor="variant-select" className="mb-1 text-label-md font-label-md font-semibold text-graphite-900">
-                Select Kit Configuration
-              </Label>
-              <select
-                id="variant-select"
-                value={variantId}
-                onChange={(e) => setVariantId(Number(e.target.value))}
-                className="h-11 w-full rounded-lg border border-border-default bg-surface-white px-3 text-body-sm font-body-sm"
-              >
+            <fieldset className={styles.configuration}>
+              <legend>Select Kit Configuration</legend>
+              <div className={styles.variants}>
                 {product.variants.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.label} — {formatPrice(v.priceIncVat)}
-                  </option>
+                  <label key={v.id} className={cn(styles.variant, variantId === v.id && styles.selectedVariant)}>
+                    <input type="radio" name={`variant-${product.id}`} value={v.id} checked={variantId === v.id} onChange={() => setVariantId(v.id)} />
+                    <strong>{v.label}</strong><span>{formatPrice(v.priceIncVat)}</span>
+                  </label>
                 ))}
-              </select>
-            </div>
+              </div>
+            </fieldset>
           )}
 
           <div className="flex items-center gap-2">
@@ -188,11 +197,11 @@ export function ProductDetail({ product, related, productReviews }: ProductDetai
           </div>
           <p className="-mt-2 text-label-sm font-label-sm text-text-secondary">{product.deliveryEta}</p>
 
-          <div className="flex items-center gap-3">
+          <div className={styles.buyRow}>
             <QuantityInput value={qty} onChange={setQty} label={product.name} />
             <Button
               type="button"
-              className="h-11 flex-1 bg-orange-500 font-label-lg text-label-lg font-bold text-text-inverse hover:bg-orange-600"
+              className="h-11 min-w-0 flex-1 cursor-pointer bg-orange-500 px-2 text-[12px] font-semibold text-text-inverse hover:bg-orange-600"
               disabled={product.stock === "out-of-stock"}
               onClick={handleAddToCart}
             >
@@ -202,7 +211,7 @@ export function ProductDetail({ product, related, productReviews }: ProductDetai
           <Button
             type="button"
             variant="secondary"
-            className="h-11 bg-graphite-900 font-label-lg text-label-lg font-bold text-text-inverse hover:bg-graphite-800"
+            className="h-11 cursor-pointer bg-graphite-900 text-[12px] font-semibold text-text-inverse hover:bg-graphite-800"
             disabled={product.stock === "out-of-stock"}
             onClick={handleFastCheckout}
           >
@@ -210,14 +219,14 @@ export function ProductDetail({ product, related, productReviews }: ProductDetai
             Fast Checkout with 1-Click
           </Button>
 
-          <div className="flex items-center justify-between text-label-sm font-label-sm text-text-secondary">
+          <div className={styles.secondaryActions}>
             <button
               type="button"
               onClick={() => {
                 toggleWishlist(product.id);
                 toast.success(isWished ? "Removed from wishlist" : "Added to wishlist");
               }}
-              className="flex items-center gap-1 hover:text-text-primary"
+              className="flex cursor-pointer items-center gap-1 hover:text-text-primary"
               aria-pressed={isWished}
             >
               <span aria-hidden className="material-symbols-outlined text-[18px]" style={isWished ? { fontVariationSettings: "'FILL' 1" } : undefined}>
@@ -225,11 +234,11 @@ export function ProductDetail({ product, related, productReviews }: ProductDetai
               </span>
               Wishlist
             </button>
-            <Link href="/compare" className="flex items-center gap-1 hover:text-text-primary">
+            <Link href="/compare" className="flex cursor-pointer items-center gap-1 hover:text-text-primary">
               <span aria-hidden className="material-symbols-outlined text-[18px]">compare_arrows</span>
               Compare
             </Link>
-            <Link href="#reviews" className="flex items-center gap-1 hover:text-text-primary">
+            <Link href="#reviews" className="flex cursor-pointer items-center gap-1 hover:text-text-primary">
               <span aria-hidden className="material-symbols-outlined text-[18px]">reviews</span>
               Trade FAQs
             </Link>
@@ -238,9 +247,9 @@ export function ProductDetail({ product, related, productReviews }: ProductDetai
       </div>
 
       {product.highlights.length > 0 && (
-        <section className="mt-12 grid grid-cols-2 gap-4 border-t border-border-default pt-8 lg:grid-cols-4">
+        <section className={styles.highlights}>
           {product.highlights.map((h) => (
-            <div key={h.label} className="flex flex-col items-start gap-1 rounded-xl border border-border-default p-4">
+            <div key={h.label} className="flex flex-col items-start gap-1 rounded-xl border border-border-default bg-white p-4">
               <span aria-hidden className="material-symbols-outlined text-[24px] text-orange-600">{h.icon}</span>
               <p className="text-headline-sm font-headline-sm font-bold text-graphite-900">{h.label}</p>
               <p className="text-label-sm font-label-sm font-semibold text-text-secondary">{h.value}</p>
@@ -250,19 +259,20 @@ export function ProductDetail({ product, related, productReviews }: ProductDetai
         </section>
       )}
 
-      <section className="mt-12 border-t border-border-default pt-8">
+      <section className={styles.details}>
         <Tabs defaultValue="specs">
-          <TabsList>
+          <TabsList className={styles.tabList}>
             <TabsTrigger value="specs">Technical Specifications</TabsTrigger>
             <TabsTrigger value="box">What&apos;s in the Box</TabsTrigger>
             <TabsTrigger value="manuals">Manuals &amp; Downloads</TabsTrigger>
             <TabsTrigger value="compat">System Compatibility</TabsTrigger>
           </TabsList>
-          <TabsContent value="specs">
+          <TabsContent value="specs" className={styles.tabContent}>
+            <h2 className={styles.sectionTitle}>Technical Specifications</h2>
             {product.specs.length === 0 ? (
               <p className="py-6 text-body-sm font-body-sm text-text-secondary">No technical specifications recorded for this product yet.</p>
             ) : (
-              <dl className="grid grid-cols-1 gap-x-8 sm:grid-cols-2">
+              <dl className={styles.specifications}>
                 {product.specs.map((spec) => (
                   <div key={spec.label} className="flex justify-between border-b border-border-default py-2 text-body-sm font-body-sm">
                     <dt className="text-text-secondary">{spec.label}</dt>
@@ -272,28 +282,28 @@ export function ProductDetail({ product, related, productReviews }: ProductDetai
               </dl>
             )}
           </TabsContent>
-          <TabsContent value="box">
+          <TabsContent value="box" className={styles.tabContent}>
             <ul className="list-inside list-disc py-4 text-body-sm font-body-sm text-text-primary">
               {product.whatsInTheBox.map((item) => (
                 <li key={item}>{item}</li>
               ))}
             </ul>
           </TabsContent>
-          <TabsContent value="manuals">
+          <TabsContent value="manuals" className={styles.tabContent}>
             <p className="py-6 text-body-sm font-body-sm text-text-secondary">
-              No manual has been attached to this prototype listing yet. In production this tab lists downloadable PDF manuals and safety data sheets.
+              No manuals or safety data sheets are available for this product yet.
             </p>
           </TabsContent>
-          <TabsContent value="compat">
+          <TabsContent value="compat" className={styles.tabContent}>
             <p className="py-6 text-body-sm font-body-sm text-text-secondary">
-              Compatibility data (battery platform, accessory fit) has not been modelled for this prototype listing yet.
+              Compatibility information is not available for this product yet.
             </p>
           </TabsContent>
         </Tabs>
       </section>
 
       {related.length > 0 && (
-        <section className="mt-12 border-t border-border-default pt-8">
+        <section className={styles.section}>
           <h2 className="mb-4 text-headline-sm font-headline-sm font-bold text-graphite-900">Frequently Bought Together</h2>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             {related.map((p) => (
@@ -303,23 +313,23 @@ export function ProductDetail({ product, related, productReviews }: ProductDetai
         </section>
       )}
 
-      <section id="reviews" className="mt-12 border-t border-border-default pt-8">
+      <section id="reviews" className={styles.section}>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-headline-sm font-headline-sm font-bold text-graphite-900">Customer Reviews &amp; Ratings</h2>
           <WriteReviewDialog productName={product.name} />
         </div>
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[240px_1fr]">
-          <div>
+        <div className={styles.reviewLayout}>
+          <div className={styles.reviewScore}>
             <p className="text-display-lg-mobile font-display-lg-mobile font-bold text-graphite-900">{product.rating.toFixed(1)}</p>
             <Rating value={product.rating} />
             <p className="mt-1 text-label-sm font-label-sm text-text-secondary">out of 5 · {product.reviewCount} trade reviews</p>
           </div>
-          <ul className="flex flex-col gap-6">
+          <ul className={styles.reviewCards}>
             {productReviews.length === 0 ? (
               <li className="text-body-sm font-body-sm text-text-secondary">No written reviews yet — be the first to review this product.</li>
             ) : (
               productReviews.map((review) => (
-                <li key={review.id} className="border-b border-border-default pb-6">
+                <li key={review.id} className={styles.reviewCard}>
                   <div className="mb-1 flex items-center gap-2">
                     <Rating value={review.rating} />
                     {review.verified && (

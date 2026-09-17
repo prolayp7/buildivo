@@ -28,11 +28,11 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { slugs } = await params;
   const activeSlug = slugs[slugs.length - 1];
-  const [category, departments, tree, { items: categoryProducts }] = await Promise.all([
+  const [category, departments, tree, initialProducts] = await Promise.all([
     fetchCategoryBySlug(activeSlug),
     fetchDepartments(),
     fetchCategoryTree(),
-    fetchProducts({ category: activeSlug, perPage: 100 }),
+    fetchProducts({ category: activeSlug, page: 1, perPage: 12, sort: "newest" }),
   ]);
   if (!category) notFound();
 
@@ -84,7 +84,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
               {category.name}
             </h1>
             <span className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-label-sm font-label-sm font-semibold text-orange-600">
-              {categoryProducts.length} {isPowerTools ? "Professional & DIY Models" : "Active Products"}
+              {initialProducts.meta.total} {isPowerTools ? "Professional & DIY Models" : "Active Products"}
             </span>
           </div>
 
@@ -140,7 +140,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         </div>
       ) : null}
 
-      <ProductListing products={categoryProducts} categoryName={category.name} />
+      <ProductListing initialProducts={initialProducts} categorySlug={activeSlug} categoryName={category.name} />
       {activeSlug === "power-tools" && <CategoryExtras />}
     </div>
   );

@@ -192,15 +192,15 @@ export function ProductCard({ product, layout = "grid", className }: ProductCard
               <span className="font-semibold text-graphite-900">{product.tradePriceIncVat !== undefined ? "Trade: " : ""}{formatPrice((product.tradePriceIncVat ?? product.priceIncVat) / (1 + product.vatRate))} ex. VAT</span>
             </div>
             <div className="grid grid-cols-[minmax(0,1fr)_40px] gap-2">
-              <Button type="button" onClick={handleAddToCart} disabled={product.stock === "out-of-stock"} className="h-10 rounded-xl bg-orange-500 px-2 text-[12px] font-semibold text-white hover:bg-orange-600">
+              <Button type="button" onClick={handleAddToCart} disabled={product.stock === "out-of-stock"} className="h-10 cursor-pointer rounded-xl bg-orange-500 px-2 text-[12px] font-semibold text-white hover:bg-orange-600">
                 <span aria-hidden className="material-symbols-outlined text-[18px]">shopping_cart</span>
                 {product.stock === "out-of-stock" ? "Out of Stock" : "Quick Add"}
               </Button>
-              <Link href={href} aria-label={`View ${product.name}`} className="flex size-10 items-center justify-center rounded-xl bg-surface-container-low text-graphite-600 transition-colors hover:bg-orange-100 hover:text-orange-700 focus-visible:outline-2 focus-visible:outline-orange-500">
+              <Link href={href} aria-label={`View ${product.name}`} className="flex size-10 cursor-pointer items-center justify-center rounded-xl bg-surface-container-low text-graphite-600 transition-colors hover:bg-orange-100 hover:text-orange-700 focus-visible:outline-2 focus-visible:outline-orange-500">
                 <span aria-hidden className="material-symbols-outlined text-[18px]">visibility</span>
               </Link>
             </div>
-            <button type="button" onClick={handleToggleCompare} aria-pressed={isCompared} aria-label={`${isCompared ? "Remove" : "Add"} ${product.name} ${isCompared ? "from" : "to"} comparison`} className={cn("mt-2 flex min-h-9 w-full items-center justify-center gap-2 rounded-lg border text-[11px] font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500", isCompared ? "border-orange-500 bg-orange-50 text-orange-700" : "border-border-default bg-white text-graphite-400 hover:border-orange-500 hover:bg-orange-50 hover:text-orange-700")}>
+            <button type="button" onClick={handleToggleCompare} aria-pressed={isCompared} aria-label={`${isCompared ? "Remove" : "Add"} ${product.name} ${isCompared ? "from" : "to"} comparison`} className={cn("mt-2 flex min-h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border text-[11px] font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500", isCompared ? "border-orange-500 bg-orange-50 text-orange-700" : "border-border-default bg-white text-graphite-400 hover:border-orange-500 hover:bg-orange-50 hover:text-orange-700")}>
               <span aria-hidden className="material-symbols-outlined text-[16px]">{isCompared ? "check" : "compare_arrows"}</span>
               {isCompared ? "Added to compare" : "Compare"}
             </button>

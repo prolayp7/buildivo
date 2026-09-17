@@ -8,6 +8,7 @@
  */
 import type { Category, Product } from "@/types";
 import {
+  resolveMediaUrl,
   toCategory,
   toFooterColumns,
   toMainMenuItem,
@@ -21,6 +22,7 @@ import {
   type ApiReview,
   type FooterColumn,
   type MainMenuItem,
+  type ProductListMeta,
 } from "./adapters";
 
 const API_BASE = process.env.BUILDIVO_API_URL ?? "http://localhost:3000/api/v1";
@@ -80,6 +82,13 @@ export async function fetchFooterMenu(): Promise<FooterColumn[]> {
   return menu ? toFooterColumns(menu.items) : [];
 }
 
+// Which homepage sections (src/app/(storefront)/page.tsx) are turned on,
+// set from buildivo-admin's Homepage page. Layout/order stay fixed in code.
+export async function fetchVisibleHomepageSections(): Promise<Set<string>> {
+  const sections = await apiGet<{ data: { type: string }[] }>("homepage-sections");
+  return new Set(sections.data.map((section) => section.type));
+}
+
 export async function fetchCategoryBySlug(slug: string): Promise<Category | null> {
   const found = (await fetchCategoryTree()).find((c) => c.slug === slug);
   if (found) return found;
@@ -87,14 +96,24 @@ export async function fetchCategoryBySlug(slug: string): Promise<Category | null
   return api ? toCategory(resolveCategoryImages(api)) : null;
 }
 
+function resolveBrandLogo(brand: ApiBrand): ApiBrand {
+  return { ...brand, logo: resolveMediaUrl(API_ORIGIN, brand.logo) };
+}
+
 export function fetchBrands(): Promise<ApiBrand[]> {
-  return apiGet<{ data: ApiBrand[] }>("brands").then((r) => r.data);
+  return apiGet<{ data: ApiBrand[] }>("brands").then((r) => r.data.map(resolveBrandLogo));
+}
+
+export async function fetchBrandBySlug(slug: string): Promise<ApiBrand | null> {
+  const brand = await apiGetOrNull<ApiBrand>(`brands/${encodeURIComponent(slug)}`);
+  return brand ? resolveBrandLogo(brand) : null;
 }
 
 export interface ProductListParams {
   q?: string;
   category?: string;
   brand?: string;
+  specs?: string;
   priceMin?: number;
   priceMax?: number;
   sort?: "newest" | "price_asc" | "price_desc" | "name_asc" | "name_desc" | "discount_desc";
@@ -103,13 +122,6 @@ export interface ProductListParams {
   page?: number;
   perPage?: number;
   ids?: number[];
-}
-
-export interface ProductListMeta {
-  page: number;
-  perPage: number;
-  total: number;
-  totalPages: number;
 }
 
 export async function fetchProducts(params: ProductListParams = {}): Promise<{ items: Product[]; meta: ProductListMeta }> {
