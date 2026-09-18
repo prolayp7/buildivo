@@ -62,7 +62,9 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   if (res.status === 204) return undefined as T;
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new ApiError(Array.isArray(body?.message) ? body.message[0] : body?.message ?? `Request failed (${res.status})`, res.status);
+    const errors = body?.error?.details?.errors;
+    const message = (Array.isArray(errors) ? errors[0] : undefined) ?? body?.error?.message ?? `Request failed (${res.status})`;
+    throw new ApiError(message, res.status);
   }
   const data = (body?.data ?? body) as T;
   if (data && typeof data === "object" && "guestToken" in (data as object)) {

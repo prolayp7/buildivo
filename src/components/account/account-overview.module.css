@@ -1,0 +1,97 @@
+.overview { display: flex; flex-direction: column; gap: 20px; }
+.welcome, .metric, .dispatch, .recent, .noDispatch { border-radius: 9px; background: white; }
+.welcome { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 22px; }
+.eyebrow { color: #b65200; font-size: 13px; font-weight: 600; text-transform: uppercase; }
+.welcome h2 { font-size: 25px; line-height: 1.3; font-weight: 700; margin: 5px 0 !important; letter-spacing: -.025em; }
+.welcome p { max-width: 34ch; font-size: 14.5px; color: var(--color-graphite-400); }
+.headerActions { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.headerActions button { display: inline-flex; align-items: center; gap: 5px; border-radius: 4px; padding: 8px 10px; background: var(--color-surface-container); font-size: 13px; font-weight: 600; }
+.headerActions button:disabled { opacity: 1; color: var(--color-graphite-400); }
+.primary, .headerActions .primary { display: inline-flex; align-items: center; justify-content: center; gap: 5px; border-radius: 4px; padding: 8px 10px; background: var(--color-orange-500); color: var(--color-graphite-900); font-size: 13.5px; font-weight: 600; }
+.metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.metric { padding: 16px; min-width: 0; display: flex; flex-direction: column; }
+.metric > div { display: flex; justify-content: space-between; gap: 6px; align-items: center; margin-bottom: 18px; }
+.metric h3 { text-transform: uppercase; font-size: 13px; letter-spacing: .025em; color: var(--color-graphite-400); font-weight: 500; }
+.metric svg { color: var(--color-orange-700); }
+.metric:nth-child(2) svg { color: var(--color-info-500); }
+.metric:nth-child(3) svg { color: var(--color-success-500); }
+.metric > strong { font-size: 23px; line-height: 1.25; font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.metric > p { font-size: 13px; color: var(--color-graphite-400); margin: 8px 0 12px !important; }
+.metric footer { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--color-border-default); padding-top: 10px; margin-top: auto; font-size: 13px; color: var(--color-graphite-400); }
+.metric footer span { display: flex; justify-content: space-between; gap: 8px; }
+.metric footer b { font-weight: 500; }
+.metric footer button { display: flex; align-items: center; justify-content: space-between; text-align: left; color: var(--color-graphite-600); }
+.partial { color: var(--color-graphite-400); font-size: 14.5px; }
+.partial button { text-decoration: underline; text-underline-offset: 3px; }
+.dispatch { overflow: hidden; }
+.dispatch > header { display: flex; align-items: center; gap: 10px; padding: 14px 20px; background: var(--color-graphite-900); color: white; }
+.locationIcon { display: grid; place-items: center; width: 30px; height: 30px; background: var(--color-orange-500); color: var(--color-graphite-900); border-radius: 5px; flex-shrink: 0; }
+.dispatch header small { font-size: 13px; text-transform: uppercase; color: var(--color-text-inverse-muted); }
+.dispatch header small span { color: var(--color-orange-500); }
+.dispatch header h3 { font-size: 17px; font-weight: 600; }
+.status { margin-left: auto; flex-shrink: 0; border-radius: 20px; padding: 4px 10px; font-size: 13px; font-weight: 600; text-transform: uppercase; background: #123c2c; color: #a6ebc9; }
+.dispatchBody { padding: 20px; }
+.routing { display: grid; grid-template-columns: 1fr 1fr auto; align-items: center; gap: 16px; padding: 15px; background: var(--color-surface-warm); border-radius: 5px; }
+.routing small { display: block; margin-bottom: 4px; color: var(--color-graphite-400); font-size: 12px; text-transform: uppercase; }
+.routing strong { display: block; font-size: 14.5px; font-weight: 600; }
+.routing p, .routing > div:last-child > span { font-size: 13.5px; color: var(--color-graphite-400); overflow-wrap: anywhere; }
+.progress { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); list-style: none; margin: 25px 0 18px; padding: 0; }
+.progress li { position: relative; color: var(--color-graphite-400); }
+.progress li:not(:last-child)::after { content: ""; position: absolute; top: 10px; left: 27px; right: 6px; height: 3px; background: var(--color-border-default); }
+.progress li.complete::after { background: var(--color-success-500); }
+.progress li > span { display: grid; place-items: center; width: 23px; height: 23px; border-radius: 50%; background: var(--color-surface-container); margin-bottom: 7px; }
+.progress strong, .progress small { display: block; font-size: 13px; font-weight: 500; }
+.progress .complete > span { background: var(--color-success-500); color: white; }
+.progress .current { color: #b65200; }
+.progress .current > span { background: var(--color-orange-500); color: var(--color-graphite-900); }
+.manifest { display: flex; align-items: center; gap: 14px; border-top: 1px solid var(--color-border-default); padding-top: 12px; font-size: 13.5px; }
+.manifest > strong { flex: 0 0 115px; }
+.manifest > p { flex: 1; color: var(--color-graphite-400); font-size: 13px; }
+.manifest > span { display: flex; flex-direction: column; flex-shrink: 0; }
+.manifest small { color: var(--color-graphite-400); }
+.manifest button, .recent header button { display: inline-flex; align-items: center; gap: 5px; color: #b65200; font-size: 13.5px; font-weight: 600; flex-shrink: 0; }
+.recent { padding: 20px; }
+.recent header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 14px; }
+.recent h2 { font-size: 18px; font-weight: 700; }
+.recent header p { font-size: 14.5px; color: var(--color-graphite-400); }
+.tableScroll { overflow-x: auto; }
+.tableScroll:focus-visible { outline: 2px solid var(--color-orange-700); outline-offset: 3px; }
+.recent table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13.5px; }
+.recent thead { background: var(--color-surface-warm); color: var(--color-graphite-400); }
+.recent th, .recent td { padding: 10px 7px; border-bottom: 1px solid var(--color-border-default); }
+.recent thead th { text-transform: uppercase; font-size: 12px; font-weight: 500; }
+.recent tbody th { font-size: 13.5px; font-weight: 600; }
+.recent tbody tr:last-child > * { border-bottom: 0; }
+.recent td button { color: #b65200; white-space: nowrap; }
+.amount { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tableStatus { display: inline-block; border-radius: 3px; padding: 3px 5px; background: var(--color-orange-50); color: #b65200; font-size: 13px; text-transform: capitalize; }
+.delivered { background: var(--color-success-100); color: #126b43; }
+.stopped { background: var(--color-error-100); color: var(--color-error-500); }
+.noDispatch { display: flex; align-items: center; gap: 16px; padding: 28px 22px; }
+.noDispatch > svg { width: 28px; height: 28px; color: var(--color-graphite-400); }
+.noDispatch h3 { font-size: 17px; font-weight: 600; }
+.noDispatch p { font-size: 14.5px; color: var(--color-graphite-400); }
+.empty { padding: 25px 10px; text-align: center; color: var(--color-graphite-400); }
+.empty > svg { display: block; width: 24px; height: 24px; margin: 0 auto 10px; }
+.empty a { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; color: #b65200; }
+@media (max-width: 1150px) { .welcome { flex-wrap: wrap; } .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } .routing { grid-template-columns: 1fr 1fr; } .manifest { flex-wrap: wrap; } .recent header { flex-wrap: wrap; } }
+@media (max-width: 700px) {
+  .welcome, .recent, .dispatchBody { padding: 16px; }
+  .welcome h2 { font-size: 24px; }
+  .welcome p, .noDispatch p { font-size: 15px; }
+  .headerActions button, .metric footer button, .manifest button, .recent header button, .recent td button, .primary, .partial button, .empty a { min-height: 44px; }
+  .headerActions { gap: 8px; }
+  .metric { padding: 14px; }
+  .metric h3, .metric > p, .metric footer { font-size: 13.5px; }
+  .metric > strong { font-size: 21px; }
+  .dispatch > header { flex-wrap: wrap; padding: 14px 16px; }
+  .dispatch header h3 { overflow-wrap: anywhere; }
+  .status { margin-left: 40px; }
+  .routing { gap: 12px; padding: 12px; }
+  .routing strong { overflow-wrap: anywhere; }
+  .routing > div:last-child { grid-column: 1 / -1; }
+  .progress strong, .progress small { font-size: 13.5px; }
+  .manifest > strong { flex-basis: auto; }
+  .manifest > p { flex-basis: 100%; font-size: 14.5px; }
+  .recent table { min-width: 600px; }
+}
