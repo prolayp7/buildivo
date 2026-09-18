@@ -1,0 +1,95 @@
+.layout { display: grid; grid-template-columns: minmax(0, 2.08fr) minmax(260px, 1fr); align-items: start; gap: 20px; color: var(--color-graphite-900); font-size: 14px; line-height: 1.5; }
+.layout svg { width: 14px; height: 14px; flex-shrink: 0; }
+.main, .sidebar { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.layout h2, .layout h3, .layout p { margin: 0; }
+.layout button { cursor: pointer; }
+.layout button:disabled { cursor: not-allowed; opacity: .55; }
+.layout button:focus-visible, .layout input:focus-visible, .layout select:focus-visible, .layout a:focus-visible { outline: 2px solid var(--color-orange-700); outline-offset: 3px; }
+
+.hero { display: flex; align-items: center; justify-content: space-between; gap: 16px; background: white; border-radius: 10px; padding: 20px; }
+.eyebrow { display: block; color: #b65200; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.hero h2 { margin-top: 4px !important; font-size: 21px; font-weight: 700; letter-spacing: -.02em; }
+.hero p { margin-top: 4px; font-size: 13px; color: var(--color-graphite-400); }
+.primary { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; padding: 9px 14px; background: var(--color-orange-500); color: var(--color-graphite-900); border-radius: 6px; font-weight: 600; font-size: 13px; }
+.primary:hover:not(:disabled) { background: var(--color-orange-600); }
+
+.metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.metric { background: white; border-radius: 10px; padding: 14px 16px; }
+.metric h3 { text-transform: uppercase; font-size: 11px; letter-spacing: .025em; color: var(--color-graphite-400); font-weight: 600; }
+.metric strong { display: block; margin-top: 8px; font-size: 19px; font-weight: 700; overflow-wrap: anywhere; }
+.metric p { margin-top: 4px; font-size: 12px; color: var(--color-graphite-400); }
+
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; background: white; border-radius: 10px; padding: 12px 16px; }
+.search { display: flex; align-items: center; gap: 6px; flex: 1 1 200px; background: var(--color-surface-warm); padding: 8px; border-radius: 4px; color: var(--color-graphite-400); }
+.search input { width: 100%; min-width: 0; background: transparent; font-size: 13px; }
+.search input::placeholder { color: var(--color-graphite-400); }
+.filters { display: flex; flex-wrap: wrap; gap: 4px; }
+.filters button { background: var(--color-surface-warm); border-radius: 4px; padding: 7px 8px; font-size: 12px; white-space: nowrap; color: var(--color-graphite-600); }
+.filters [aria-pressed="true"] { background: var(--color-orange-500); color: var(--color-graphite-900); font-weight: 600; }
+
+.message { background: white; border-radius: 10px; padding: 12px 16px; font-size: 13px; }
+.message[role="alert"] { color: var(--color-error-500); }
+.message[role="status"] { color: var(--color-success-500); }
+
+.form { background: white; border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.form header { display: flex; align-items: center; justify-content: space-between; }
+.form header h3 { font-size: 16px; font-weight: 700; }
+.form header button { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 6px; color: var(--color-graphite-400); }
+.form header button:hover { background: var(--color-surface-warm); }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.span2 { grid-column: 1 / -1; }
+.form label { display: block; font-size: 13px; font-weight: 600; }
+.form label > b { color: var(--color-orange-700); font-weight: 600; }
+.form input, .form select { display: block; width: 100%; margin-top: 6px; padding: 9px 10px; border: 1px solid var(--color-border-default); border-radius: 6px; font-size: 14px; font-weight: 400; color: var(--color-graphite-900); background: white; }
+.form small[role="alert"] { display: block; margin-top: 4px; font-size: 12px; font-weight: 400; color: var(--color-error-500); }
+.checkbox { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 400; }
+.formActions { display: flex; justify-content: flex-end; gap: 10px; }
+.formActions > button:first-child { padding: 9px 14px; border-radius: 6px; color: var(--color-graphite-600); font-size: 13px; font-weight: 600; }
+.formActions > button:first-child:hover { background: var(--color-surface-warm); }
+.error { color: var(--color-error-500); font-size: 13px; }
+
+.empty { background: white; border-radius: 10px; padding: 40px 24px; text-align: center; color: var(--color-graphite-400); }
+.empty > svg { display: block; width: 26px; height: 26px; margin: 0 auto 10px; }
+.empty h3 { font-size: 16px; font-weight: 700; color: var(--color-graphite-900); }
+.empty p { margin: 8px 0 16px; }
+
+.list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.card { background: white; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; }
+.card > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 14px 16px; background: var(--color-surface-warm); border-bottom: 1px solid var(--color-border-default); }
+.card > header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+.card > header svg { width: 15px; height: 15px; color: var(--color-orange-700); flex-shrink: 0; }
+.card strong { font-size: 14px; font-weight: 700; }
+.type { padding: 2px 8px; border-radius: 20px; background: white; border: 1px solid var(--color-border-default); color: var(--color-graphite-600); font-size: 11px; font-weight: 600; }
+.default { padding: 2px 8px; border-radius: 20px; background: var(--color-success-100); color: #126b43; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+.cardActions { display: flex; gap: 4px; flex-shrink: 0; }
+.cardActions button { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 6px; color: var(--color-graphite-400); }
+.cardActions button:hover:not(:disabled) { background: white; color: var(--color-graphite-900); }
+.cardActions svg { width: 14px; height: 14px; }
+.cardBody { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.cardBody > p { font-size: 13px; color: var(--color-graphite-600); overflow-wrap: anywhere; }
+.phone { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--color-graphite-400); }
+.phone svg { width: 12px; height: 12px; }
+.card > footer { padding: 0 16px 14px; }
+.makeDefault { display: inline-flex; align-items: center; gap: 5px; padding: 6px 10px; border-radius: 5px; background: var(--color-surface-warm); font-size: 12px; font-weight: 600; color: var(--color-graphite-600); }
+.makeDefault svg { width: 12px; height: 12px; }
+.makeDefault:hover:not(:disabled) { background: var(--color-orange-50); color: #b65200; }
+
+.support { padding: 20px; border-radius: 10px; background: var(--color-graphite-900); color: white; }
+.supportHeading { display: flex; align-items: flex-start; gap: 10px; }
+.supportHeading > span { display: grid; place-items: center; width: 34px; height: 34px; background: var(--color-graphite-800); color: var(--color-orange-500); border-radius: 6px; flex-shrink: 0; }
+.supportHeading small { font-size: 12px; color: var(--color-orange-500); text-transform: uppercase; font-weight: 600; }
+.support h2 { font-size: 17px; line-height: 1.35; font-weight: 700; }
+.support > p { font-size: 13px; color: var(--color-text-inverse-muted); margin: 12px 0; }
+.supportContact { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; padding: 12px; background: var(--color-graphite-800); border-radius: 5px; }
+.supportContact small { display: block; text-transform: uppercase; color: var(--color-text-inverse-muted); font-size: 11px; }
+.supportContact strong { font-size: 13px; }
+.supportContact a { display: flex; align-items: center; gap: 5px; padding: 7px 9px; border-radius: 5px; background: var(--color-orange-500); color: var(--color-graphite-900); font-size: 12.5px; }
+
+@media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1.8fr) minmax(235px, 1fr); } }
+@media (max-width: 700px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .hero { flex-wrap: wrap; }
+  .metrics { grid-template-columns: 1fr; }
+  .grid { grid-template-columns: 1fr; }
+  .primary, .formActions > button, .filters button, .makeDefault, .cardActions button, .supportContact a { min-height: 44px; }
+}

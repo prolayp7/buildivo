@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BadgeCheck, Heart, ClipboardList, Headset, House, LayoutDashboard, MapPin, Package, ReceiptText, Truck, Wallet, Zap } from "lucide-react";
+import { BadgeCheck, FileText, Heart, House, LayoutDashboard, MapPin, Package, Truck, Zap } from "lucide-react";
 import styles from "./account-summary.module.css";
 import { AccountOrders } from "./account-orders";
 import { AccountWishlist } from "./account-wishlist";
+import { AccountAddresses } from "./account-addresses";
+import { AccountQuotes } from "./account-quotes";
 
 type Customer = {
   firstName: string;
@@ -15,12 +17,22 @@ type Customer = {
   emailVerified: boolean;
 };
 
+type View = "overview" | "orders" | "wishlist" | "addresses" | "quotes";
+
+const VIEW_LABELS: Record<View, string> = {
+  overview: "Account Overview",
+  orders: "Orders & Jobsite Dispatches",
+  wishlist: "Wishlists & Saved Materials",
+  addresses: "Jobsite Addresses",
+  quotes: "Quote Requests",
+};
+
 export function AccountSummary() {
   const router = useRouter();
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [view, setView] = useState<"overview" | "orders" | "wishlist">("overview");
+  const [view, setView] = useState<View>("overview");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -56,7 +68,7 @@ export function AccountSummary() {
           <nav className={styles.breadcrumb} aria-label="Breadcrumb">
             <Link href="/"><House aria-hidden="true" />Home</Link>
             <span aria-hidden="true">/</span><Link href="/account">Customer Account</Link>
-            <span aria-hidden="true">/</span><span aria-current="page">{view === "overview" ? "Account Overview" : view === "wishlist" ? "Wishlists & Saved Materials" : "Orders & Jobsite Dispatches"}</span>
+            <span aria-hidden="true">/</span><span aria-current="page">{VIEW_LABELS[view]}</span>
           </nav>
           <div className={styles.summary}>
             <div className={styles.profile} id="account-overview">
@@ -73,10 +85,6 @@ export function AccountSummary() {
               </div>
             </div>
             <div className={styles.statuses}>
-              <div className={styles.facility}>
-                <span className={styles.statusIcon}><Wallet aria-hidden="true" /></span>
-                <div><span className={styles.label}>Net-30 facility</span><span className={styles.value}>Not available</span></div>
-              </div>
               <button className={styles.transit} onClick={() => setView("orders")}>
                 <span className={styles.statusIcon}><Truck aria-hidden="true" /></span>
                 <div><span className={styles.label}>Active transit</span><span className={styles.value}>Track your order</span></div>
@@ -88,17 +96,18 @@ export function AccountSummary() {
             <button className={view === "overview" ? styles.active : undefined} aria-pressed={view === "overview"} aria-controls="account-panel" onClick={() => setView("overview")}><LayoutDashboard aria-hidden="true" />Account Overview</button>
             <button className={view === "orders" ? styles.active : undefined} aria-pressed={view === "orders"} aria-controls="account-panel" onClick={() => setView("orders")}><Package aria-hidden="true" />Orders &amp; Dispatches</button>
             <button className={view === "wishlist" ? styles.active : undefined} aria-pressed={view === "wishlist"} aria-controls="account-panel" onClick={() => setView("wishlist")}><Heart aria-hidden="true" />Wishlist</button>
-            <button disabled title="Project lists and bills of materials are not available yet"><ClipboardList aria-hidden="true" />Project Lists &amp; BOM</button>
-            <button disabled title="Net-30 invoices and statements are not available yet"><ReceiptText aria-hidden="true" />Net-30 Invoices &amp; Statements</button>
-            <button disabled title="Jobsite addresses are not available yet"><MapPin aria-hidden="true" />Jobsite Addresses</button>
-            <Link href="/help"><Headset aria-hidden="true" />Priority Pro Desk</Link>
+            <button className={view === "addresses" ? styles.active : undefined} aria-pressed={view === "addresses"} aria-controls="account-panel" onClick={() => setView("addresses")}><MapPin aria-hidden="true" />Jobsite Addresses</button>
+            <button className={view === "quotes" ? styles.active : undefined} aria-pressed={view === "quotes"} aria-controls="account-panel" onClick={() => setView("quotes")}><FileText aria-hidden="true" />Quote Requests</button>
           </nav>
         </div>
       </header>
       <div className={styles.content}>
         {error && <p role="alert" className={styles.error}>{error}</p>}
         {customer ? <>
-          {view === "wishlist" ? <AccountWishlist /> : <AccountOrders view={view} onViewOrders={() => setView("orders")} />}
+          {view === "wishlist" ? <AccountWishlist />
+            : view === "addresses" ? <AccountAddresses />
+            : view === "quotes" ? <AccountQuotes />
+            : <AccountOrders view={view} onViewOrders={() => setView("orders")} />}
           <div className={styles.actions}>
           <Link href="/">Continue shopping</Link>
           <button onClick={() => setView("wishlist")}>Saved products</button>

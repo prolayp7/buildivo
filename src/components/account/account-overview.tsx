@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Check, ClipboardCheck, CreditCard, Download, MapPin, Package, Plus, TrendingUp, Truck, Wallet } from "lucide-react";
+import { ArrowRight, Check, ClipboardCheck, MapPin, Package, TrendingUp, Truck } from "lucide-react";
 import type { AccountOrder } from "./order-types";
 import styles from "./account-overview.module.css";
 
@@ -24,13 +24,10 @@ export function AccountOverview({ orders, total, loading, error, onViewOrders }:
   return <div className={styles.overview}>
     <section className={styles.welcome} aria-labelledby="overview-heading">
       <div><span className={styles.eyebrow}>Commercial master operations</span><h2 id="overview-heading">Account Overview &amp;<br />Operational Hub</h2><p>Your orders, live dispatches and fleet replenishment, together in one place.</p></div>
-      <div className={styles.headerActions}><button disabled title="Account statements are not available yet"><Download />Statement (PDF)</button><button disabled title="Credit requests are not available yet"><CreditCard />Credit Request</button><button disabled className={styles.primary} title="Project bills of materials are not available yet"><Plus />New Project BOM</button></div>
     </section>
     <div className={styles.metrics}>
-      <section className={styles.metric}><div><h3>Available Net-30</h3><Wallet /></div><strong>Not available</strong><p>Credit facility not connected</p><footer><span>Credit limit <b>—</b></span><span>Next cycle <b>—</b></span></footer></section>
       <section className={styles.metric}><div><h3>{partial ? "Loaded dispatches" : "Active dispatches"}</h3><Truck /></div><strong>{ready ? active.length : "—"}<br />{ready && active.length === 1 ? "Shipment" : "Shipments"}</strong><p>{ready ? active.length ? "Orders currently in transit" : "No shipments in transit" : "Awaiting order history"}</p><footer><button onClick={() => onViewOrders()}>View dispatches <ArrowRight /></button></footer></section>
-      <section className={styles.metric}><div><h3>Open Project BOMs</h3><ClipboardCheck /></div><strong>Not available</strong><p>Project lists not connected</p><footer><span>Allocated <b>—</b></span><span>Fulfilment <b>—</b></span></footer></section>
-      <section className={styles.metric}><div><h3>{partial ? "Loaded YTD spend" : "YTD tooling spend"}</h3><TrendingUp /></div><strong>{ready ? money(spend) : "—"}</strong><p>Paid orders in {currentYear} · incl. VAT</p><footer><span>Account tier <b>—</b></span><span>Rebate <b>Not available</b></span></footer></section>
+      <section className={styles.metric}><div><h3>{partial ? "Loaded YTD spend" : "YTD tooling spend"}</h3><TrendingUp /></div><strong>{ready ? money(spend) : "—"}</strong><p>Paid orders in {currentYear} · incl. VAT</p></section>
     </div>
     {partial && <p className={styles.partial}>Summary covers {orders.length} of {total} orders. <button onClick={() => onViewOrders()}>View order history</button> to load the remaining orders for complete totals.</p>}
     {dispatch ? <article className={styles.dispatch} aria-label={`Active dispatch ${dispatch.orderNumber}`}>

@@ -206,11 +206,25 @@ export async function fetchProductsPage(queryString: string, signal?: AbortSigna
 }
 
 export interface CompareResult {
-  products: { id: number; title: string; slug: string; image: string | null; category: string; brand: string | null; vatRatePercent: string | null; price: string | null; salePrice: string | null }[];
+  products: {
+    id: number; title: string; slug: string; image: string | null; brand: string | null;
+    category: { title: string; slug: string; parent: { title: string; slug: string } | null };
+    vatRatePercent: string | null; price: string | null; salePrice: string | null;
+    inStock: boolean; stockQty: number; defaultVariantId: number | null;
+    reviewSummary: { average: number; count: number };
+  }[];
   specifications: { key: string; values: (string | null)[] }[];
 }
 export function fetchCompareProducts(ids: number[]): Promise<CompareResult> {
   return request<CompareResult>(`products/compare?ids=${ids.join(",")}`);
+}
+
+// Real order co-occurrence ("customers who bought this also bought"), not a
+// fabricated cross-sell list - same /frequently-bought-together endpoint the
+// product detail page's server-side fetchRelatedProducts() uses.
+export async function fetchFrequentlyBoughtTogether(slug: string, limit = 3): Promise<Product[]> {
+  const res = await request<ApiProductBase[]>(`products/${encodeURIComponent(slug)}/frequently-bought-together?limit=${limit}`);
+  return res.map((p) => toProduct(p, apiOrigin()));
 }
 
 /* ------------------------- Header search suggestions ------------------------- */
