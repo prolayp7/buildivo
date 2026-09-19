@@ -9,6 +9,7 @@ import type { Product } from "@/types";
 import { ProductImage } from "@/components/commerce/product-image";
 import { formatPrice } from "@/lib/format";
 import { useCartStore } from "@/lib/cart-store";
+import { OtpBoxes } from "./otp-boxes";
 import styles from "./registration.module.css";
 
 const STRENGTH_LEVELS = [
@@ -56,6 +57,7 @@ export function Registration({ products }: { products: Product[] }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [otpCode, setOtpCode] = useState("");
   const [verifyBusy, setVerifyBusy] = useState(false);
   const [verifyError, setVerifyError] = useState("");
   const [verifyFieldError, setVerifyFieldError] = useState("");
@@ -74,13 +76,13 @@ export function Registration({ products }: { products: Product[] }) {
         <BadgeCheck size={32} />
         <h2>Check your email</h2>
         <p>We&rsquo;ve sent a 6-digit code to <strong>{email}</strong>. Enter it below to activate your account and sign in.</p>
-        <form className={styles.form} noValidate onChange={() => verifyFieldError && setVerifyFieldError("")} onSubmit={async (event) => {event.preventDefault(); if (verifyBusy) return; const data = new FormData(event.currentTarget); const code = String(data.get("code") || "").trim(); if (!code) { setVerifyFieldError("Please enter the 6-digit code."); return; } if (!/^\d{6}$/.test(code)) { setVerifyFieldError("Enter the 6-digit code exactly as emailed to you."); return; } setVerifyFieldError(""); setVerifyError(""); setVerifyBusy(true); try { const res = await fetch("/api/customer-session/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, code }) }); const result = await res.json(); if (!res.ok) throw new Error(result.message); toast.success("Account verified — you're signed in"); router.replace("/account"); router.refresh(); } catch (err) { setVerifyError(err instanceof Error ? err.message : "That code is invalid or has expired."); } finally { setVerifyBusy(false); }}}>
-          <label>Verification code <b>*</b><input name="code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="6-digit code" aria-invalid={!!verifyFieldError} /></label>
+        <form className={styles.form} noValidate  onSubmit={async (event) => {event.preventDefault(); if (verifyBusy) return; const code = otpCode.trim(); if (!code) { setVerifyFieldError("Please enter the 6-digit code."); return; } if (!/^\d{6}$/.test(code)) { setVerifyFieldError("Enter the 6-digit code exactly as emailed to you."); return; } setVerifyFieldError(""); setVerifyError(""); setVerifyBusy(true); try { const res = await fetch("/api/customer-session/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, code }) }); const result = await res.json(); if (!res.ok) throw new Error(result.message); toast.success("Account verified — you're signed in"); router.replace("/account"); router.refresh(); } catch (err) { setVerifyError(err instanceof Error ? err.message : "That code is invalid or has expired."); } finally { setVerifyBusy(false); }}}>
+          <div><span>Verification code <b>*</b></span><OtpBoxes value={otpCode} onChange={(next) => { setOtpCode(next); if (verifyFieldError) setVerifyFieldError(""); }} disabled={verifyBusy} invalid={!!verifyFieldError} /></div>
           {verifyFieldError && <small role="alert" className={styles.fieldError}>{verifyFieldError}</small>}
           {verifyError && <p role="alert" className={styles.error}><AlertCircle size={16} /><span>{verifyError}</span></p>}
           <button className={styles.submit} disabled={verifyBusy} type="submit">{verifyBusy ? "Verifying…" : "Verify & Activate Account"}<ArrowRight size={16} /></button>
         </form>
-        <button type="button" disabled={resendBusy} onClick={async () => {setResendBusy(true); setResendNotice(""); setVerifyError(""); try { await request("auth/otp/send", { method: "POST", body: JSON.stringify({ email, purpose: "email_verification" }) }); setResendNotice("A new code has been sent."); } catch (err) { setVerifyError(err instanceof Error ? err.message : "Could not resend the code."); } finally { setResendBusy(false); }}} className="mt-4 text-xs font-semibold text-orange-600 disabled:opacity-50">{resendBusy ? "Sending…" : "Resend code"}</button>
+        <button type="button" disabled={resendBusy} onClick={async () => {setResendBusy(true); setResendNotice(""); setVerifyError(""); try { await request("auth/otp/send", { method: "POST", body: JSON.stringify({ email, purpose: "email_verification" }) }); setResendNotice("A new code has been sent."); setOtpCode(""); } catch (err) { setVerifyError(err instanceof Error ? err.message : "Could not resend the code."); } finally { setResendBusy(false); }}} className="mt-4 text-xs font-semibold text-orange-600 disabled:opacity-50">{resendBusy ? "Sending…" : "Resend code"}</button>
         {resendNotice && <p role="status" className={styles.notice}>{resendNotice}</p>}
       </div> : <>
       <div className={styles.notice}><ShieldCheck size={18} /><p><strong>Create your account today.</strong>Save your favourite tools and keep your details ready for your next order.</p></div>

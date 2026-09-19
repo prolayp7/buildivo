@@ -158,8 +158,24 @@ export interface OrderResult {
   shippingCity?: string;
   shippingPostcode?: string;
 }
-export function placeOrder(input: CheckoutInput): Promise<OrderResult> {
-  return request<OrderResult>("orders", { method: "POST", body: JSON.stringify(input) });
+export interface PlacedOrder extends OrderResult {
+  email: string;
+}
+/** Goes through the site's own /api/checkout route so a signed-in customer's session
+ * cookie is attached (the order then shows up in their account). The idempotency key
+ * makes a double click or retry return the same order instead of a second one. */
+export async function placeOrder(input: CheckoutInput, idempotencyKey?: string): Promise<PlacedOrder> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const guestToken = readGuestToken();
+  if (guestToken) headers["X-Guest-Token"] = guestToken;
+  if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
+  const res = await fetch("/api/checkout", { method: "POST", headers, body: JSON.stringify(input) });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const errors = body?.error?.details?.errors;
+    throw new ApiError((Array.isArray(errors) ? errors[0] : undefined) ?? body?.error?.message ?? body?.message ?? `Request failed (${res.status})`, res.status);
+  }
+  return (body.data ?? body) as PlacedOrder;
 }
 
 /* ------------------------------ Quotes (RFQ) ------------------------------ */

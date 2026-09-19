@@ -1,0 +1,5 @@
+.row { display: flex; gap: 8px; margin-top: 7px; }
+.row input { width: 100%; aspect-ratio: 1; min-width: 0; padding: 0; border: 1px solid #d9dde3; border-radius: 8px; background: #fff; text-align: center; font: 700 22px/1 inherit; color: #101827; caret-color: #ff7900; }
+.row input:focus { outline: none; border-color: #ff7900; box-shadow: 0 0 0 3px rgba(255, 121, 0, .18); }
+.row input[aria-invalid="true"] { border-color: #b72a3c; }
+.row input:disabled { opacity: .6; }

@@ -10,7 +10,7 @@ import { Price } from "@/components/commerce/price";
 import { StockBadge } from "@/components/commerce/stock-badge";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/lib/cart-store";
-import { formatPrice } from "@/lib/format";
+import { formatPrice, CURRENCY_SYMBOL } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 interface ProductCardProps {
@@ -126,7 +126,7 @@ export function ProductCard({ product, layout = "grid", className }: ProductCard
             <Price priceIncVat={product.priceIncVat} compareAtIncVat={product.compareAtIncVat} vatRate={product.vatRate} size="sm" />
             {product.tradePriceIncVat && (
               <p className="text-label-sm font-label-sm text-graphite-600">
-                Trade: <span className="font-semibold">£{product.tradePriceIncVat.toFixed(2)}</span>
+                Trade: <span className="font-semibold">{CURRENCY_SYMBOL}{product.tradePriceIncVat.toFixed(2)}</span>
               </p>
             )}
           </div>

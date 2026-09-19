@@ -180,3 +180,6 @@
 .overviewLayout .supportContact svg { color: currentColor; }
 @media (max-width: 900px) { .overviewLayout { grid-template-columns: minmax(0, 1.8fr) minmax(235px, 1fr); } }
 @media (max-width: 700px) { .overviewLayout { grid-template-columns: minmax(0, 1fr); } }
+
+.invoiceLink { display: inline-flex; align-items: center; padding: 8px 12px; border: 1px solid var(--color-border-default); border-radius: 6px; font-size: 13px; font-weight: 600; color: var(--color-graphite-900); background: white; }
+.invoiceLink:hover { background: var(--color-surface-warm); }

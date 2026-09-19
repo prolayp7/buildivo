@@ -31,3 +31,30 @@ export function backendErrorMessage(body: unknown, fallback: string): string {
   }
   return fallback;
 }
+
+/** Calls the API as the signed-in customer (httpOnly cookie token), transparently
+ * refreshing an expired access token once. Returns the raw API response, or null when there is no session. */
+export async function sessionFetch(path: string, init: RequestInit = {}): Promise<Response | null> {
+  const jar = await cookies();
+  let token = jar.get("buildivo.access")?.value;
+  const refreshToken = jar.get("buildivo.refresh")?.value;
+  if (!token && !refreshToken) return null;
+  const call = (bearer: string | undefined) => {
+    const headers = new Headers(init.headers);
+    if (bearer) headers.set("Authorization", `Bearer ${bearer}`);
+    if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+    return fetch(`${apiBase()}/${path.replace(/^\//, "")}`, { ...init, headers, cache: "no-store", signal: AbortSignal.timeout(20000) });
+  };
+  let response = token ? await call(token) : null;
+  if ((!response || response.status === 401) && refreshToken) {
+    const refresh = await fetch(`${apiBase()}/auth/refresh`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ refreshToken }), cache: "no-store", signal: AbortSignal.timeout(15000) });
+    if (refresh.ok) {
+      const body = await refresh.json();
+      const data = body.data ?? body;
+      token = data.accessToken;
+      await saveSession(data, jar.get("buildivo.remember")?.value === "1");
+      response = await call(token);
+    } else if (!response) return null;
+  }
+  return response;
+}

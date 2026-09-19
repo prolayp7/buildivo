@@ -156,3 +156,20 @@ export async function fetchReviews(productId: number, page = 1, perPage = 20): P
 }
 
 export { toReview };
+
+export interface GeneralSettings {
+  logo?: string | null;
+  companyAddress?: string;
+  vatNumber?: string;
+  supportEmail?: string;
+  supportPhone1?: string;
+  copyright?: string;
+}
+export async function fetchGeneralSettings(): Promise<GeneralSettings> {
+  try {
+    const res = await apiGet<{ data: GeneralSettings }>("settings/general", 300);
+    return { ...res.data, logo: res.data.logo?.startsWith("/uploads/") ? `${API_ORIGIN}${res.data.logo}` : res.data.logo };
+  } catch {
+    return {};
+  }
+}

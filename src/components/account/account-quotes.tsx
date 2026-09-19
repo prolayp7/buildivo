@@ -1,12 +1,13 @@
 "use client";
 
+import { CURRENCY } from "@/lib/format";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, ClipboardList, FileText, Headset, Package, Search, XCircle } from "lucide-react";
 import styles from "./account-quotes.module.css";
 import type { AccountQuote } from "./quote-types";
 
-const money = (value: string | number) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(Number(value));
+const money = (value: string | number) => new Intl.NumberFormat("en-GB", { style: "currency", currency: CURRENCY }).format(Number(value));
 
 const STATUSES = ["All", "NEW", "REVIEWING", "QUOTED", "ACCEPTED", "DECLINED", "EXPIRED"] as const;
 type StatusFilter = (typeof STATUSES)[number];

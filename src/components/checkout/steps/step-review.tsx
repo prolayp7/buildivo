@@ -12,10 +12,8 @@ import type { PaymentMethodId } from "@/components/checkout/steps/step-payment";
 import Link from "next/link";
 
 const PAYMENT_LABEL: Record<PaymentMethodId, string> = {
-  card: "Credit / Debit Card",
-  "trade-net30": "Trade Account — Net 30",
-  wallet: "Digital Wallet",
-  bacs: "Direct BACS / Bank Transfer",
+  stripe: "Credit / Debit Card (Stripe)",
+  paypal: "PayPal",
 };
 
 interface StepReviewProps {

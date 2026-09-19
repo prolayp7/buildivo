@@ -1,5 +1,6 @@
 "use client";
 
+import { CURRENCY } from "@/lib/format";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, ClipboardList, Download, Heart, Headset, Minus, Package, Plus, Search, ShieldCheck, ShoppingCart, Trash2, Truck, Upload, Wrench, Zap } from "lucide-react";
@@ -9,7 +10,7 @@ import { fetchProductsByIds } from "@/lib/storefront-client";
 import type { Product } from "@/types";
 import styles from "./account-wishlist.module.css";
 
-const money = (value: number) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(value);
+const money = (value: number) => new Intl.NumberFormat("en-GB", { style: "currency", currency: CURRENCY }).format(value);
 const stockLimit = (product: Product) => product.variants?.find((variant) => variant.id === product.defaultVariantId)?.stockQty ?? product.stockCount;
 const canAdd = (product: Product) => Boolean(product.defaultVariantId) && product.stock !== "out-of-stock" && (stockLimit(product) ?? 1) > 0;
 

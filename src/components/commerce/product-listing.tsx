@@ -1,5 +1,6 @@
 "use client";
 
+import { CURRENCY_SYMBOL } from "@/lib/format";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ListingGuideBanner } from "@/components/commerce/listing-guide-banner";
@@ -97,7 +98,7 @@ export function ProductListing({ initialProducts, categorySlug, categoryName }: 
     }))),
     ...(priceMin !== "" || priceMax !== "" ? [{
       key: "price",
-      label: priceMin !== "" && priceMax !== "" ? `£${priceMin}–£${priceMax}` : priceMin !== "" ? `From £${priceMin}` : `Up to £${priceMax}`,
+      label: priceMin !== "" && priceMax !== "" ? `${CURRENCY_SYMBOL}${priceMin}–${CURRENCY_SYMBOL}${priceMax}` : priceMin !== "" ? `From ${CURRENCY_SYMBOL}${priceMin}` : `Up to ${CURRENCY_SYMBOL}${priceMax}`,
       clear: () => { setPriceMin(""); setPriceMax(""); },
     }] : []),
     ...(inStock ? [{ key: "stock", label: "In Stock Only", clear: () => setInStock(false) }] : []),
@@ -138,7 +139,7 @@ export function ProductListing({ initialProducts, categorySlug, categoryName }: 
       </fieldset>
 
       <fieldset>
-        <legend className="mb-2 text-label-md font-label-md font-bold text-graphite-900">Price Range (£)</legend>
+        <legend className="mb-2 text-label-md font-label-md font-bold text-graphite-900">Price Range ({CURRENCY_SYMBOL})</legend>
         <div className="flex items-center gap-2">
           <input
             type="number" min={0} placeholder="Min" value={priceMin}
@@ -155,7 +156,7 @@ export function ProductListing({ initialProducts, categorySlug, categoryName }: 
         {maxPrice > 0 && (
           <>
             <Slider min={0} max={maxPrice} step={1} value={[Number(priceMax) || maxPrice]} onValueChange={([v]) => setPriceMax(String(v))} className="mt-3" />
-            <p className="mt-2 text-label-sm font-label-sm text-text-secondary">Up to £{priceMax || maxPrice}</p>
+            <p className="mt-2 text-label-sm font-label-sm text-text-secondary">Up to {CURRENCY_SYMBOL}{priceMax || maxPrice}</p>
           </>
         )}
       </fieldset>

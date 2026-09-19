@@ -1,5 +1,6 @@
 "use client";
 
+import { CURRENCY } from "@/lib/format";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, BadgeCheck, Check, ClipboardCheck, Download, Headset, MapPin, Package, Printer, RotateCcw, Search, ShieldCheck, ShoppingCart, SlidersHorizontal, Truck, Wrench, Zap } from "lucide-react";
@@ -8,7 +9,7 @@ import type { AccountOrder, AccountOrderItem, AccountOrderPage } from "./order-t
 import styles from "./account-orders.module.css";
 import { AccountOverview } from "./account-overview";
 
-const money = (value: string | number) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(Number(value));
+const money = (value: string | number) => new Intl.NumberFormat("en-GB", { style: "currency", currency: CURRENCY }).format(Number(value));
 const statusLabel = (value: string) => value.toLowerCase().replaceAll("_", " ");
 const filters = ["All Orders", "In Transit", "Delivered", "Awaiting Dispatch"] as const;
 type Filter = typeof filters[number];
@@ -84,7 +85,7 @@ export function AccountOrders({ view = "orders", onViewOrders }: { view?: "overv
 
   function exportOrders() {
     const cell = (value: string | number) => `"${String(value).replace(/^[=+@\-\t\r]/, "'$&").replaceAll('"', '""')}"`;
-    const rows = [["Order", "Placed", "Status", "Jobsite", "Total GBP"], ...visible.map((order) => [order.orderNumber, order.placedAt, order.status, order.shippingPostcode, order.total])];
+    const rows = [["Order", "Placed", "Status", "Jobsite", `Total ${CURRENCY}`], ...visible.map((order) => [order.orderNumber, order.placedAt, order.status, order.shippingPostcode, order.total])];
     const url = URL.createObjectURL(new Blob([rows.map((row) => row.map(cell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8;" }));
     const link = document.createElement("a"); link.href = url; link.download = "buildivo-orders.csv"; link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -133,7 +134,7 @@ export function AccountOrders({ view = "orders", onViewOrders }: { view?: "overv
               {!delivered && <p className={styles.itemsLabel}>Consigned equipment &amp; fasteners ({order.items.length} line items · {order.items.reduce((sum, item) => sum + item.quantity, 0)} total units)</p>}
               <div className={delivered ? styles.compactItems : styles.itemList}>{order.items.map((item) => <div className={styles.item} key={item.id}><span className={styles.productImage}><Package aria-label="Product image unavailable" /></span><div className={styles.itemInfo}><small>{item.skuSnapshot ? `SKU: ${item.skuSnapshot}` : "Ordered item"}</small><h4>{item.titleSnapshot}</h4><p>{item.variantTitleSnapshot}</p><p><strong>Qty: {item.quantity}</strong><span>Unit: {money(Number(item.subtotal) / item.quantity)} incl. VAT</span></p></div><div className={styles.price}><strong>{money(item.subtotal)}</strong><small>{money(Number(item.subtotal) - Number(item.vatAmount))} ex. VAT</small></div></div>)}</div>
             </div>
-            <footer className={styles.orderFooter}><div><small>Subtotal ex. VAT</small><strong>{money(Number(order.subtotal) - Number(order.vatTotal))}</strong></div><div className={styles.total}><small>Total payable incl. VAT</small><strong>{money(order.total)}</strong></div><div><small>Payment status</small><strong className={styles.payment}>{statusLabel(order.paymentStatus)}</strong></div><div className={styles.orderActions}><button onClick={() => window.print()}><Printer />Print summaries</button><button className={styles.orangeButton} disabled={busy !== null || !order.items.length} onClick={() => reorder(order.items, order.uuid)}><RotateCcw />{busy === order.uuid ? "Adding to basket…" : delivered ? "Quick Reorder" : "Reorder Consignment"}</button></div></footer>
+            <footer className={styles.orderFooter}><div><small>Subtotal ex. VAT</small><strong>{money(Number(order.subtotal) - Number(order.vatTotal))}</strong></div><div className={styles.total}><small>Total payable incl. VAT</small><strong>{money(order.total)}</strong></div><div><small>Payment status</small><strong className={styles.payment}>{statusLabel(order.paymentStatus)}</strong></div><div className={styles.orderActions}><button onClick={() => window.print()}><Printer />Print summaries</button><button className={styles.orangeButton} disabled={busy !== null || !order.items.length} onClick={() => reorder(order.items, order.uuid)}><RotateCcw />{busy === order.uuid ? "Adding to basket…" : delivered ? "Quick Reorder" : "Reorder Consignment"}</button>{["PAID", "PARTIALLY_REFUNDED", "REFUNDED"].includes(order.paymentStatus) && <Link className={styles.invoiceLink} href={`/account/orders/${order.uuid}/invoice`}>View invoice</Link>}</div></footer>
           </article>;
         })}
         {meta && meta.page < meta.totalPages && <button className={styles.loadMore} disabled={loading} onClick={loadMore}>Load more orders</button>}

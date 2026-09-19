@@ -1,9 +1,10 @@
+import { CURRENCY } from "@/lib/format";
 import Link from "next/link";
 import { ArrowRight, Check, ClipboardCheck, MapPin, Package, TrendingUp, Truck } from "lucide-react";
 import type { AccountOrder } from "./order-types";
 import styles from "./account-overview.module.css";
 
-const money = (value: string | number) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(Number(value));
+const money = (value: string | number) => new Intl.NumberFormat("en-GB", { style: "currency", currency: CURRENCY }).format(Number(value));
 
 export function AccountOverview({ orders, total, loading, error, onViewOrders }: {
   orders: AccountOrder[];
