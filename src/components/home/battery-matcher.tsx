@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { powerToolsSubcategories } from "@/data/categories";
+import { ECOSYSTEM_MATCHER_DEFAULTS, type EcosystemMatcherContent } from "@/components/home/ecosystem-matcher-content";
 
 const brands = [
   { value: "DeWalt 18V XR", label: "DeWalt (18V / 54V FlexVolt)" },
@@ -19,7 +20,7 @@ const popularPlatforms = [
   { value: "Milwaukee M18", label: "Milwaukee M18 (720 tools)" },
 ];
 
-export function BatteryMatcher() {
+export function BatteryMatcher({ content = ECOSYSTEM_MATCHER_DEFAULTS }: { content?: EcosystemMatcherContent }) {
   const [brand, setBrand] = useState(brands[0].value);
   const [category, setCategory] = useState("power-tools");
   const router = useRouter();
@@ -28,13 +29,13 @@ export function BatteryMatcher() {
     <section aria-labelledby="battery-matcher-heading" className="rounded-3xl bg-[linear-gradient(110deg,#ffffff_55%,#fff8f2_100%)] p-6 shadow-[0_2px_4px_rgb(0_0_0/0.12)] sm:p-10 lg:p-12">
       <div className="grid items-center gap-8 xl:grid-cols-[minmax(0,1fr)_340px] 2xl:gap-12">
       <div className="min-w-0">
-      <span className="mb-4 inline-flex items-center gap-2 rounded-full bg-graphite-900 px-3 py-1 text-[11px] leading-4 font-bold text-white">
+      <span className="mb-4 inline-flex items-center gap-2 rounded-full bg-graphite-900 px-3 py-1 text-[11px] leading-4 font-bold text-white uppercase">
         <span aria-hidden className="material-symbols-outlined text-[14px] text-orange-500">battery_charging_full</span>
-        ECOSYSTEM MATCHER
+        {content.badgeLabel}
       </span>
-      <h2 id="battery-matcher-heading" className="mb-3 text-[28px] leading-tight font-bold tracking-tight text-graphite-900 sm:text-[36px]">Match Your Battery Platform &amp; Bare Tools</h2>
+      <h2 id="battery-matcher-heading" className="mb-3 text-[28px] leading-tight font-bold tracking-tight text-graphite-900 sm:text-[36px]">{content.heading}</h2>
       <p className="mb-8 max-w-[780px] text-body-md font-body-md text-text-secondary">
-        Never buy the wrong voltage or redundant chargers. Select your existing battery system to instantly filter thousands of 100% compatible naked tools.
+        {content.description}
       </p>
       <form onSubmit={(event) => { event.preventDefault(); router.push(`/c/${category}?platform=${encodeURIComponent(brand)}`); }} className="grid max-w-[768px] grid-cols-1 items-end gap-3 md:grid-cols-3">
         <div>
@@ -71,13 +72,13 @@ export function BatteryMatcher() {
             <span aria-hidden className="material-symbols-outlined flex size-11 items-center justify-center rounded-xl bg-orange-500 text-[26px] text-white">battery_charging_full</span>
             <p className="text-xs font-semibold text-orange-500">{brand}</p>
           </div>
-          <h3 id="bare-tools-cta" className="max-w-[240px] text-[28px] leading-8 font-bold tracking-tight">Already own<br />the battery?</h3>
-          <p className="mt-3 text-sm leading-6 text-text-inverse-muted">Build your next kit around it. Explore bare tools without another battery or charger.</p>
+          <h3 id="bare-tools-cta" className="max-w-[240px] text-[28px] leading-8 font-bold tracking-tight">{content.previewHeading}</h3>
+          <p className="mt-3 text-sm leading-6 text-text-inverse-muted">{content.previewDescription}</p>
           <Link href={`/c/${category}?platform=${encodeURIComponent(brand)}`} className="mt-6 flex min-h-12 items-center justify-between gap-3 rounded-xl bg-orange-500 px-4 text-sm font-semibold text-white transition-colors hover:bg-orange-600 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-500">
-            Explore bare tools
+            {content.previewCtaLabel}
             <span aria-hidden className="material-symbols-outlined text-[20px]">arrow_forward</span>
           </Link>
-          <p className="mt-3 text-[11px] leading-4 text-text-inverse-muted">Check each tool’s platform before you buy.</p>
+          <p className="mt-3 text-[11px] leading-4 text-text-inverse-muted">{content.previewCaption}</p>
         </div>
       </aside>
       </div>

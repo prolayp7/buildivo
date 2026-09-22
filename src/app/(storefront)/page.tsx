@@ -6,104 +6,46 @@ import { ProductImage } from "@/components/commerce/product-image";
 import { TileCalculator } from "@/components/home/tile-calculator";
 import { BatteryMatcher } from "@/components/home/battery-matcher";
 import { HomeHero } from "@/components/home/hero/home-hero";
-import { fetchDepartments, fetchFeaturedProducts, fetchFloatingBadge, fetchHeroSlides, fetchTrustBadges, fetchVisibleHomepageSections } from "@/lib/api";
+import { fetchCalculatorsContent, fetchDepartments, fetchEcosystemMatcherContent, fetchFeaturedProducts, fetchFloatingBadge, fetchHeroSlides, fetchProjectKitsContent, fetchTradeCtaContent, fetchTrustBadges, fetchVisibleHomepageSections } from "@/lib/api";
 
 export const metadata: Metadata = {
   title: "Buildivo — Pro-Grade Tools, Hardware & DIY Supplies",
 };
 
-
-
-const projects = [
-  {
-    slug: "decking-outdoor-framing",
-    image: "/images/projects/decking.jpg",
-    name: "Decking & Outdoor Framing",
-    description: "C24 treated joists, deck boards, weed membrane, joist tape & coach screws.",
-    itemCount: 24,
-    specLabel: "Estimated Area",
-    specValue: "25 - 35 m²",
-    est: "£1,420.00",
-    categorySlug: "garden-outdoor",
-  },
-  {
-    slug: "complete-bathroom-refit",
-    image: "/images/projects/bathroom.jpg",
-    name: "Complete Bathroom Refit",
-    description: "Tanking kit, 15mm/22mm copper, JG Speedfit manifolds, tile backer boards.",
-    itemCount: 48,
-    specLabel: "Typical Room Size",
-    specValue: "Standard 3-piece",
-    est: "£2,180.00",
-    categorySlug: "plumbing-heating",
-  },
-  {
-    slug: "jobsite-rough-in",
-    image: "/images/projects/electrical.jpg",
-    name: "Jobsite Electrical Rough-In",
-    description: "100m drums 2.5mm² T&E, 1.5mm² lighting, dry lining boxes, RCBOs.",
-    itemCount: 32,
-    specLabel: "Scope",
-    specValue: "4-Zone Extension",
-    est: "£895.00",
-    categorySlug: "electrical-lighting",
-  },
-  {
-    slug: "workshop-storage-build",
-    image: "/images/projects/workshop.jpg",
-    name: "Workshop Storage Build",
-    description: "Birch plywood sheets, heavy duty steel angle brackets, heavy-duty castors.",
-    itemCount: 18,
-    specLabel: "Bench Spec",
-    specValue: "2.4m Heavy Workbench",
-    est: "£640.00",
-    categorySlug: "storage",
-  },
-];
-
-const calculators = [
-  {
-    slug: "concrete-mortar",
-    icon: "architecture",
-    label: "Concrete & Mortar Volume",
-    caption: (
-      <>
-        Calculates <span className="text-text-secondary">cubic meters, ballast &amp; cement bags</span> for footings and slabs.
-      </>
-    ),
-  },
-  {
-    slug: "paint-coverage",
-    icon: "format_paint",
-    label: "Paint Coverage & Primer",
-    caption: (
-      <>
-        Coat multipliers for <span className="text-text-secondary">masonry, emulsion, gloss, and exterior cladding</span>.
-      </>
-    ),
-  },
-  {
-    slug: "flooring-underlay",
-    icon: "view_agenda",
-    label: "Flooring & Underlay Packs",
-    caption: (
-      <>
-        Pack box rounding with <span className="text-text-secondary">expansion gap perimeter formulas</span>.
-      </>
-    ),
-  },
-
+// Image/slug/categorySlug are structural (tied to real asset paths and
+// category routing), so they stay hardcoded here - only the text/stat
+// fields below come from ProjectKitsContent (admin-editable).
+const projectKitAssets = [
+  { slug: "decking-outdoor-framing", image: "/images/projects/decking.jpg", categorySlug: "garden-outdoor" },
+  { slug: "complete-bathroom-refit", image: "/images/projects/bathroom.jpg", categorySlug: "plumbing-heating" },
+  { slug: "jobsite-rough-in", image: "/images/projects/electrical.jpg", categorySlug: "electrical-lighting" },
+  { slug: "workshop-storage-build", image: "/images/projects/workshop.jpg", categorySlug: "storage" },
 ];
 
 export default async function HomePage() {
-  const [departments, featured, visibleSections, heroSlides, trustBadges, floatingBadge] = await Promise.all([
+  const [departments, featured, visibleSections, heroSlides, trustBadges, floatingBadge, tradeCta, calculatorsContent, ecosystemMatcherContent, projectKitsContent] = await Promise.all([
     fetchDepartments(),
     fetchFeaturedProducts(4),
     fetchVisibleHomepageSections(),
     fetchHeroSlides(),
     fetchTrustBadges(),
     fetchFloatingBadge(),
+    fetchTradeCtaContent(),
+    fetchCalculatorsContent(),
+    fetchEcosystemMatcherContent(),
+    fetchProjectKitsContent(),
   ]);
+  const calculators = [
+    { slug: "concrete-mortar", icon: calculatorsContent.calc1Icon, label: calculatorsContent.calc1Label, caption: calculatorsContent.calc1Caption },
+    { slug: "paint-coverage", icon: calculatorsContent.calc2Icon, label: calculatorsContent.calc2Label, caption: calculatorsContent.calc2Caption },
+    { slug: "flooring-underlay", icon: calculatorsContent.calc3Icon, label: calculatorsContent.calc3Label, caption: calculatorsContent.calc3Caption },
+  ];
+  const projects = [
+    { ...projectKitAssets[0], name: projectKitsContent.kit1Name, description: projectKitsContent.kit1Description, specLabel: projectKitsContent.kit1SpecLabel, specValue: projectKitsContent.kit1SpecValue, est: projectKitsContent.kit1Est, itemCount: projectKitsContent.kit1ItemCount },
+    { ...projectKitAssets[1], name: projectKitsContent.kit2Name, description: projectKitsContent.kit2Description, specLabel: projectKitsContent.kit2SpecLabel, specValue: projectKitsContent.kit2SpecValue, est: projectKitsContent.kit2Est, itemCount: projectKitsContent.kit2ItemCount },
+    { ...projectKitAssets[2], name: projectKitsContent.kit3Name, description: projectKitsContent.kit3Description, specLabel: projectKitsContent.kit3SpecLabel, specValue: projectKitsContent.kit3SpecValue, est: projectKitsContent.kit3Est, itemCount: projectKitsContent.kit3ItemCount },
+    { ...projectKitAssets[3], name: projectKitsContent.kit4Name, description: projectKitsContent.kit4Description, specLabel: projectKitsContent.kit4SpecLabel, specValue: projectKitsContent.kit4SpecValue, est: projectKitsContent.kit4Est, itemCount: projectKitsContent.kit4ItemCount },
+  ];
   return (
     <div className="flex flex-col">
       {visibleSections.has("HERO") && heroSlides.length > 0 && <HomeHero slides={heroSlides} floatingBadge={floatingBadge} />}
@@ -171,15 +113,15 @@ export default async function HomePage() {
         <div className="mx-auto max-w-[1600px] px-4 sm:px-margin-desktop">
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="mb-1 text-label-md font-label-md font-semibold uppercase tracking-wide text-orange-600">Turnkey Project Packs</p>
+            <p className="mb-1 text-label-md font-label-md font-semibold uppercase tracking-wide text-orange-600">{projectKitsContent.badgeLabel}</p>
             <h2 className="mb-1 text-headline-lg-mobile font-headline-lg-mobile font-bold text-graphite-900 sm:text-headline-lg sm:font-headline-lg">
-              Shop by Complete Job
+              {projectKitsContent.heading}
             </h2>
             <p className="max-w-2xl text-body-md font-body-md text-text-secondary">
-              Standardized bills of materials curated with vetted tradespeople. Eliminate missed fixings, incorrect gauge wiring, and return trips.
+              {projectKitsContent.description}
             </p>
           </div>
-          <p className="text-label-sm font-label-sm text-text-secondary">All bundles include 5% bulk rebate</p>
+          <p className="text-label-sm font-label-sm text-text-secondary">{projectKitsContent.footnote}</p>
         </div>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {projects.map((project) => (
@@ -227,46 +169,46 @@ export default async function HomePage() {
             <div>
               <span className="mb-4 inline-flex items-center gap-2 rounded-sm bg-[#0c1722] px-3 py-1 text-label-sm font-label-sm font-bold uppercase tracking-wide text-orange-500">
                 <span aria-hidden className="material-symbols-outlined text-[14px]">badge</span>
-                Official Trade Contractor Scheme
+                {tradeCta.badgeLabel}
               </span>
               <h2 className="mb-4 text-[28px] leading-tight font-bold tracking-[-0.025em] text-text-inverse sm:text-[36px]">
-                Unlock Net Pricing &amp; 30-Day Credit Lines
+                {tradeCta.heading}
               </h2>
               <p className="mb-8 max-w-[650px] text-[18px] leading-7 text-[#91a3b5]">
-                Power your jobs with instant approvals, volume tiered rates on daily consumables, and guaranteed delivery direct to active jobsites before 9:00 AM.
+                {tradeCta.description}
               </p>
               <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-3">
                 <div className="min-h-[142px] rounded-[14px] bg-[#0e1a26] p-4">
-                  <p className="text-[32px] leading-8 font-bold tracking-tight text-orange-500">Up to 15%</p>
-                  <p className="text-[16px] leading-6 font-semibold text-text-inverse">Trade Discount</p>
-                  <p className="mt-1 text-[11px] leading-6">Tiered rebates applied to invoicing</p>
+                  <p className="text-[32px] leading-8 font-bold tracking-tight text-orange-500">{tradeCta.stat1Value}</p>
+                  <p className="text-[16px] leading-6 font-semibold text-text-inverse">{tradeCta.stat1Label}</p>
+                  <p className="mt-1 text-[11px] leading-6">{tradeCta.stat1Caption}</p>
                 </div>
                 <div className="min-h-[142px] rounded-[14px] bg-[#0e1a26] p-4">
                   <span aria-hidden className="material-symbols-outlined mb-2 block text-[28px] text-orange-500">
-                    support_agent
+                    {tradeCta.stat2Icon}
                   </span>
-                  <p className="text-[16px] leading-6 font-semibold text-text-inverse">Dedicated Manager</p>
-                  <p className="mt-1 text-[11px] leading-6">Direct phone desk for instant tender quotes</p>
+                  <p className="text-[16px] leading-6 font-semibold text-text-inverse">{tradeCta.stat2Label}</p>
+                  <p className="mt-1 text-[11px] leading-6">{tradeCta.stat2Caption}</p>
                 </div>
                 <div className="min-h-[142px] rounded-[14px] bg-[#0e1a26] p-4">
                   <span aria-hidden className="material-symbols-outlined mb-2 block text-[28px] text-orange-500">
-                    location_on
+                    {tradeCta.stat3Icon}
                   </span>
-                  <p className="text-[16px] leading-6 font-semibold text-text-inverse">Instant Jobsite Drops</p>
-                  <p className="mt-1 text-[11px] leading-6">What3words geofenced drop-offs</p>
+                  <p className="text-[16px] leading-6 font-semibold text-text-inverse">{tradeCta.stat3Label}</p>
+                  <p className="mt-1 text-[11px] leading-6">{tradeCta.stat3Caption}</p>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-4">
                 <Link
-                  href="/trade"
+                  href={tradeCta.ctaHref}
                   className="inline-flex items-center min-h-[52px] justify-center gap-2 rounded-xl bg-orange-500 px-8 py-3 font-label-lg text-label-lg font-bold text-text-inverse transition-colors hover:bg-orange-600 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-500"
                 >
-                  Apply for Trade Account
+                  {tradeCta.ctaLabel}
                   <span aria-hidden className="material-symbols-outlined text-[18px]">arrow_forward</span>
                 </Link>
                 <p className="flex items-center gap-1.5 text-label-sm font-label-sm">
                   <span aria-hidden className="material-symbols-outlined text-[16px] text-orange-500">bolt</span>
-                  Instant 2-minute soft-check application (Companies House verified)
+                  {tradeCta.microcopy}
                 </p>
               </div>
             </div>
@@ -276,27 +218,27 @@ export default async function HomePage() {
                   <span aria-hidden className="material-symbols-outlined text-[26px] text-orange-500">
                     deployed_code
                   </span>
-                  <span className="text-[20px] leading-7 font-bold text-text-inverse">BUILDIVO PRO</span>
+                  <span className="text-[20px] leading-7 font-bold text-text-inverse">{tradeCta.previewBrand}</span>
                 </span>
                 <span className="rounded-sm bg-success-500/20 px-2.5 py-0.5 text-label-sm font-label-sm font-semibold uppercase tracking-wide text-success-500">
-                  Active
+                  {tradeCta.previewStatus}
                 </span>
               </div>
               <p className="mb-1 text-label-sm font-label-sm uppercase text-[#8499ad]">Account Holder</p>
-              <p className="mb-3 text-[14px] leading-5 font-semibold text-text-inverse">Apex Mechanical &amp; Electrical Ltd</p>
+              <p className="mb-3 text-[14px] leading-5 font-semibold text-text-inverse">{tradeCta.previewHolderName}</p>
               <div className="mb-10 flex items-start justify-between gap-4">
                 <div>
                   <p className="text-label-sm font-label-sm uppercase text-[#8499ad]">Credit Limit</p>
-                  <p className="text-body-md font-body-md font-bold text-orange-500">£25,000.00</p>
+                  <p className="text-body-md font-body-md font-bold text-orange-500">{tradeCta.previewCreditLimit}</p>
                 </div>
                 <div>
                   <p className="text-label-sm font-label-sm uppercase text-[#8499ad]">Terms</p>
-                  <p className="text-body-md font-body-md font-bold text-text-inverse">Net 30 Days</p>
+                  <p className="text-body-md font-body-md font-bold text-text-inverse">{tradeCta.previewTerms}</p>
                 </div>
               </div>
               <div className="mt-auto flex items-center justify-between text-label-sm font-label-sm uppercase text-[#8499ad]">
-                <span>Card: •••• 9842</span>
-                <span>Exp: 12/28</span>
+                <span>Card: {tradeCta.previewCardMask}</span>
+                <span>Exp: {tradeCta.previewExpiry}</span>
               </div>
             </div>
           </div>
@@ -306,14 +248,12 @@ export default async function HomePage() {
 
       {visibleSections.has("CALCULATORS") && (
       <section className="mx-auto w-full max-w-[1600px] px-4 py-10 sm:px-margin-desktop">
-        <p className="mb-1 text-label-md font-label-md font-semibold uppercase tracking-wide text-orange-600">Jobsite Estimation Suite</p>
+        <p className="mb-1 text-label-md font-label-md font-semibold uppercase tracking-wide text-orange-600">{calculatorsContent.eyebrow}</p>
         <h2 className="mb-1 text-headline-lg-mobile font-headline-lg-mobile font-bold text-graphite-900 sm:text-headline-lg sm:font-headline-lg">
-          Interactive Material Calculators
+          {calculatorsContent.heading}
         </h2>
         <p className="mb-8 max-w-[560px] text-body-md font-body-md text-text-secondary">
-          Prevent site waste and calculate exact quantities for{" "}
-          <span className="text-text-secondary">tile, paint coverage, concrete pours, and laminate flooring</span> with automatic 10% wastage
-          allowance.
+          {calculatorsContent.description}
         </p>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <TileCalculator />
@@ -345,7 +285,7 @@ export default async function HomePage() {
 
       {visibleSections.has("ECOSYSTEM_MATCHER") && (
       <section className="mx-auto w-full max-w-[1600px] px-4 pb-14 sm:px-margin-desktop">
-        <BatteryMatcher />
+        <BatteryMatcher content={ecosystemMatcherContent} />
       </section>
       )}
     </div>
