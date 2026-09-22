@@ -6,18 +6,11 @@ import { ProductImage } from "@/components/commerce/product-image";
 import { TileCalculator } from "@/components/home/tile-calculator";
 import { BatteryMatcher } from "@/components/home/battery-matcher";
 import { HomeHero } from "@/components/home/hero/home-hero";
-import { fetchDepartments, fetchFeaturedProducts, fetchVisibleHomepageSections } from "@/lib/api";
+import { fetchDepartments, fetchFeaturedProducts, fetchFloatingBadge, fetchHeroSlides, fetchTrustBadges, fetchVisibleHomepageSections } from "@/lib/api";
 
 export const metadata: Metadata = {
   title: "Buildivo — Pro-Grade Tools, Hardware & DIY Supplies",
 };
-
-const trustBadges = [
-  { icon: "local_shipping", title: "Next-Day Jobsite Dispatch", caption: "Orders before 8 PM ship tonight" },
-  { icon: "cached", title: "30-Day Free Returns", caption: "Zero hassle on unopened stock" },
-  { icon: "price_check", title: "Price Match Promise", caption: "We beat authorized trade quotes" },
-  { icon: "verified_user", title: "3-Year Manufacturer Warranty", caption: "Registered straight at checkout" },
-];
 
 
 
@@ -103,21 +96,28 @@ const calculators = [
 ];
 
 export default async function HomePage() {
-  const [departments, featured, visibleSections] = await Promise.all([fetchDepartments(), fetchFeaturedProducts(4), fetchVisibleHomepageSections()]);
+  const [departments, featured, visibleSections, heroSlides, trustBadges, floatingBadge] = await Promise.all([
+    fetchDepartments(),
+    fetchFeaturedProducts(4),
+    fetchVisibleHomepageSections(),
+    fetchHeroSlides(),
+    fetchTrustBadges(),
+    fetchFloatingBadge(),
+  ]);
   return (
     <div className="flex flex-col">
-      {visibleSections.has("HERO") && <HomeHero />}
+      {visibleSections.has("HERO") && heroSlides.length > 0 && <HomeHero slides={heroSlides} floatingBadge={floatingBadge} />}
 
-      {visibleSections.has("TRUST_STRIP") && (
+      {visibleSections.has("TRUST_STRIP") && trustBadges.length > 0 && (
       <section className="bg-surface-warm">
         <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-4 sm:grid-cols-2 px-4 py-6 sm:px-margin-desktop lg:grid-cols-4">
           {trustBadges.map((badge) => (
-            <div key={badge.title} className="flex min-h-16 items-center gap-2 rounded-lg bg-white p-3 shadow-[0_1px_2px_rgb(0_0_0/0.05)]">
+            <div key={badge.id} className="flex min-h-16 items-center gap-2 rounded-lg bg-white p-3 shadow-[0_1px_2px_rgb(0_0_0/0.05)]">
               <span aria-hidden className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-orange-100 text-orange-600">
-                <span className="material-symbols-outlined text-[22px]">{badge.icon}</span>
+                <span className="material-symbols-outlined text-[22px]">{badge.icon ?? "verified"}</span>
               </span>
               <div>
-                <p className="text-[12px] leading-4 font-semibold text-graphite-900">{badge.title}</p>
+                <p className="text-[12px] leading-4 font-semibold text-graphite-900">{badge.label}</p>
                 <p className="text-label-sm font-label-sm text-text-secondary">{badge.caption}</p>
               </div>
             </div>

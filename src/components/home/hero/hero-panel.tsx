@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { heroSlides } from "./hero-slides";
+import type { HeroSlide } from "./hero-slides";
 import { HeroSlideMedia } from "./hero-slide-media";
 import { HeroCarouselControls } from "./hero-carousel-controls";
 import { FloatingCollectionCard } from "./floating-collection-card";
 import type { useHeroCarousel } from "./use-hero-carousel";
+import type { ApiTrustBadge } from "@/lib/api";
 
 // Static perspective geometry for the angled panel assembly. Tuned against the
 // approved reference image, not a literal reading of any named angle. Adjust
@@ -15,8 +16,7 @@ const HERO_ROTATE_Y = "-17.6deg";
 const HERO_ROTATE_X = "1.6deg";
 const EDGE_DEPTH = "48px";
 
-export function HeroPanel({ carousel }: { carousel: ReturnType<typeof useHeroCarousel> }) {
-  const slides = heroSlides;
+export function HeroPanel({ carousel, slides, floatingBadge }: { carousel: ReturnType<typeof useHeroCarousel>; slides: HeroSlide[]; floatingBadge: ApiTrustBadge | null }) {
   const stageRef = useRef<HTMLDivElement>(null);
 
   // Pause autoplay while the hero is scrolled out of view.
@@ -116,7 +116,7 @@ export function HeroPanel({ carousel }: { carousel: ReturnType<typeof useHeroCar
             />
           </div>
           <div style={{ transform: "translateZ(28px)" } as React.CSSProperties}>
-            <FloatingCollectionCard />
+            <FloatingCollectionCard badge={floatingBadge} />
           </div>
         </div>
       </div>

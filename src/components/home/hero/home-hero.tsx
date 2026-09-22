@@ -5,9 +5,10 @@ import { AuroraText } from "@/components/ui/aurora-text";
 import { ShimmerButton } from "@/components/ui/shimmer-button";
 import { TextAnimate } from "@/components/ui/text-animate";
 import { HeroPanel } from "./hero-panel";
-import { heroSlides } from "./hero-slides";
+import type { HeroSlide } from "./hero-slides";
 import { useHeroCarousel } from "./use-hero-carousel";
 import styles from "./home-hero.module.css";
+import type { ApiTrustBadge } from "@/lib/api";
 
 const heroCtas = [
   { icon: "local_shipping", title: "Next-Day Delivery", caption: "Free over £75", href: "/help", color: "text-orange-600" },
@@ -15,7 +16,7 @@ const heroCtas = [
   { icon: "near_me", title: "Track Your Order", caption: "Live status updates", href: "/track-order", color: "text-success-500" },
 ];
 
-export function HomeHero() {
+export function HomeHero({ slides: heroSlides, floatingBadge }: { slides: HeroSlide[]; floatingBadge: ApiTrustBadge | null }) {
   const carousel = useHeroCarousel(heroSlides.length);
   const slide = heroSlides[carousel.index];
   const textVariants = {
@@ -86,7 +87,7 @@ export function HomeHero() {
                 ))}
               </div>
             </div>
-            <HeroPanel carousel={carousel} />
+            <HeroPanel carousel={carousel} slides={heroSlides} floatingBadge={floatingBadge} />
           </div>
         </div>
       </section>

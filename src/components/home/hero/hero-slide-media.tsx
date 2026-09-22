@@ -51,7 +51,7 @@ function SlideBody({ slide, priority }: { slide: HeroSlide; priority?: boolean }
           </span>
         </div>
       )}
-      <HeroInfoOverlay slide={slide} />
+      {slide.title ? <HeroInfoOverlay slide={slide} /> : null}
     </>
   );
 }
@@ -82,7 +82,7 @@ export function HeroSlideMedia({ slide, direction, duration, priority, active, o
               href={slide.href}
               tabIndex={active ? 0 : -1}
               className="absolute inset-0 block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
-              aria-label={`${slide.title} — ${slide.price}`}
+              aria-label={slide.title ? `${slide.title} — ${slide.price}` : `${slide.heading} ${slide.highlight} ${slide.ending}`}
             >
               <SlideBody slide={slide} priority={priority} />
             </Link>

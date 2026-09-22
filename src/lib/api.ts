@@ -7,6 +7,7 @@
  * fetchers in lib/storefront-client.ts.
  */
 import type { Category, Product } from "@/types";
+import { type ApiHeroSlide, type HeroSlide, toHeroSlide } from "@/components/home/hero/hero-slides";
 import {
   resolveMediaUrl,
   toCategory,
@@ -87,6 +88,44 @@ export async function fetchFooterMenu(): Promise<FooterColumn[]> {
 export async function fetchVisibleHomepageSections(): Promise<Set<string>> {
   const sections = await apiGet<{ data: { type: string }[] }>("homepage-sections");
   return new Set(sections.data.map((section) => section.type));
+}
+
+export interface ApiTrustBadge {
+  id: number;
+  label: string;
+  caption: string | null;
+  icon: string | null;
+}
+
+interface ApiHomeHero {
+  slides: ApiHeroSlide[];
+  badges: ApiTrustBadge[];
+  floatingBadge: ApiTrustBadge | null;
+}
+
+// Admin-managed homepage hero carousel (buildivo-admin's Merchandising > Hero
+// page) - a linked product's title/price/sku are already resolved by the API.
+// Slides, the trust-strip badges and the floating "Click & Collect" badge
+// all live on the same /home payload, so one fetch (cached by Next) covers
+// all three homepage callers.
+async function fetchHomeHero(): Promise<ApiHomeHero> {
+  const res = await apiGet<{ data: { hero: ApiHomeHero } }>("home");
+  return res.data.hero;
+}
+
+export async function fetchHeroSlides(): Promise<HeroSlide[]> {
+  const hero = await fetchHomeHero();
+  return hero.slides.map((slide) => toHeroSlide(slide, API_ORIGIN));
+}
+
+export async function fetchTrustBadges(): Promise<ApiTrustBadge[]> {
+  const hero = await fetchHomeHero();
+  return hero.badges;
+}
+
+export async function fetchFloatingBadge(): Promise<ApiTrustBadge | null> {
+  const hero = await fetchHomeHero();
+  return hero.floatingBadge;
 }
 
 export async function fetchCategoryBySlug(slug: string): Promise<Category | null> {
