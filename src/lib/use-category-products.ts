@@ -64,7 +64,7 @@ export function useCategoryProducts(query: string, initialData: ProductResults |
 // the moment one is selected. Fetched once per category, independent of the
 // interactively-selected filters, so the option list itself stays stable -
 // only the product results below narrow down.
-export function useCategoryFacets(categorySlug: string, initialFacets: ApiFacets) {
+export function useCategoryFacets(scopeQuery: string, initialFacets: ApiFacets) {
   const [facets, setFacets] = useState(initialFacets);
   const initial = useRef(true);
 
@@ -75,11 +75,11 @@ export function useCategoryFacets(categorySlug: string, initialFacets: ApiFacets
     }
     let cancelled = false;
     const controller = new AbortController();
-    void fetchProductsPage(`category=${categorySlug}&perPage=1`, controller.signal)
+    void fetchProductsPage(`${scopeQuery}&perPage=1`, controller.signal)
       .then((data) => { if (!cancelled) setFacets(data.meta.facets); })
       .catch(() => undefined);
     return () => { cancelled = true; controller.abort(); };
-  }, [categorySlug]);
+  }, [scopeQuery]);
 
   return facets;
 }

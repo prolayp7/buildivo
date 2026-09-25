@@ -8,6 +8,7 @@ import type { ApiBrand } from "@/lib/adapters";
 import { formatPrice } from "@/lib/format";
 import { BatteryMatcher } from "@/components/home/battery-matcher";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import type { ToolPlatform } from "@/lib/api";
 import styles from "./brand-directory.module.css";
 
 // A handful of top brands get the bespoke accent colours already designed
@@ -24,7 +25,7 @@ function initials(title: string): string {
   return title.split(/\s+/).map((word) => word[0]).slice(0, 2).join("").toUpperCase();
 }
 
-export function BrandDirectory({ brands }: { brands: ApiBrand[] }) {
+export function BrandDirectory({ brands, toolPlatforms }: { brands: ApiBrand[]; toolPlatforms: ToolPlatform[] }) {
   const [query, setQuery] = useState("");
   const [matcherOpen, setMatcherOpen] = useState(false);
   const filtered = useMemo(() => {
@@ -89,6 +90,6 @@ export function BrandDirectory({ brands }: { brands: ApiBrand[] }) {
         })}</div>
       </div>
     </section>
-    <Dialog open={matcherOpen} onOpenChange={setMatcherOpen}><DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-4xl"><DialogHeader><DialogTitle>Battery Platform Matcher</DialogTitle></DialogHeader><BatteryMatcher /></DialogContent></Dialog>
+    <Dialog open={matcherOpen} onOpenChange={setMatcherOpen}><DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-4xl"><DialogHeader><DialogTitle>Battery Platform Matcher</DialogTitle></DialogHeader><BatteryMatcher platforms={toolPlatforms} /></DialogContent></Dialog>
   </div>;
 }

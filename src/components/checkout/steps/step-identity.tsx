@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { syncWishlist } from "@/lib/cart-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,9 +24,28 @@ function useCountdown(startSeconds: number) {
 }
 
 export function StepIdentity({ email, onContinue }: StepIdentityProps) {
-  const [guestEmail, setGuestEmail] = useState(email || "alex.turner@apexengineering.co.uk");
+  const [guestEmail, setGuestEmail] = useState(email);
   const [signInEmail, setSignInEmail] = useState("");
   const [signInPassword, setSignInPassword] = useState("");
+  const [signingIn, setSigningIn] = useState(false);
+  const [signInError, setSignInError] = useState("");
+
+  // A real sign-in: the session cookie it sets makes the order belong to this customer's account.
+  async function signIn() {
+    setSigningIn(true);
+    setSignInError("");
+    try {
+      const response = await fetch("/api/customer-session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: signInEmail.trim(), password: signInPassword, remember: false }) });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.message || "Unable to sign in. Please try again.");
+      void syncWishlist();
+      onContinue(body.customer?.email ?? signInEmail.trim());
+    } catch (error) {
+      setSignInError(error instanceof Error ? error.message : "Unable to sign in. Please try again.");
+    } finally {
+      setSigningIn(false);
+    }
+  }
   const countdown = useCountdown(28 * 60 + 42);
 
   return (
@@ -66,7 +87,7 @@ export function StepIdentity({ email, onContinue }: StepIdentityProps) {
         <Label htmlFor="guest-email" className="mb-1">
           Work or Dispatch Email Address
         </Label>
-        <Input id="guest-email" type="email" value={guestEmail} onChange={(e) => setGuestEmail(e.target.value)} autoComplete="email" />
+        <Input id="guest-email" type="email" placeholder="you@example.com" value={guestEmail} onChange={(e) => setGuestEmail(e.target.value)} autoComplete="email" />
         <p className="mt-2 flex items-start gap-1.5 text-label-sm font-label-sm text-text-secondary">
           <span aria-hidden className="material-symbols-outlined text-[16px]">info</span>
           We will dispatch your order confirmation, courier tracking updates, and a digital VAT receipt directly to this address.
@@ -107,19 +128,20 @@ export function StepIdentity({ email, onContinue }: StepIdentityProps) {
             <div>
               <div className="mb-1 flex items-center justify-between">
                 <Label htmlFor="signin-password">Password</Label>
-                <button type="button" className="text-label-sm font-label-sm text-orange-600 hover:underline">Forgot?</button>
+                <Link href="/login" className="text-label-sm font-label-sm text-orange-600 hover:underline">Forgot?</Link>
               </div>
               <Input id="signin-password" type="password" value={signInPassword} onChange={(e) => setSignInPassword(e.target.value)} autoComplete="current-password" />
             </div>
             <Button
               variant="secondary"
               className="bg-graphite-900 text-text-inverse hover:bg-graphite-800"
-              disabled={!signInEmail || !signInPassword}
-              onClick={() => onContinue(signInEmail)}
+              disabled={!signInEmail || !signInPassword || signingIn}
+              onClick={signIn}
             >
               <span aria-hidden className="material-symbols-outlined text-[18px]">key</span>
-              Sign In &amp; Continue
+              {signingIn ? "Signing in…" : "Sign In & Continue"}
             </Button>
+            {signInError && <p role="alert" className="text-label-sm font-label-sm text-error-500">{signInError}</p>}
           </div>
         </div>
 
@@ -146,9 +168,11 @@ export function StepIdentity({ email, onContinue }: StepIdentityProps) {
               </li>
             ))}
           </ul>
-          <Button variant="outline" className="w-full" onClick={() => onContinue(guestEmail)}>
-            <span aria-hidden className="material-symbols-outlined text-[18px]">app_registration</span>
-            Create Account &amp; Checkout
+          <Button asChild variant="outline" className="w-full">
+            <Link href="/register">
+              <span aria-hidden className="material-symbols-outlined text-[18px]">app_registration</span>
+              Create an Account
+            </Link>
           </Button>
         </div>
       </div>

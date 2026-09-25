@@ -106,6 +106,9 @@ export function updateCartItem(productVariantId: number, patch: { quantity?: num
 export function removeCartItem(productVariantId: number): Promise<CartData> {
   return request<CartData>(`cart/items/${productVariantId}`, { method: "DELETE" });
 }
+export function addBundleToCart(slug: string): Promise<CartData> {
+  return request<CartData>(`bundles/${encodeURIComponent(slug)}/add-to-cart`, { method: "POST" });
+}
 export function validateCoupon(code: string): Promise<{ code: string; discountType: string; discountAmount: number; freeShipping: boolean }> {
   return request("cart/coupon/validate", { method: "POST", body: JSON.stringify({ code }) });
 }
@@ -116,7 +119,8 @@ export interface ShippingQuote {
   id: number;
   title: string;
   carrier: string;
-  price: number;
+  /** Delivery charge, VAT-inclusive; 0 once the order qualifies for free delivery. */
+  rate: number;
   estimatedDaysMin: number | null;
   estimatedDaysMax: number | null;
 }
@@ -178,10 +182,38 @@ export async function placeOrder(input: CheckoutInput, idempotencyKey?: string):
   return (body.data ?? body) as PlacedOrder;
 }
 
+/* ---------------------------- Order tracking ------------------------------ */
+
+export interface TrackedOrder {
+  orderNumber: string;
+  status: string;
+  placedAt: string;
+  shippingMethod: { title: string; carrier: string } | null;
+  trackingCarrier: string | null;
+  trackingNumber: string | null;
+  trackingUrl: string | null;
+  items: { titleSnapshot: string; variantTitleSnapshot: string; quantity: number }[];
+  history: { toStatus: string; createdAt: string }[];
+  shipments: { carrier: string; trackingNumber: string | null; trackingUrl: string | null; estimatedDeliveryAt: string | null; deliveredAt: string | null; events: { status: string; description: string | null; location: string | null; occurredAt: string }[] }[];
+}
+/** Public lookup: needs the order number and the email address on the order - no sign-in. */
+export function trackOrder(orderNumber: string, email: string): Promise<TrackedOrder> {
+  return request<TrackedOrder>("orders/track", { method: "POST", body: JSON.stringify({ orderNumber, email }) });
+}
+
 /* ------------------------------ Quotes (RFQ) ------------------------------ */
 
-export function submitQuoteRequest(input: { contactName: string; email: string; companyName?: string; phone?: string; message?: string; items: { productVariantId: number; quantity: number }[] }): Promise<{ uuid: string }> {
-  return request("quotes", { method: "POST", body: JSON.stringify(input) });
+export interface QuoteRequestInput { contactName: string; email: string; companyName?: string; phone?: string; message?: string; items: { productVariantId: number; quantity: number }[] }
+/** Goes through the site's own route so a signed-in customer's session is attached and the
+ * request appears under Account > Quote requests (a direct browser call would be a guest quote). */
+export async function submitQuoteRequest(input: QuoteRequestInput): Promise<{ uuid: string }> {
+  const res = await fetch("/api/customer-session/quotes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const errors = body?.error?.details?.errors;
+    throw new ApiError((Array.isArray(errors) ? errors[0] : undefined) ?? body?.error?.message ?? body?.message ?? `Request failed (${res.status})`, res.status);
+  }
+  return (body.data ?? body) as { uuid: string };
 }
 
 /* ---------------------------- Product Q&A --------------------------------- */
@@ -236,8 +268,7 @@ export function fetchCompareProducts(ids: number[]): Promise<CompareResult> {
 }
 
 // Real order co-occurrence ("customers who bought this also bought"), not a
-// fabricated cross-sell list - same /frequently-bought-together endpoint the
-// product detail page's server-side fetchRelatedProducts() uses.
+// fabricated cross-sell list.
 export async function fetchFrequentlyBoughtTogether(slug: string, limit = 3): Promise<Product[]> {
   const res = await request<ApiProductBase[]>(`products/${encodeURIComponent(slug)}/frequently-bought-together?limit=${limit}`);
   return res.map((p) => toProduct(p, apiOrigin()));

@@ -3,22 +3,24 @@
 import { useState } from "react";
 import { ProductImage } from "@/components/commerce/product-image";
 import { formatPrice } from "@/lib/format";
-import { COUPONS, vatAmount } from "@/lib/checkout";
+import { vatAmount } from "@/lib/checkout";
+import type { ShippingQuote } from "@/lib/storefront-client";
 import { lineProduct, lineUnitPrice, useCartTotals } from "@/lib/cart-store";
 import { cn } from "@/lib/utils";
 
 interface CheckoutOrderSummaryProps {
-  appliedCoupon?: string | null;
+  /** The delivery method chosen so far (undefined until step 3), priced by the API. */
+  shipping?: ShippingQuote;
   showItems?: boolean;
   className?: string;
 }
 
-export function CheckoutOrderSummary({ appliedCoupon = "BUILD10", showItems = true, className }: CheckoutOrderSummaryProps) {
-  const { activeLines, subtotal } = useCartTotals();
+export function CheckoutOrderSummary({ shipping, showItems = true, className }: CheckoutOrderSummaryProps) {
+  const { activeLines, subtotal, discount, coupon, freeShippingCoupon, payable } = useCartTotals();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const coupon = appliedCoupon ? COUPONS[appliedCoupon] : undefined;
-  const discount = coupon ? (subtotal * coupon.discountPct) / 100 : 0;
-  const total = Math.max(0, subtotal - discount);
+  // Same rule the API applies when it prices the order: goods - coupon + delivery (a free-delivery coupon zeroes delivery).
+  const deliveryCharge = shipping ? (freeShippingCoupon ? 0 : shipping.rate) : null;
+  const total = payable + (deliveryCharge ?? 0);
   const itemCount = activeLines.reduce((n, l) => n + l.qty, 0);
 
   return (
@@ -72,9 +74,9 @@ export function CheckoutOrderSummary({ appliedCoupon = "BUILD10", showItems = tr
           <div className="flex items-center justify-between rounded-lg bg-orange-50 px-3 py-2 text-label-sm font-label-sm text-orange-700">
             <span className="flex items-center gap-1 font-semibold">
               <span aria-hidden className="material-symbols-outlined text-[16px]">sell</span>
-              {appliedCoupon} ({coupon.discountPct}% Trade Promo)
+              {coupon.code}
             </span>
-            <span>-{formatPrice(discount)}</span>
+            <span>{coupon.freeShipping ? "Free delivery" : `-${formatPrice(discount)}`}</span>
           </div>
         )}
 
@@ -84,31 +86,31 @@ export function CheckoutOrderSummary({ appliedCoupon = "BUILD10", showItems = tr
             <span>{formatPrice(subtotal)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-text-secondary">Courier Next-Day Dispatch</span>
-            <span className="font-semibold text-success-500">FREE</span>
+            <span className="text-text-secondary">{shipping ? `Delivery (${shipping.title})` : "Delivery"}</span>
+            {deliveryCharge === null ? <span className="text-text-secondary">Choose at step 3</span> : <span className={deliveryCharge === 0 ? "font-semibold text-success-500" : ""}>{deliveryCharge === 0 ? "FREE" : formatPrice(deliveryCharge)}</span>}
           </div>
           <div className="flex justify-between">
-            <span className="text-text-secondary">VAT (20% Included)</span>
-            <span>{formatPrice(vatAmount(total))}</span>
+            <span className="text-text-secondary">VAT included in prices</span>
+            <span>{formatPrice(vatAmount(payable))}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-text-secondary">Trade Net Total (ex. VAT)</span>
-            <span>{formatPrice(total - vatAmount(total))}</span>
+            <span className="text-text-secondary">Total excluding VAT</span>
+            <span>{formatPrice(total - vatAmount(payable))}</span>
           </div>
         </div>
 
         <div className="rounded-lg bg-graphite-900 p-4 text-text-inverse">
-          <p className="text-label-sm font-label-sm uppercase tracking-wide text-text-inverse-muted">Total Payable Now</p>
+          <p className="text-label-sm font-label-sm uppercase tracking-wide text-text-inverse-muted">{shipping ? "Total Payable Now" : "Total so far"}</p>
           <div className="flex items-baseline justify-between">
-            <p className="text-label-sm font-label-sm text-text-inverse-muted">Includes all applicable UK VAT</p>
+            <p className="text-label-sm font-label-sm text-text-inverse-muted">{shipping ? "Includes VAT and delivery" : "Including VAT, before delivery"}</p>
             <p className="text-headline-lg font-headline-lg font-bold text-orange-500">{formatPrice(total)}</p>
           </div>
         </div>
 
-        {coupon && (
+        {discount > 0 && (
           <p className="flex items-center gap-1 rounded-lg bg-success-100 px-3 py-2 text-label-sm font-label-sm font-semibold text-success-500">
             <span aria-hidden className="material-symbols-outlined text-[16px]">savings</span>
-            You save {formatPrice(discount)} on this industrial order
+            You save {formatPrice(discount)} on this order
           </p>
         )}
 
@@ -116,10 +118,6 @@ export function CheckoutOrderSummary({ appliedCoupon = "BUILD10", showItems = tr
           <li className="flex items-center gap-1.5">
             <span aria-hidden className="material-symbols-outlined text-[14px] text-success-500">verified_user</span>
             100% Authorized UK Dealer Warranty Included
-          </li>
-          <li className="flex items-center gap-1.5">
-            <span aria-hidden className="material-symbols-outlined text-[14px] text-success-500">local_shipping</span>
-            Tracked DPD / FedEx Priority Freight Dispatch
           </li>
           <li className="flex items-center gap-1.5">
             <span aria-hidden className="material-symbols-outlined text-[14px] text-success-500">description</span>

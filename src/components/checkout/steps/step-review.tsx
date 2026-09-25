@@ -4,10 +4,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ProductImage } from "@/components/commerce/product-image";
-import { DELIVERY_METHODS } from "@/lib/checkout";
+import { deliveryEstimate } from "@/lib/checkout";
+import type { ShippingQuote } from "@/lib/storefront-client";
 import { formatPrice } from "@/lib/format";
 import { lineProduct, lineUnitPrice, useCartTotals } from "@/lib/cart-store";
-import type { Address, DeliveryMethodId } from "@/types";
+import type { Address } from "@/types";
 import type { PaymentMethodId } from "@/components/checkout/steps/step-payment";
 import Link from "next/link";
 
@@ -19,7 +20,9 @@ const PAYMENT_LABEL: Record<PaymentMethodId, string> = {
 interface StepReviewProps {
   email: string;
   address: Address;
-  deliveryMethod: DeliveryMethodId;
+  shipping: ShippingQuote;
+  /** Delivery charge after any free-delivery coupon. */
+  deliveryCharge: number;
   paymentMethod: PaymentMethodId;
   total: number;
   onEdit: (step: 1 | 2 | 3 | 4) => void;
@@ -56,10 +59,9 @@ function SectionCard({
   );
 }
 
-export function StepReview({ email, address, deliveryMethod, paymentMethod, total, onEdit, onPlaceOrder, onBack, placing }: StepReviewProps) {
+export function StepReview({ email, address, shipping, deliveryCharge, paymentMethod, total, onEdit, onPlaceOrder, onBack, placing }: StepReviewProps) {
   const [consent, setConsent] = useState(false);
   const { activeLines } = useCartTotals();
-  const method = DELIVERY_METHODS.find((m) => m.id === deliveryMethod) ?? DELIVERY_METHODS[0];
 
   return (
     <div className="flex flex-col gap-6">
@@ -88,10 +90,10 @@ export function StepReview({ email, address, deliveryMethod, paymentMethod, tota
       <SectionCard icon="local_shipping" title="Delivery Method & Schedule" onEdit={() => onEdit(3)}>
         <div className="flex items-center justify-between rounded-lg bg-surface-container-low p-3">
           <div>
-            <p className="text-body-sm font-body-sm font-semibold text-text-primary">{method.label}</p>
-            <p className="text-label-sm font-label-sm text-text-secondary">{method.eta}</p>
+            <p className="text-body-sm font-body-sm font-semibold text-text-primary">{shipping.title}</p>
+            <p className="text-label-sm font-label-sm text-text-secondary">{shipping.carrier} · {deliveryEstimate(shipping)}</p>
           </div>
-          <span className="text-label-sm font-label-sm font-bold text-success-500">{method.price === 0 ? "FREE" : formatPrice(method.price)}</span>
+          <span className={deliveryCharge === 0 ? "text-label-sm font-label-sm font-bold text-success-500" : "text-label-sm font-label-sm font-bold text-text-primary"}>{deliveryCharge === 0 ? "FREE" : formatPrice(deliveryCharge)}</span>
         </div>
       </SectionCard>
 

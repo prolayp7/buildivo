@@ -28,10 +28,10 @@
 .statistics strong { display: block; font-size: 25px; line-height: 1.1; font-weight: 750; }
 .statistics div > span:not(.statIcon) { display: block; margin-top: 4px; font-size: 11px; color: var(--color-text-secondary); }
 /* Offsets match the fixed header's actual height at each of its own
-   breakpoints (68/112/156px, see (storefront)/layout.tsx's <main> padding),
+   breakpoints (148/112/156px, see (storefront)/layout.tsx's <main> padding),
    not this file's own font-scaling tiers below, which land at different
    widths. */
-.controls { position: sticky; top: 76px; z-index: 10; border-block: 1px solid var(--color-border-default); background: #fff; }
+.controls { position: sticky; top: 156px; z-index: 10; border-block: 1px solid var(--color-border-default); background: #fff; }
 @media (min-width: 640px) { .controls { top: 120px; } }
 @media (min-width: 1024px) { .controls { top: 164px; } }
 .filterRow { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-block: 15px; }

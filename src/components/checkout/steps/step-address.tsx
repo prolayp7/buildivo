@@ -1,42 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type { Address } from "@/types";
 import { cn } from "@/lib/utils";
 
-const SAVED_ADDRESSES: (Address & { id: string; label: string; company: string; isDefault?: boolean })[] = [
-  {
-    id: "default",
-    label: "Default Dispatch",
-    isDefault: true,
-    company: "Apex Mechanical & Electrical Ltd",
-    fullName: "Alex Turner",
-    line1: "Unit 4B, Battersea Commercial Park",
-    line2: "Silverthorne Road",
-    city: "London",
-    postcode: "SW8 3HE",
-    phone: "020 7946 0912",
-  },
-  {
-    id: "secondary",
-    label: "Secondary Site",
-    company: "Westminster Residential Site #12",
-    fullName: "Alex Turner (Field Supervisor)",
-    line1: "Flat 3, 14 Victoria Street",
-    line2: "",
-    city: "Westminster",
-    postcode: "SW1E 5NX",
-    phone: "020 7946 0912",
-  },
-];
+// A signed-in customer's real saved addresses (Account > Addresses). Guests, and customers with none saved,
+// simply fill in the form below - nothing is ever pre-selected on their behalf.
+type SavedAddress = Address & { id: string; label: string; company: string; isDefault: boolean };
+
+async function loadSavedAddresses(): Promise<SavedAddress[]> {
+  try {
+    const response = await fetch("/api/customer-session/addresses", { cache: "no-store" });
+    if (!response.ok) return [];
+    const body = await response.json();
+    return ((body.items ?? []) as Record<string, unknown>[])
+      .filter((a) => a.addressType !== "BILLING")
+      .map((a) => ({
+        id: String(a.uuid ?? a.id),
+        label: String(a.label ?? ""),
+        company: String(a.companyName ?? ""),
+        isDefault: Boolean(a.isDefault),
+        fullName: String(a.fullName ?? ""),
+        line1: String(a.line1 ?? ""),
+        line2: a.line2 ? String(a.line2) : "",
+        city: String(a.city ?? ""),
+        postcode: String(a.postcode ?? ""),
+        phone: String(a.phone ?? ""),
+      }));
+  } catch {
+    return [];
+  }
+}
 
 const addressSchema = z.object({
   fullName: z.string().min(2, "Enter the recipient's full name"),
@@ -56,9 +57,18 @@ interface StepAddressProps {
 }
 
 export function StepAddress({ onContinue, onBack }: StepAddressProps) {
-  const [selectedId, setSelectedId] = useState<string>("default");
-  const [billing, setBilling] = useState<"same" | "different">("same");
-  const [smsUpdates, setSmsUpdates] = useState(true);
+  const [saved, setSaved] = useState<SavedAddress[]>([]);
+  const [selectedId, setSelectedId] = useState<string>("new");
+
+  useEffect(() => {
+    let cancelled = false;
+    void loadSavedAddresses().then((addresses) => {
+      if (cancelled || !addresses.length) return;
+      setSaved(addresses);
+      setSelectedId((addresses.find((a) => a.isDefault) ?? addresses[0]).id);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   const {
     register,
@@ -71,8 +81,8 @@ export function StepAddress({ onContinue, onBack }: StepAddressProps) {
 
   function handleContinue() {
     if (selectedId !== "new") {
-      const saved = SAVED_ADDRESSES.find((a) => a.id === selectedId)!;
-      onContinue(saved);
+      const chosen = saved.find((a) => a.id === selectedId)!;
+      onContinue({ fullName: chosen.fullName, line1: chosen.line1, line2: chosen.line2, city: chosen.city, postcode: chosen.postcode, phone: chosen.phone });
       return;
     }
     handleSubmit(onContinue)();
@@ -89,27 +99,9 @@ export function StepAddress({ onContinue, onBack }: StepAddressProps) {
       </div>
 
       <div className="rounded-xl border border-border-default bg-surface-white p-5">
-        <h2 className="mb-3 text-body-lg font-body-lg font-bold text-graphite-900">Site Contact Information</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <Label htmlFor="contact-email" className="mb-1">Account &amp; Invoicing Email</Label>
-            <Input id="contact-email" type="email" defaultValue="alex.turner@apexmechanical.co.uk" autoComplete="email" />
-          </div>
-          <div>
-            <Label htmlFor="contact-phone" className="mb-1">Mobile Number for Site Dispatch</Label>
-            <Input id="contact-phone" type="tel" defaultValue="+44 7911 123456" autoComplete="tel" />
-          </div>
-        </div>
-        <label className="mt-3 flex items-center gap-2 text-body-sm font-body-sm text-text-primary">
-          <Checkbox checked={smsUpdates} onCheckedChange={(c) => setSmsUpdates(Boolean(c))} />
-          Receive SMS delivery slot notifications from courier fleet
-        </label>
-      </div>
-
-      <div className="rounded-xl border border-border-default bg-surface-white p-5">
-        <h2 className="mb-3 text-body-lg font-body-lg font-bold text-graphite-900">Saved Delivery Addresses</h2>
+        <h2 className="mb-3 text-body-lg font-body-lg font-bold text-graphite-900">{saved.length ? "Saved Delivery Addresses" : "Delivery Address"}</h2>
         <RadioGroup value={selectedId} onValueChange={setSelectedId} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {SAVED_ADDRESSES.map((addr) => (
+          {saved.map((addr) => (
             <label
               key={addr.id}
               htmlFor={`addr-${addr.id}`}
@@ -120,11 +112,11 @@ export function StepAddress({ onContinue, onBack }: StepAddressProps) {
             >
               <div className="flex items-center justify-between">
                 <span className="rounded bg-graphite-100 px-2 py-0.5 text-label-sm font-label-sm font-semibold uppercase text-graphite-700">
-                  {addr.isDefault ? "Default Dispatch" : "Secondary Site"}
+                  {addr.label || (addr.isDefault ? "Default" : "Saved address")}
                 </span>
                 <RadioGroupItem value={addr.id} id={`addr-${addr.id}`} />
               </div>
-              <p className="text-body-sm font-body-sm font-bold text-graphite-900">{addr.company}</p>
+              <p className="text-body-sm font-body-sm font-bold text-graphite-900">{addr.company || addr.fullName}</p>
               <p className="text-label-sm font-label-sm text-text-secondary">
                 {addr.line1}
                 {addr.line2 ? `, ${addr.line2}` : ""}, {addr.city} {addr.postcode}
@@ -141,7 +133,7 @@ export function StepAddress({ onContinue, onBack }: StepAddressProps) {
           >
             <RadioGroupItem value="new" id="addr-new" />
             <span aria-hidden className="material-symbols-outlined text-[18px] text-orange-600">add_location_alt</span>
-            Add a new jobsite or workshop address
+            {saved.length ? "Deliver to a different address" : "Enter the delivery address"}
           </label>
         </RadioGroup>
       </div>
@@ -188,19 +180,7 @@ export function StepAddress({ onContinue, onBack }: StepAddressProps) {
         </form>
       )}
 
-      <div className="rounded-xl border border-border-default bg-surface-white p-5">
-        <h2 className="mb-3 text-body-lg font-body-lg font-bold text-graphite-900">Billing Address</h2>
-        <RadioGroup value={billing} onValueChange={(v) => setBilling(v as typeof billing)} className="flex flex-col gap-2">
-          <label htmlFor="billing-same" className="flex items-center gap-2 rounded-lg border border-border-default p-3 text-body-sm font-body-sm">
-            <RadioGroupItem value="same" id="billing-same" />
-            Billing address is the same as delivery address
-          </label>
-          <label htmlFor="billing-different" className="flex items-center gap-2 rounded-lg border border-border-default p-3 text-body-sm font-body-sm">
-            <RadioGroupItem value="different" id="billing-different" />
-            Use a different billing address
-          </label>
-        </RadioGroup>
-      </div>
+      <p className="text-label-sm font-label-sm text-text-secondary">Your billing address is the same as the delivery address.</p>
 
       <div className="flex items-center justify-between">
         <Button type="button" variant="ghost" onClick={onBack}>

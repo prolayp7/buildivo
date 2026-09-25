@@ -5,11 +5,14 @@ import { ProductCard } from "@/components/commerce/product-card";
 import { ProductImage } from "@/components/commerce/product-image";
 import { TileCalculator } from "@/components/home/tile-calculator";
 import { BatteryMatcher } from "@/components/home/battery-matcher";
+import { JsonLd } from "@/components/seo/json-ld";
+import { SITE_NAME, absoluteUrl } from "@/lib/site";
 import { HomeHero } from "@/components/home/hero/home-hero";
-import { fetchCalculatorsContent, fetchDepartments, fetchEcosystemMatcherContent, fetchFeaturedProducts, fetchFloatingBadge, fetchHeroSlides, fetchProjectKitsContent, fetchTradeCtaContent, fetchTrustBadges, fetchVisibleHomepageSections } from "@/lib/api";
+import { fetchCalculatorsContent, fetchDepartments, fetchEcosystemMatcherContent, fetchFeaturedProducts, fetchFloatingBadge, fetchHeroSlides, fetchProjectKitsContent, fetchToolPlatforms, fetchTradeCtaContent, fetchTrustBadges, fetchVisibleHomepageSections } from "@/lib/api";
 
 export const metadata: Metadata = {
   title: "Buildivo — Pro-Grade Tools, Hardware & DIY Supplies",
+  alternates: { canonical: "/" },
 };
 
 // Image/slug/categorySlug are structural (tied to real asset paths and
@@ -23,7 +26,7 @@ const projectKitAssets = [
 ];
 
 export default async function HomePage() {
-  const [departments, featured, visibleSections, heroSlides, trustBadges, floatingBadge, tradeCta, calculatorsContent, ecosystemMatcherContent, projectKitsContent] = await Promise.all([
+  const [departments, featured, visibleSections, heroSlides, trustBadges, floatingBadge, tradeCta, calculatorsContent, ecosystemMatcherContent, projectKitsContent, toolPlatforms] = await Promise.all([
     fetchDepartments(),
     fetchFeaturedProducts(4),
     fetchVisibleHomepageSections(),
@@ -34,6 +37,7 @@ export default async function HomePage() {
     fetchCalculatorsContent(),
     fetchEcosystemMatcherContent(),
     fetchProjectKitsContent(),
+    fetchToolPlatforms(),
   ]);
   const calculators = [
     { slug: "concrete-mortar", icon: calculatorsContent.calc1Icon, label: calculatorsContent.calc1Label, caption: calculatorsContent.calc1Caption },
@@ -48,6 +52,8 @@ export default async function HomePage() {
   ];
   return (
     <div className="flex flex-col">
+      <JsonLd data={{ "@context": "https://schema.org", "@type": "Organization", name: SITE_NAME, url: absoluteUrl("/") }} />
+      <JsonLd data={{ "@context": "https://schema.org", "@type": "WebSite", name: SITE_NAME, url: absoluteUrl("/"), potentialAction: { "@type": "SearchAction", target: absoluteUrl("/search?q={search_term_string}"), "query-input": "required name=search_term_string" } }} />
       {visibleSections.has("HERO") && heroSlides.length > 0 && <HomeHero slides={heroSlides} floatingBadge={floatingBadge} />}
 
       {visibleSections.has("TRUST_STRIP") && trustBadges.length > 0 && (
@@ -285,7 +291,7 @@ export default async function HomePage() {
 
       {visibleSections.has("ECOSYSTEM_MATCHER") && (
       <section className="mx-auto w-full max-w-[1600px] px-4 pb-14 sm:px-margin-desktop">
-        <BatteryMatcher content={ecosystemMatcherContent} />
+        <BatteryMatcher content={ecosystemMatcherContent} platforms={toolPlatforms} />
       </section>
       )}
     </div>

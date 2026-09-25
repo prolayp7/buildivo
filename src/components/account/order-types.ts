@@ -7,6 +7,10 @@ export type AccountOrderItem = {
   quantity: number;
   subtotal: string | number;
   vatAmount: string | number;
+  returnEligible: boolean;
+  /** Last day a return can be requested (ISO date), if the item has a deadline. */
+  returnDeadline: string | null;
+  returns: { id: number; returnStatus: string }[];
 };
 
 export type AccountOrder = {

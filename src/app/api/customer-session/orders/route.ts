@@ -27,6 +27,7 @@ export async function GET(request: Request) {
         id: item.id, productVariantId: item.productVariantId, titleSnapshot: item.titleSnapshot,
         variantTitleSnapshot: item.variantTitleSnapshot, skuSnapshot: item.skuSnapshot,
         quantity: item.quantity, subtotal: item.subtotal, vatAmount: item.vatAmount,
+        returnEligible: item.returnEligible, returnDeadline: item.returnDeadline, returns: item.returns,
       })),
     }));
     return sessionJson({ items, meta: body.meta });

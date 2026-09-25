@@ -1,13 +1,15 @@
+import styles from "@/components/commerce/category-mobile.module.css";
 import { CategoryExtras } from "@/components/commerce/category-extras";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ProductListing } from "@/components/commerce/product-listing";
-import { fetchCategoryBySlug, fetchCategoryTree, fetchDepartments, fetchProducts } from "@/lib/api";
+import { fetchCategoryBySlug, fetchCategoryTree, fetchDepartments, fetchProducts, fetchToolPlatforms } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 interface CategoryPageProps {
   params: Promise<{ slugs: string[] }>;
+  searchParams: Promise<{ platform?: string }>;
 }
 
 const POWER_TOOLS_DESCRIPTION =
@@ -22,17 +24,22 @@ const POWER_TOOLS_FEATURES = [
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
   const { slugs } = await params;
   const category = await fetchCategoryBySlug(slugs[slugs.length - 1]);
-  return { title: category ? category.name : "Category" };
+  if (!category) return { title: "Category" };
+  const description = `Shop ${category.name} at Buildivo${category.productCount ? ` - ${category.productCount} products` : ""} with fast delivery and trade pricing.`;
+  return { title: category.name, description, alternates: { canonical: `/c/${category.slug}` }, openGraph: { title: category.name, description, url: `/c/${category.slug}` } };
 }
 
-export default async function CategoryPage({ params }: CategoryPageProps) {
+export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
   const { slugs } = await params;
+  const { platform } = await searchParams;
   const activeSlug = slugs[slugs.length - 1];
-  const [category, departments, tree, initialProducts] = await Promise.all([
+  const [category, departments, tree, initialProducts, platforms, accessories] = await Promise.all([
     fetchCategoryBySlug(activeSlug),
     fetchDepartments(),
     fetchCategoryTree(),
-    fetchProducts({ category: activeSlug, page: 1, perPage: 12, sort: "newest" }),
+    fetchProducts({ category: activeSlug, platform, page: 1, perPage: 12, sort: "newest" }),
+    fetchToolPlatforms(activeSlug),
+    activeSlug === "power-tools" ? fetchProducts({ category: "hardware-fixings", page: 1, perPage: 4, sort: "newest" }).then((result) => result.items).catch(() => []) : Promise.resolve([]),
   ]);
   if (!category) notFound();
 
@@ -41,8 +48,8 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   const powerToolsSubcategories = isPowerTools ? tree.filter((c) => c.parentSlug === "power-tools") : [];
 
   return (
-    <div>
-      <div className="border-b border-border-default bg-surface-white">
+    <div className={styles.page}>
+      <div data-category-breadcrumb className="border-b border-border-default bg-surface-white">
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-2 px-4 py-3 text-label-sm font-label-sm text-text-secondary sm:px-margin-desktop">
           <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1">
             <Link href="/" className="flex items-center hover:underline">
@@ -77,14 +84,14 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         </div>
       </div>
 
-      <div className="border-b border-border-default bg-surface-white">
+      <div data-category-heading className="border-b border-border-default bg-surface-white">
         <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-margin-desktop">
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-headline-lg-mobile font-headline-lg-mobile font-bold text-graphite-900 sm:text-headline-lg sm:font-headline-lg">
               {category.name}
             </h1>
             <span className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-label-sm font-label-sm font-semibold text-orange-600">
-              {initialProducts.meta.total} {isPowerTools ? "Professional & DIY Models" : "Active Products"}
+              {initialProducts.meta.total.toLocaleString()} <span className="sm:hidden">SKUs</span><span className="hidden sm:inline">{isPowerTools ? "Professional & DIY Models" : "Active Products"}</span>
             </span>
           </div>
 
@@ -108,8 +115,15 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         </div>
       </div>
 
+      <nav aria-label="Subcategories" className={styles.tabs}>
+        <Link href={`/c/${category.slug}`} aria-current="page">All {category.name}<span>{initialProducts.meta.total.toLocaleString()}</span></Link>
+        {tree.filter((item) => item.parentSlug === category.slug).map((item) => (
+          <Link key={item.slug} href={`/c/${item.slug}`}>{item.name}<span>{item.productCount.toLocaleString()}</span></Link>
+        ))}
+      </nav>
+
       {isPowerTools ? (
-        <div className="border-b border-border-default bg-surface-white">
+        <div data-desktop-subcategories className="border-b border-border-default bg-surface-white">
           <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-margin-desktop">
             <div className="mb-4 flex items-center justify-between gap-3">
               <p className="text-label-sm font-label-sm font-semibold uppercase tracking-wide text-text-secondary">
@@ -140,8 +154,8 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         </div>
       ) : null}
 
-      <ProductListing initialProducts={initialProducts} categorySlug={activeSlug} categoryName={category.name} />
-      {activeSlug === "power-tools" && <CategoryExtras />}
+      <ProductListing initialProducts={initialProducts} categorySlug={activeSlug} categoryName={category.name} platform={platform} platforms={platforms} />
+      {activeSlug === "power-tools" && <CategoryExtras accessories={accessories} />}
     </div>
   );
 }

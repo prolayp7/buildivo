@@ -1,34 +1,36 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ProductImage } from "@/components/commerce/product-image";
-import { DELIVERY_METHODS } from "@/lib/checkout";
+import { deliveryEstimate } from "@/lib/checkout";
+import type { ShippingQuote } from "@/lib/storefront-client";
 import { formatPrice } from "@/lib/format";
 import { lineProduct, useCartTotals } from "@/lib/cart-store";
-import type { Address, DeliveryMethodId } from "@/types";
+import type { Address } from "@/types";
 import { cn } from "@/lib/utils";
 
 interface StepDeliveryProps {
   address: Address;
-  value: DeliveryMethodId;
-  onChange: (value: DeliveryMethodId) => void;
+  /** Delivery methods and prices from the API; null while loading. */
+  quotes: ShippingQuote[] | null;
+  value: number | null;
+  onChange: (id: number) => void;
+  note: string;
+  onNoteChange: (note: string) => void;
   onContinue: () => void;
   onBack: () => void;
 }
 
-export function StepDelivery({ address, value, onChange, onContinue, onBack }: StepDeliveryProps) {
-  const { activeLines } = useCartTotals();
-  const [forkliftConfirmed, setForkliftConfirmed] = useState(true);
+export function StepDelivery({ address, quotes, value, onChange, note, onNoteChange, onContinue, onBack }: StepDeliveryProps) {
+  const { activeLines, freeShippingCoupon } = useCartTotals();
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <p className="mb-1 text-label-sm font-label-sm font-semibold uppercase tracking-wide text-orange-600">Step 3 of 5 · Logistics &amp; Routing</p>
+        <p className="mb-1 text-label-sm font-label-sm font-semibold uppercase tracking-wide text-orange-600">Step 3 of 5 · Delivery</p>
         <h1 className="text-headline-lg-mobile font-headline-lg-mobile font-bold text-graphite-900 sm:text-headline-lg sm:font-headline-lg">
-          Choose Your Delivery &amp; Fulfilment Method
+          Choose Your Delivery Method
         </h1>
       </div>
 
@@ -47,8 +49,7 @@ export function StepDelivery({ address, value, onChange, onContinue, onBack }: S
 
       <div className="rounded-xl border border-border-default bg-surface-white p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-body-lg font-body-lg font-bold text-graphite-900">Equipment Dispatch ({activeLines.length} Items)</h2>
-          <span className="rounded-full bg-success-100 px-2 py-0.5 text-label-sm font-label-sm font-semibold text-success-500">Ready</span>
+          <h2 className="text-body-lg font-body-lg font-bold text-graphite-900">Items in this delivery ({activeLines.length})</h2>
         </div>
         <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {activeLines.map((line) => {
@@ -59,7 +60,7 @@ export function StepDelivery({ address, value, onChange, onContinue, onBack }: S
                 <ProductImage categorySlug={product.categorySlug} className="h-10 w-10 shrink-0 rounded" />
                 <div className="min-w-0">
                   <p className="truncate text-label-sm font-label-sm font-semibold text-text-primary">{product.name}</p>
-                  <p className="text-label-sm font-label-sm text-text-secondary">SKU: {product.sku} · Qty {line.qty}</p>
+                  <p className="text-label-sm font-label-sm text-text-secondary">Qty {line.qty}</p>
                 </div>
               </div>
             );
@@ -67,58 +68,52 @@ export function StepDelivery({ address, value, onChange, onContinue, onBack }: S
         </div>
 
         <p className="mb-2 text-label-md font-label-md font-bold text-graphite-900">Select Delivery Method</p>
-        <RadioGroup value={value} onValueChange={(v) => onChange(v as DeliveryMethodId)} className="flex flex-col gap-2">
-          {DELIVERY_METHODS.map((method) => (
-            <label
-              key={method.id}
-              htmlFor={`step-delivery-${method.id}`}
-              className={cn(
-                "flex cursor-pointer items-center justify-between gap-3 rounded-xl border p-4",
-                value === method.id ? "border-orange-500 bg-orange-50" : "border-border-default",
-              )}
-            >
-              <div className="flex items-start gap-3">
-                <RadioGroupItem value={method.id} id={`step-delivery-${method.id}`} className="mt-1" />
-                <div>
-                  <p className="text-body-sm font-body-sm font-bold text-text-primary">{method.label}</p>
-                  <p className="text-label-sm font-label-sm text-text-secondary">{method.eta}</p>
-                </div>
-              </div>
-              <span className={cn("shrink-0 text-body-sm font-body-sm font-bold", method.price === 0 ? "text-success-500" : "text-text-primary")}>
-                {method.price === 0 ? "FREE" : formatPrice(method.price)}
-              </span>
-            </label>
-          ))}
-        </RadioGroup>
+        {quotes === null ? (
+          <p role="status" className="py-4 text-body-sm font-body-sm text-text-secondary">Loading delivery options…</p>
+        ) : quotes.length === 0 ? (
+          <p role="alert" className="rounded-lg bg-error-100 p-4 text-body-sm font-body-sm text-error-500">No delivery methods are available for this basket right now. Please try again shortly or contact us.</p>
+        ) : (
+          <RadioGroup value={value === null ? "" : String(value)} onValueChange={(v) => onChange(Number(v))} className="flex flex-col gap-2">
+            {quotes.map((method) => {
+              const charge = freeShippingCoupon ? 0 : method.rate;
+              return (
+                <label
+                  key={method.id}
+                  htmlFor={`step-delivery-${method.id}`}
+                  className={cn(
+                    "flex cursor-pointer items-center justify-between gap-3 rounded-xl border p-4",
+                    value === method.id ? "border-orange-500 bg-orange-50" : "border-border-default",
+                  )}
+                >
+                  <div className="flex items-start gap-3">
+                    <RadioGroupItem value={String(method.id)} id={`step-delivery-${method.id}`} className="mt-1" />
+                    <div>
+                      <p className="text-body-sm font-body-sm font-bold text-text-primary">{method.title}</p>
+                      <p className="text-label-sm font-label-sm text-text-secondary">{method.carrier} · {deliveryEstimate(method)}</p>
+                    </div>
+                  </div>
+                  <span className={cn("shrink-0 text-body-sm font-body-sm font-bold", charge === 0 ? "text-success-500" : "text-text-primary")}>
+                    {charge === 0 ? "FREE" : formatPrice(charge)}
+                  </span>
+                </label>
+              );
+            })}
+          </RadioGroup>
+        )}
       </div>
 
       <div className="rounded-xl border border-border-default bg-surface-white p-5">
-        <h2 className="mb-3 flex items-center gap-2 text-body-lg font-body-lg font-bold text-graphite-900">
-          <span aria-hidden className="material-symbols-outlined text-[18px] text-orange-600">handyman</span>
-          Jobsite Access &amp; Delivery Instructions
-        </h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="drop-zone" className="mb-1 block text-label-md font-label-md font-semibold text-graphite-900">Designated Safe Drop Zone</label>
-            <select id="drop-zone" defaultValue="loading-bay-3" className="h-10 w-full rounded-md border border-border-default bg-surface-white px-3 text-body-sm font-body-sm">
-              <option value="loading-bay-3">Goods In Loading Bay (Bay 3)</option>
-              <option value="reception">Site Reception</option>
-              <option value="gate">Front Gate / Security Hut</option>
-            </select>
-          </div>
-          <div>
-            <label htmlFor="gate-code" className="mb-1 block text-label-md font-label-md font-semibold text-graphite-900">Gate PIN / Keycode &amp; Driver Notes</label>
-            <input
-              id="gate-code"
-              defaultValue="Ring buzzer on arrival"
-              className="h-10 w-full rounded-md border border-border-default bg-surface-white px-3 text-body-sm font-body-sm"
-            />
-          </div>
-        </div>
-        <label className="mt-4 flex items-start gap-2 rounded-lg bg-orange-50 p-3 text-body-sm font-body-sm text-text-primary">
-          <Checkbox checked={forkliftConfirmed} onCheckedChange={(c) => setForkliftConfirmed(Boolean(c))} className="mt-0.5" />
-          Forklift / Offload Capability Confirmed: site premises have clear turning access for heavy commercial fleet during the delivery window.
-        </label>
+        <label htmlFor="delivery-note" className="mb-1 block text-label-md font-label-md font-semibold text-graphite-900">Delivery instructions (optional)</label>
+        <textarea
+          id="delivery-note"
+          value={note}
+          onChange={(event) => onNoteChange(event.target.value)}
+          maxLength={500}
+          rows={3}
+          placeholder="Gate code, safe place, site contact…"
+          className="w-full rounded-md border border-border-default bg-surface-white px-3 py-2 text-body-sm font-body-sm"
+        />
+        <p className="mt-1 text-label-sm font-label-sm text-text-secondary">Passed to our team with your order.</p>
       </div>
 
       <div className="flex items-center justify-between">
@@ -126,7 +121,7 @@ export function StepDelivery({ address, value, onChange, onContinue, onBack }: S
           <span aria-hidden className="material-symbols-outlined text-[18px]">arrow_back</span>
           Return to Address
         </Button>
-        <Button className="bg-orange-500 font-label-lg text-label-lg font-bold hover:bg-orange-600" onClick={onContinue}>
+        <Button className="bg-orange-500 font-label-lg text-label-lg font-bold hover:bg-orange-600" onClick={onContinue} disabled={value === null}>
           Continue to Payment Method
           <span aria-hidden className="material-symbols-outlined text-[18px]">arrow_forward</span>
         </Button>

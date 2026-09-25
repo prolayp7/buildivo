@@ -5,7 +5,7 @@
  * from browser-only state, so they can't go through the server-only file).
  * No "use client" needed - nothing here touches the network or the DOM.
  */
-import type { Category, Product, ProductVariant, Review } from "@/types";
+import type { Category, Product, ProductVariant, QuantityTier, Review } from "@/types";
 
 // Admin-uploaded media is served statically from the API origin at
 // /uploads/<file>, not under /api/v1 - resolve those to absolute URLs the
@@ -76,6 +76,11 @@ export interface ApiProductBase {
   sku: string | null;
   shortDescription: string | null;
   description?: string | null;
+  mpn?: string | null;
+  gtin?: string | null;
+  metaTitle?: string | null;
+  metaDescription?: string | null;
+  isIndexable?: boolean;
   outOfStockLabel?: string | null;
   inStockDeliveryTime?: string | null;
   outOfStockDeliveryTime?: string | null;
@@ -89,6 +94,8 @@ export interface ApiProductBase {
   defaultVariantId?: number | null;
   image?: string | null;
   images?: { url: string; altText: string | null }[];
+  videos?: { url: string; altText: string | null }[];
+  toolPlatform?: string | null;
   isFeatured?: boolean;
   specsSummary?: Record<string, unknown> | null;
   reviewSummary?: { average: number; count: number };
@@ -104,6 +111,8 @@ export interface ApiFacets {
   priceMax: number | null;
 }
 export interface ProductListMeta {
+  /** True when no product matched every search word, so results match only some of them. */
+  loose?: boolean;
   page: number;
   perPage: number;
   total: number;
@@ -173,7 +182,17 @@ function variantLabel(variant: ApiVariant): string {
   return variant.attributes.map((a) => `${a.attribute.title}: ${a.attributeValue.value}`).join(" · ");
 }
 
-function toVariant(variant: ApiVariant): ProductVariant {
+// Quantity-break rows for one variant: the base price first, then each tier, all ex. VAT.
+function toQuantityTiers(variant: ApiVariant, vatRate: number): QuantityTier[] | undefined {
+  if (!variant.priceTiers?.length) return undefined;
+  const base = Number(variant.salePrice ?? variant.price);
+  return [
+    { minQty: 1, unitPriceExVat: base / (1 + vatRate), savePct: 0 },
+    ...variant.priceTiers.map((tier) => ({ minQty: tier.minQty, unitPriceExVat: Number(tier.unitPrice) / (1 + vatRate), savePct: Math.round((1 - Number(tier.unitPrice) / base) * 100) })),
+  ];
+}
+
+function toVariant(variant: ApiVariant, vatRate: number): ProductVariant {
   return {
     id: variant.id,
     label: variantLabel(variant),
@@ -181,6 +200,7 @@ function toVariant(variant: ApiVariant): ProductVariant {
     priceIncVat: Number(variant.salePrice ?? variant.price),
     compareAtIncVat: variant.salePrice ? Number(variant.price) : undefined,
     stockQty: variant.stockQty,
+    quantityTiers: toQuantityTiers(variant, vatRate),
   };
 }
 
@@ -194,6 +214,7 @@ export function toProduct(api: ApiProductBase, apiOrigin: string): Product {
   const vatRate = api.taxRate ? Number(api.taxRate.ratePercent) / 100 : 0.2;
   const stockQty = api.variants ? api.variants.reduce((sum, v) => sum + v.stockQty, 0) : api.stockQty ?? (api.inStock ? Infinity : 0);
   const images = (api.images ?? []).map((image) => resolveMediaUrl(apiOrigin, image.url) ?? image.url);
+  const videos = (api.videos ?? []).map((video) => resolveMediaUrl(apiOrigin, video.url) ?? video.url);
   const defaultVariant = api.variants?.find((v) => v.isDefault) ?? api.variants?.[0];
 
   return {
@@ -207,6 +228,8 @@ export function toProduct(api: ApiProductBase, apiOrigin: string): Product {
     categoryLabel: api.category.title,
     image: resolveMediaUrl(apiOrigin, productImage(api)) ?? images[0] ?? "",
     images: images.length ? images : [""],
+    videos,
+    toolPlatform: api.toolPlatform ?? undefined,
     priceIncVat: sale ?? price,
     compareAtIncVat: sale !== null ? price : undefined,
     vatRate,
@@ -218,7 +241,7 @@ export function toProduct(api: ApiProductBase, apiOrigin: string): Product {
     badges: api.isFeatured ? ["Bestseller"] : undefined,
     specs: api.specsSummary && typeof api.specsSummary === "object" ? Object.entries(api.specsSummary).map(([label, value]) => ({ label, value: String(value) })) : [],
     highlights: [],
-    variants: api.variants?.map(toVariant),
+    variants: api.variants?.map((variant) => toVariant(variant, vatRate)),
     quantityTiers: defaultVariant?.priceTiers?.length
       ? [
           { minQty: 1, unitPriceExVat: (sale ?? price) / (1 + vatRate), savePct: 0 },
@@ -230,6 +253,9 @@ export function toProduct(api: ApiProductBase, apiOrigin: string): Product {
         ]
       : undefined,
     description: api.description ?? api.shortDescription ?? "",
+    mpn: api.mpn ?? undefined,
+    gtin: api.gtin ?? undefined,
+    seo: { title: api.metaTitle ?? undefined, description: api.metaDescription ?? api.shortDescription ?? undefined, indexable: api.isIndexable !== false },
     whatsInTheBox: (api.faqs ?? []).find((faq) => /included|box/i.test(faq.question))?.answer.split("\n") ?? [],
   };
 }

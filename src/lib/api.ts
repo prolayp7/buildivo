@@ -28,7 +28,7 @@ import {
 } from "./adapters";
 
 const API_BASE = process.env.BUILDIVO_API_URL ?? "http://localhost:3000/api/v1";
-const API_ORIGIN = new URL(API_BASE).origin;
+export const API_ORIGIN = new URL(API_BASE).origin;
 
 function apiUrl(path: string): string {
   return `${API_BASE.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
@@ -212,6 +212,31 @@ export async function fetchEcosystemMatcherContent(): Promise<EcosystemMatcherCo
   return { ...ECOSYSTEM_MATCHER_DEFAULTS, ...section?.config };
 }
 
+export interface FooterSettings {
+  trustBadges: { icon: string; title: string; caption: string }[];
+  aboutHeading: string;
+  aboutText: string;
+  certifications: { label: string; tone: "success" | "info" | "neutral" }[];
+  showGateways: boolean;
+  paymentMethods: { label: string; highlight: boolean }[];
+  legalLinks: { label: string; href: string }[];
+  social: Record<"facebook" | "instagram" | "linkedin" | "youtube" | "x", string>;
+  copyright: string;
+  complianceBadge: string;
+  /** Payment gateways currently enabled under the admin's Settings > Integrations. */
+  gateways: string[];
+}
+
+// Admin-managed footer content (buildivo-admin > Footer). Null when the API is unreachable, in which
+// case the footer falls back to just its link columns.
+export async function fetchFooterSettings(): Promise<FooterSettings | null> {
+  try {
+    return (await apiGet<{ data: FooterSettings }>("settings/footer")).data;
+  } catch {
+    return null;
+  }
+}
+
 export interface ApiTrustBadge {
   id: number;
   label: string;
@@ -274,6 +299,7 @@ export interface ProductListParams {
   q?: string;
   category?: string;
   brand?: string;
+  platform?: string;
   specs?: string;
   priceMin?: number;
   priceMax?: number;
@@ -302,13 +328,109 @@ export async function fetchProductBySlug(slug: string): Promise<Product | null> 
 }
 
 export async function fetchRelatedProducts(slug: string, limit = 4): Promise<Product[]> {
-  const res = await apiGet<{ data: ApiProductBase[] }>(`products/${encodeURIComponent(slug)}/frequently-bought-together?limit=${limit}`).catch(() => ({ data: [] as ApiProductBase[] }));
+  const res = await apiGet<{ data: ApiProductBase[] }>(`products/${encodeURIComponent(slug)}/recommendations?limit=${limit}`).catch(() => ({ data: [] as ApiProductBase[] }));
   return res.data.map((p) => toProduct(p, API_ORIGIN));
+}
+
+// Free-text product advisor. Resolves to null whenever there is nothing to add (short search, no AI
+// key, limit reached, API down) so callers just render the normal results.
+export async function fetchAssistantAdvice(q: string): Promise<{ answer: string; products: Product[] } | null> {
+  const res = await apiGet<{ data: { mode: string; answer: string | null; products: ApiProductBase[] } }>(`products/assistant?q=${encodeURIComponent(q)}`).catch(() => null);
+  if (!res || res.data.mode !== "assistant" || !res.data.answer) return null;
+  return { answer: res.data.answer, products: res.data.products.map((p) => toProduct(p, API_ORIGIN)) };
+}
+
+// Other products on the same battery/tool platform as this one (bare tool <->
+// its batteries/chargers) - the real data behind the compatibility finder.
+export async function fetchPlatformMatches(slug: string, limit = 6): Promise<Product[]> {
+  const res = await apiGet<{ data: ApiProductBase[] }>(`products/${encodeURIComponent(slug)}/platform-matches?limit=${limit}`).catch(() => ({ data: [] as ApiProductBase[] }));
+  return res.data.map((p) => toProduct(p, API_ORIGIN));
+}
+
+export interface ToolPlatform {
+  platform: string;
+  productCount: number;
+}
+
+// Real distinct tool platforms in the catalogue, with product counts - powers
+// the homepage battery/platform matcher instead of a hardcoded brand list.
+export async function fetchToolPlatforms(category?: string): Promise<ToolPlatform[]> {
+  const res = await apiGet<{ data: ToolPlatform[] }>(`products/tool-platforms${category ? `?category=${encodeURIComponent(category)}` : ""}`).catch(() => ({ data: [] as ToolPlatform[] }));
+  return res.data;
 }
 
 export async function fetchFeaturedProducts(limit = 4): Promise<Product[]> {
   const res = await apiGet<{ data: ApiProductBase[] }>(`products/recommended?limit=${limit}`);
   return res.data.map((p) => toProduct(p, API_ORIGIN));
+}
+
+export interface BundleItemView {
+  productVariantId: number;
+  quantity: number;
+  productName: string;
+  variantTitle: string;
+  productSlug: string;
+  image: string;
+  categorySlug: string;
+  unitPriceIncVat: number;
+}
+export interface Bundle {
+  slug: string;
+  title: string;
+  description: string;
+  bundlePriceIncVat: number;
+  regularTotalIncVat: number;
+  savingsIncVat: number;
+  savingsPct: number;
+  items: BundleItemView[];
+}
+interface ApiBundle {
+  slug: string;
+  title: string;
+  description: string | null;
+  bundlePrice: string;
+  regularTotal: number;
+  savings: number;
+  items: { productVariantId: number; quantity: number; title: string; price: string; salePrice: string | null; product: { id: number; title: string; slug: string } }[];
+}
+
+// The bundles endpoint returns no imagery, so product photos come from one batched product lookup.
+async function toBundles(api: ApiBundle[]): Promise<Bundle[]> {
+  const ids = [...new Set(api.flatMap((bundle) => bundle.items.map((item) => item.product.id)))];
+  const products = ids.length ? (await fetchProducts({ ids, perPage: Math.min(ids.length, 100) })).items : [];
+  const byId = new Map(products.map((product) => [product.id, product]));
+  return api.map((bundle) => ({
+    slug: bundle.slug,
+    title: bundle.title,
+    description: bundle.description ?? "",
+    bundlePriceIncVat: Number(bundle.bundlePrice),
+    regularTotalIncVat: bundle.regularTotal,
+    savingsIncVat: bundle.savings,
+    savingsPct: bundle.regularTotal > 0 ? Math.round((bundle.savings / bundle.regularTotal) * 100) : 0,
+    items: bundle.items.map((item) => {
+      const product = byId.get(item.product.id);
+      return {
+        productVariantId: item.productVariantId,
+        quantity: item.quantity,
+        productName: item.product.title,
+        variantTitle: item.title,
+        productSlug: item.product.slug,
+        image: product?.image ?? "",
+        categorySlug: product?.categorySlug ?? "",
+        unitPriceIncVat: Number(item.salePrice ?? item.price),
+      };
+    }),
+  }));
+}
+
+export async function fetchBundles(): Promise<Bundle[]> {
+  const res = await apiGet<{ data: ApiBundle[] }>("bundles");
+  return toBundles(res.data);
+}
+
+export async function fetchBundleBySlug(slug: string): Promise<Bundle | null> {
+  const api = await apiGetOrNull<ApiBundle>(`bundles/${encodeURIComponent(slug)}`);
+  return api ? (await toBundles([api]))[0] : null;
 }
 
 export async function fetchReviews(productId: number, page = 1, perPage = 20): Promise<ApiReview[]> {
@@ -334,3 +456,40 @@ export async function fetchGeneralSettings(): Promise<GeneralSettings> {
     return {};
   }
 }
+
+// ---- CMS content (blog posts and static pages) - rendered by /blog and /[slug]. ----
+
+export interface BlogPost {
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  content: string;
+  tags: string[];
+  publishedAt: string | null;
+  updatedAt: string;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  blogCategory: { title: string; slug: string } | null;
+  author: { name: string; role: string | null; bio?: string | null } | null;
+}
+export interface CmsPage {
+  slug: string;
+  title: string;
+  contentBlocks: unknown;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  updatedAt: string;
+}
+
+export async function fetchBlogPosts(params: { page?: number; perPage?: number; category?: string } = {}): Promise<{ items: BlogPost[]; meta: { page: number; totalPages: number; total: number } }> {
+  const query = new URLSearchParams();
+  if (params.page) query.set("page", String(params.page));
+  if (params.perPage) query.set("perPage", String(params.perPage));
+  if (params.category) query.set("category", params.category);
+  const res = await apiGet<{ data: BlogPost[]; meta: { page: number; totalPages: number; total: number } }>(`blog${query.size ? `?${query}` : ""}`);
+  return { items: res.data, meta: res.meta };
+}
+
+export const fetchBlogPost = (slug: string) => apiGetOrNull<BlogPost>(`blog/${encodeURIComponent(slug)}`);
+export const fetchBlogCategories = () => apiGet<{ data: { title: string; slug: string }[] }>("blog-categories").then((res) => res.data).catch(() => []);
+export const fetchCmsPage = (slug: string) => apiGetOrNull<CmsPage>(`pages/${encodeURIComponent(slug)}`);

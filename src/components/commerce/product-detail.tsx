@@ -9,6 +9,7 @@ import { ProductImage } from "@/components/commerce/product-image";
 import { Rating } from "@/components/commerce/rating";
 import { StockBadge } from "@/components/commerce/stock-badge";
 import { QuantityInput } from "@/components/commerce/quantity-input";
+import { QuoteRequestDialog } from "@/components/commerce/quote-request-dialog";
 import { ProductCard } from "@/components/commerce/product-card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,10 +25,17 @@ interface ProductDetailProps {
   product: Product;
   related: Product[];
   productReviews: Review[];
+  platformMatches: Product[];
 }
 
-export function ProductDetail({ product, related, productReviews }: ProductDetailProps) {
+export function ProductDetail({ product, related, productReviews, platformMatches }: ProductDetailProps) {
   const [activeImage, setActiveImage] = useState(0);
+  // Product identifiers shown at the top of the specifications tab (barcode and manufacturer part number).
+  const identifiers = [
+    product.sku ? { label: "SKU", value: product.sku } : null,
+    product.mpn ? { label: "Manufacturer part no. (MPN)", value: product.mpn } : null,
+    product.gtin ? { label: "Barcode (GTIN)", value: product.gtin } : null,
+  ].filter((row): row is { label: string; value: string } => row !== null);
   const [variantId, setVariantId] = useState(product.variants?.[0]?.id);
   const [qty, setQty] = useState(1);
   const [zoomOpen, setZoomOpen] = useState(false);
@@ -39,10 +47,16 @@ export function ProductDetail({ product, related, productReviews }: ProductDetai
   const activeVariant = product.variants?.find((v) => v.id === variantId);
   const price = activeVariant?.priceIncVat ?? product.priceIncVat;
   const compareAt = activeVariant?.compareAtIncVat ?? product.compareAtIncVat;
+  const quantityTiers = activeVariant?.quantityTiers ?? product.quantityTiers;
+  const quoteVariantId = variantId ?? product.defaultVariantId;
 
   const galleryImages = Array.from(new Set([product.image, ...product.images].filter(Boolean)));
-  const imageCount = Math.max(galleryImages.length, 1);
-  const selectedImage = galleryImages[activeImage] ?? galleryImages[0];
+  const galleryItems = [
+    ...galleryImages.map((url) => ({ kind: "image" as const, url })),
+    ...(product.videos ?? []).map((url) => ({ kind: "video" as const, url })),
+  ];
+  const itemCount = Math.max(galleryItems.length, 1);
+  const selectedItem = galleryItems[activeImage] ?? galleryItems[0];
   const isWished = wishlist.includes(product.id);
 
   function handleAddToCart() {
@@ -72,21 +86,31 @@ export function ProductDetail({ product, related, productReviews }: ProductDetai
         <div className={styles.media}>
         <div className={styles.gallery}>
         <div className={styles.thumbnails}>
-          {Array.from({ length: imageCount }).map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => setActiveImage(i)}
-              aria-label={`View image ${i + 1} of ${product.name}`}
-              aria-current={activeImage === i}
-              className={cn(
-                "size-full cursor-pointer overflow-hidden rounded-lg border bg-white",
-                activeImage === i ? "border-orange-500" : "border-border-default",
-              )}
-            >
-              <ProductImage src={galleryImages[i]} categorySlug={product.categorySlug} className="flex h-full w-full items-center justify-center bg-white object-contain p-1" />
-            </button>
-          ))}
+          {Array.from({ length: itemCount }).map((_, i) => {
+            const item = galleryItems[i];
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setActiveImage(i)}
+                aria-label={item?.kind === "video" ? `View video of ${product.name}` : `View image ${i + 1} of ${product.name}`}
+                aria-current={activeImage === i}
+                className={cn(
+                  "relative size-full cursor-pointer overflow-hidden rounded-lg border bg-white",
+                  activeImage === i ? "border-orange-500" : "border-border-default",
+                )}
+              >
+                {item?.kind === "video" ? (
+                  <>
+                    <video src={item.url} muted playsInline className="h-full w-full object-cover" />
+                    <span aria-hidden className="material-symbols-outlined absolute inset-0 flex items-center justify-center bg-graphite-900/30 text-[20px] text-white">play_circle</span>
+                  </>
+                ) : (
+                  <ProductImage src={item?.url} categorySlug={product.categorySlug} className="flex h-full w-full items-center justify-center bg-white object-contain p-1" />
+                )}
+              </button>
+            );
+          })}
         </div>
 
         <div className={styles.imagePanel}>
@@ -94,20 +118,24 @@ export function ProductDetail({ product, related, productReviews }: ProductDetai
             <div><span className={styles.brandBadge}>{product.brand}</span><StockBadge status={product.stock} /></div>
             <span className={styles.model}>SKU: {product.sku}</span>
           </div>
-          <Dialog open={zoomOpen} onOpenChange={setZoomOpen}>
-            <DialogTrigger asChild>
-              <button type="button" className={styles.zoomButton} aria-label="Open image zoom">
-                <ProductImage src={selectedImage} categorySlug={product.categorySlug} className={styles.mainImage} iconClassName="text-[72px]" />
-              </button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>{product.name}</DialogTitle>
-              </DialogHeader>
-              <ProductImage src={selectedImage} categorySlug={product.categorySlug} className="flex aspect-square w-full items-center justify-center rounded-xl bg-white object-contain p-4" iconClassName="text-[96px]" />
-            </DialogContent>
-          </Dialog>
-          <p className={styles.galleryCaption}>Model: {product.name} · Click image to zoom</p>
+          {selectedItem?.kind === "video" ? (
+            <video key={selectedItem.url} src={selectedItem.url} controls className={styles.mainImage} />
+          ) : (
+            <Dialog open={zoomOpen} onOpenChange={setZoomOpen}>
+              <DialogTrigger asChild>
+                <button type="button" className={styles.zoomButton} aria-label="Open image zoom">
+                  <ProductImage src={selectedItem?.url} categorySlug={product.categorySlug} className={styles.mainImage} iconClassName="text-[72px]" />
+                </button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>{product.name}</DialogTitle>
+                </DialogHeader>
+                <ProductImage src={selectedItem?.url} categorySlug={product.categorySlug} className="flex aspect-square w-full items-center justify-center rounded-xl bg-white object-contain p-4" iconClassName="text-[96px]" />
+              </DialogContent>
+            </Dialog>
+          )}
+          <p className={styles.galleryCaption}>Model: {product.name} · {selectedItem?.kind === "video" ? "Product video" : "Click image to zoom"}</p>
         </div>
         </div>
         {product.specs.length > 0 && <dl className={styles.summarySpecs}>
@@ -155,7 +183,7 @@ export function ProductDetail({ product, related, productReviews }: ProductDetai
             </div>
           )}
 
-          {product.quantityTiers && product.quantityTiers.length > 0 && (
+          {quantityTiers && quantityTiers.length > 0 && (
             <div className="overflow-hidden rounded-lg border border-border-default">
               <table className="w-full text-label-sm font-label-sm">
                 <thead className="bg-surface-container-low text-text-secondary">
@@ -166,7 +194,7 @@ export function ProductDetail({ product, related, productReviews }: ProductDetai
                   </tr>
                 </thead>
                 <tbody>
-                  {product.quantityTiers.map((tier) => (
+                  {quantityTiers.map((tier) => (
                     <tr key={tier.minQty} className="border-t border-border-default">
                       <td className="px-3 py-2">{tier.minQty}+ Units</td>
                       <td className="px-3 py-2">{formatPrice(tier.unitPriceExVat)}</td>
@@ -219,6 +247,14 @@ export function ProductDetail({ product, related, productReviews }: ProductDetai
             Fast Checkout with 1-Click
           </Button>
 
+          <QuoteRequestDialog
+            lines={quoteVariantId ? [{ variantId: quoteVariantId, label: activeVariant ? `${product.name} — ${activeVariant.label}` : product.name, quantity: Math.max(qty, 1) }] : []}
+            className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-graphite-900/20 px-3 text-[12px] font-semibold text-graphite-900 transition-colors hover:border-orange-500 hover:text-orange-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <span aria-hidden className="material-symbols-outlined text-[18px]">request_quote</span>
+            Ordering in bulk? Request a quote
+          </QuoteRequestDialog>
+
           <div className={styles.secondaryActions}>
             <button
               type="button"
@@ -264,16 +300,15 @@ export function ProductDetail({ product, related, productReviews }: ProductDetai
           <TabsList className={styles.tabList}>
             <TabsTrigger value="specs">Technical Specifications</TabsTrigger>
             <TabsTrigger value="box">What&apos;s in the Box</TabsTrigger>
-            <TabsTrigger value="manuals">Manuals &amp; Downloads</TabsTrigger>
             <TabsTrigger value="compat">System Compatibility</TabsTrigger>
           </TabsList>
           <TabsContent value="specs" className={styles.tabContent}>
             <h2 className={styles.sectionTitle}>Technical Specifications</h2>
-            {product.specs.length === 0 ? (
+            {identifiers.length + product.specs.length === 0 ? (
               <p className="py-6 text-body-sm font-body-sm text-text-secondary">No technical specifications recorded for this product yet.</p>
             ) : (
               <dl className={styles.specifications}>
-                {product.specs.map((spec) => (
+                {[...identifiers, ...product.specs].map((spec) => (
                   <div key={spec.label} className="flex justify-between border-b border-border-default py-2 text-body-sm font-body-sm">
                     <dt className="text-text-secondary">{spec.label}</dt>
                     <dd className="font-semibold text-text-primary">{spec.value}</dd>
@@ -289,22 +324,34 @@ export function ProductDetail({ product, related, productReviews }: ProductDetai
               ))}
             </ul>
           </TabsContent>
-          <TabsContent value="manuals" className={styles.tabContent}>
-            <p className="py-6 text-body-sm font-body-sm text-text-secondary">
-              No manuals or safety data sheets are available for this product yet.
-            </p>
-          </TabsContent>
           <TabsContent value="compat" className={styles.tabContent}>
-            <p className="py-6 text-body-sm font-body-sm text-text-secondary">
-              Compatibility information is not available for this product yet.
-            </p>
+            {product.toolPlatform ? (
+              <div className="py-6">
+                <p className="text-body-sm font-body-sm text-text-secondary">
+                  Part of the <span className="font-semibold text-graphite-900">{product.toolPlatform}</span> platform. It works with any bare tool, battery or charger on the same platform.
+                </p>
+                {platformMatches.length > 0 ? (
+                  <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+                    {platformMatches.map((match) => <ProductCard key={match.id} product={match} />)}
+                  </div>
+                ) : null}
+                <Link href={`/c/${product.categorySlug}?platform=${encodeURIComponent(product.toolPlatform)}`} className="mt-4 inline-flex items-center gap-1 text-label-sm font-label-sm font-semibold text-orange-600 hover:underline">
+                  Shop all {product.toolPlatform} tools
+                  <span aria-hidden className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                </Link>
+              </div>
+            ) : (
+              <p className="py-6 text-body-sm font-body-sm text-text-secondary">
+                Compatibility information is not available for this product yet.
+              </p>
+            )}
           </TabsContent>
         </Tabs>
       </section>
 
       {related.length > 0 && (
         <section className={styles.section}>
-          <h2 className="mb-4 text-headline-sm font-headline-sm font-bold text-graphite-900">Frequently Bought Together</h2>
+          <h2 className="mb-4 text-headline-sm font-headline-sm font-bold text-graphite-900">You May Also Need</h2>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             {related.map((p) => (
               <ProductCard key={p.id} product={p} />

@@ -7,23 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { powerToolsSubcategories } from "@/data/categories";
 import { ECOSYSTEM_MATCHER_DEFAULTS, type EcosystemMatcherContent } from "@/components/home/ecosystem-matcher-content";
+import type { ToolPlatform } from "@/lib/api";
 
-const brands = [
-  { value: "DeWalt 18V XR", label: "DeWalt (18V / 54V FlexVolt)" },
-  { value: "Milwaukee M18", label: "Milwaukee M18 (18V)" },
-  { value: "Makita LXT 18V", label: "Makita LXT (18V)" },
-  { value: "Bosch Professional 18V", label: "Bosch Professional (18V)" },
-];
-const popularPlatforms = [
-  { value: "DeWalt 18V XR", label: "DeWalt 18V XR (840 tools)" },
-  { value: "Makita LXT 18V", label: "Makita 18V LXT (910 tools)" },
-  { value: "Milwaukee M18", label: "Milwaukee M18 (720 tools)" },
-];
-
-export function BatteryMatcher({ content = ECOSYSTEM_MATCHER_DEFAULTS }: { content?: EcosystemMatcherContent }) {
-  const [brand, setBrand] = useState(brands[0].value);
+export function BatteryMatcher({ content = ECOSYSTEM_MATCHER_DEFAULTS, platforms }: { content?: EcosystemMatcherContent; platforms: ToolPlatform[] }) {
+  const [brand, setBrand] = useState(platforms[0]?.platform ?? "");
   const [category, setCategory] = useState("power-tools");
   const router = useRouter();
+  const popularPlatforms = [...platforms].sort((a, b) => b.productCount - a.productCount).slice(0, 3);
+
+  if (!platforms.length) return null;
 
   return (
     <section aria-labelledby="battery-matcher-heading" className="rounded-3xl bg-[linear-gradient(110deg,#ffffff_55%,#fff8f2_100%)] p-6 shadow-[0_2px_4px_rgb(0_0_0/0.12)] sm:p-10 lg:p-12">
@@ -41,7 +33,7 @@ export function BatteryMatcher({ content = ECOSYSTEM_MATCHER_DEFAULTS }: { conte
         <div>
           <Label htmlFor="battery-brand" className="mb-1 text-label-sm font-label-sm font-semibold text-graphite-900">1. Select Brand</Label>
           <select id="battery-brand" value={brand} onChange={(event) => setBrand(event.target.value)} className="h-12 w-full rounded-xl border-0 bg-surface-container-low px-3 text-[12px] font-semibold text-graphite-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500">
-            {brands.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+            {platforms.map((item) => <option key={item.platform} value={item.platform}>{item.platform} ({item.productCount} tool{item.productCount === 1 ? "" : "s"})</option>)}
           </select>
         </div>
         <div>
@@ -53,14 +45,14 @@ export function BatteryMatcher({ content = ECOSYSTEM_MATCHER_DEFAULTS }: { conte
         </div>
         <Button type="submit" className="h-12 rounded-xl bg-orange-500 text-[14px] font-semibold text-white hover:bg-orange-600">
           <span aria-hidden className="material-symbols-outlined text-[20px]">tune</span>
-          {brand === brands[0].value && category === "power-tools" ? "Filter 1,420 Tools" : "Filter Compatible Tools"}
+          Filter Compatible Tools
         </Button>
       </form>
       <div className="mt-6 flex flex-wrap items-center gap-2 text-[11px] leading-4">
         <span className="mr-1 text-text-secondary">Popular platforms:</span>
         {popularPlatforms.map((platform) => (
-          <button key={platform.value} type="button" onClick={() => setBrand(platform.value)} aria-pressed={brand === platform.value} className="min-h-7 rounded-full bg-surface-container-low px-3 py-1 text-graphite-900 transition-colors hover:bg-orange-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500">
-            {platform.label}
+          <button key={platform.platform} type="button" onClick={() => setBrand(platform.platform)} aria-pressed={brand === platform.platform} className="min-h-7 rounded-full bg-surface-container-low px-3 py-1 text-graphite-900 transition-colors hover:bg-orange-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500">
+            {platform.platform} ({platform.productCount} tool{platform.productCount === 1 ? "" : "s"})
           </button>
         ))}
       </div>

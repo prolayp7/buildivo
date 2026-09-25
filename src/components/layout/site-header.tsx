@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import styles from "./site-header.module.css";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { DepartmentsMenu } from "@/components/layout/departments-menu";
@@ -35,6 +36,44 @@ export function SiteHeader({ departments, mainMenu }: { departments: Category[];
         Skip to content
       </a>
 
+      <div className={styles.mobile}>
+        <div className={styles.promo}>
+          <p><span className={styles.status} /><strong>FREE NEXT-DAY</strong> over £75 <span>· Click &amp; Collect 30m</span></p>
+          <Link href="/trade"><span aria-hidden className="material-symbols-outlined">verified</span>Pro Net 30</Link>
+        </div>
+        <div className={styles.mainRow}>
+          <button type="button" className={styles.menuButton} onClick={() => setMobileNavOpen(true)} aria-label="Open menu" aria-expanded={mobileNavOpen} aria-haspopup="dialog">
+            <span aria-hidden className="material-symbols-outlined">menu</span>
+          </button>
+          <Link href="/" className={styles.logo} aria-label="Buildivo home">
+            <BuildivoLogo height={44} />
+          </Link>
+          <div className={styles.actions}>
+            <Link href="/account" aria-label="Your account" className={styles.account}><span aria-hidden className="material-symbols-outlined">person</span></Link>
+            <Link href="/wishlist" aria-label="Saved items"><span aria-hidden className="material-symbols-outlined">favorite</span></Link>
+            <button type="button" className={styles.cart} onClick={() => setCartOpen(true)} aria-label={`Cart, ${count} items, ${formatPrice(subtotal)}`}>
+              <span className="relative flex items-center">
+                <span aria-hidden className="material-symbols-outlined text-[24px] text-orange-600">shopping_bag</span>
+                <span aria-hidden className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold leading-none text-text-inverse">{count}</span>
+              </span>
+            </button>
+          </div>
+        </div>
+        <form role="search" aria-label="Mobile product search" action="/search" className={styles.search}>
+          <span aria-hidden className="material-symbols-outlined">search</span>
+          <label htmlFor="mobile-header-search" className="sr-only">Search by SKU, tools or cordless products</label>
+          <input id="mobile-header-search" type="search" name="q" placeholder="Search by SKU, tools, cordless…" required />
+          <button type="submit" aria-label="Search products"><span aria-hidden className="material-symbols-outlined">arrow_forward</span></button>
+        </form>
+        <nav aria-label="Mobile store shortcuts" className={styles.shortcuts}>
+          <Link href="/branches" className={styles.branch}><span aria-hidden className="material-symbols-outlined">near_me</span><span>London SW1A (Central)</span><small>30m</small></Link>
+          <div className={styles.quickLinks}>
+            <Link href="/deals" className={styles.deals}><span aria-hidden className="material-symbols-outlined">local_fire_department</span>Deals</Link>
+            {categoryLinks.slice(0, 3).map((item) => <Link key={item.href} href={item.href} aria-current={pathname.startsWith(item.href) ? "page" : undefined}>{item.label}</Link>)}
+          </div>
+        </nav>
+      </div>
+
       <div className="hidden h-9 bg-graphite-800 text-text-inverse sm:block">
         <div className="mx-auto flex h-full max-w-[1600px] items-center justify-between px-margin-desktop text-label-sm font-label-sm">
           <div className="flex items-center gap-space-sm overflow-hidden text-ellipsis whitespace-nowrap">
@@ -67,7 +106,7 @@ export function SiteHeader({ departments, mainMenu }: { departments: Category[];
         </div>
       </div>
 
-      <div className="h-[68px] border-b border-border-default bg-surface-white shadow-[0_1px_3px_rgba(13,23,34,0.06)] sm:h-[76px]">
+      <div className="hidden sm:block h-[68px] border-b border-border-default bg-surface-white shadow-[0_1px_3px_rgba(13,23,34,0.06)] sm:h-[76px]">
         <div className="mx-auto flex h-full max-w-[1600px] items-center gap-space-md px-4 sm:gap-space-lg sm:px-margin-desktop">
           <button
             type="button"

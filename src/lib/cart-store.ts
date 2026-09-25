@@ -2,14 +2,12 @@
 
 import { create } from "zustand";
 import type { CartLine } from "@/types";
-import { addCartItem, fetchCart, readGuestToken, removeCartItem, updateCartItem, type CartData, type CartLineApi } from "./storefront-client";
+import { addBundleToCart, addCartItem, fetchCart, readGuestToken, removeCartItem, updateCartItem, validateCoupon, type CartData, type CartLineApi } from "./storefront-client";
 
-// Default UK standard VAT rate, used only to estimate an inc-VAT display
-// price for cart lines - the cart API returns ex-VAT unitPrice without a
-// per-line tax rate (that requires the full product record). The real,
-// authoritative VAT breakdown comes back from the order response at
-// checkout; this is a pre-checkout estimate only, same assumption already
-// used as the default in lib/checkout.ts.
+// Every price the API returns (catalogue, cart line, subtotal, shipping) is VAT-INCLUSIVE, so the
+// storefront never adds VAT on top. The cart response has no per-line tax rate, so this default UK rate
+// is only used to work out how much VAT is *inside* a price for display; the authoritative breakdown
+// comes back from the order response at checkout.
 const DEFAULT_VAT_RATE = 0.2;
 
 export interface CartLineProduct {
@@ -46,8 +44,18 @@ export interface LastOrder {
   items: { title: string; variantTitle: string; quantity: number; subtotal: number }[];
 }
 
+/** A coupon the API has validated against the current cart. */
+export interface AppliedCoupon {
+  code: string;
+  discountAmount: number;
+  freeShipping: boolean;
+}
+
 interface CartState {
   raw: CartData | null;
+  coupon: AppliedCoupon | null;
+  /** Why a previously applied coupon stopped applying (e.g. the cart fell below its minimum). */
+  couponNotice: string;
   loaded: boolean;
   lines: CartLine[];
   wishlist: number[];
@@ -55,11 +63,15 @@ interface CartState {
   lastOrder: LastOrder | null;
   load: () => Promise<void>;
   addItem: (variantId: number, qty?: number) => Promise<void>;
+  addBundle: (slug: string) => Promise<void>;
   removeItem: (productId: number, variantId: number) => Promise<void>;
   setQty: (productId: number, qty: number, variantId: number) => Promise<void>;
   toggleSaveForLater: (productId: number, variantId: number) => Promise<void>;
   clear: () => Promise<void>;
   commitOrder: (order: LastOrder) => void;
+  applyCoupon: (code: string) => Promise<{ ok: boolean; message: string }>;
+  removeCoupon: () => void;
+  revalidateCoupon: () => Promise<void>;
   toggleWishlist: (productId: number) => void;
   toggleCompare: (productId: number) => void;
 }
@@ -76,6 +88,14 @@ function toCartLines(cart: CartData): CartLine[] {
 // pulling in the full zustand persist middleware (which would also try to
 // persist the API-backed `raw`/`lines`, which shouldn't be cached locally).
 const WISHLIST_KEY = "buildivo.wishlist";
+const COUPON_KEY = "buildivo.coupon";
+
+function readCouponCode(): string | null {
+  try { return window.localStorage.getItem(COUPON_KEY); } catch { return null; }
+}
+function writeCouponCode(code: string | null) {
+  try { if (code) window.localStorage.setItem(COUPON_KEY, code); else window.localStorage.removeItem(COUPON_KEY); } catch { /* storage unavailable */ }
+}
 const COMPARE_KEY = "buildivo.compare";
 function readIds(key: string): number[] {
   if (typeof window === "undefined") return [];
@@ -99,8 +119,11 @@ export const useCartStore = create<CartState>()((set, get) => ({
   raw: null,
   loaded: false,
   lines: [],
-  wishlist: readIds(WISHLIST_KEY),
-  compare: readIds(COMPARE_KEY),
+  coupon: null,
+  couponNotice: "",
+  // Keep the server and browser initial snapshots identical for hydration.
+  wishlist: [],
+  compare: [],
   lastOrder: null,
 
   load: async () => {
@@ -115,6 +138,10 @@ export const useCartStore = create<CartState>()((set, get) => ({
 
   addItem: async (variantId, qty = 1) => {
     const cart = await addCartItem(variantId, qty);
+    set({ raw: cart, lines: toCartLines(cart) });
+  },
+  addBundle: async (slug) => {
+    const cart = await addBundleToCart(slug);
     set({ raw: cart, lines: toCartLines(cart) });
   },
   removeItem: async (_productId, variantId) => {
@@ -140,14 +167,48 @@ export const useCartStore = create<CartState>()((set, get) => ({
     set({ raw: cart, lines: toCartLines(cart) });
   },
 
-  commitOrder: (order) => set({ lastOrder: order, raw: null, lines: [] }),
+  commitOrder: (order) => {
+    writeCouponCode(null);
+    set({ lastOrder: order, raw: null, lines: [], coupon: null, couponNotice: "" });
+  },
 
-  toggleWishlist: (productId) =>
+  // Coupons are checked by the API against the real cart (dates, minimum spend, usage limits) - nothing is hardcoded here.
+  applyCoupon: async (code) => {
+    try {
+      const result = await validateCoupon(code.trim());
+      writeCouponCode(result.code);
+      set({ coupon: { code: result.code, discountAmount: result.discountAmount, freeShipping: result.freeShipping }, couponNotice: "" });
+      return { ok: true, message: `Code ${result.code} applied.` };
+    } catch (error) {
+      return { ok: false, message: error instanceof Error ? error.message : "That code could not be applied." };
+    }
+  },
+  removeCoupon: () => {
+    writeCouponCode(null);
+    set({ coupon: null, couponNotice: "" });
+  },
+  // Re-checks the applied (or remembered) code whenever the cart changes, so the discount always matches the basket.
+  revalidateCoupon: async () => {
+    const code = get().coupon?.code ?? readCouponCode();
+    if (!code) return;
+    try {
+      const result = await validateCoupon(code);
+      set({ coupon: { code: result.code, discountAmount: result.discountAmount, freeShipping: result.freeShipping } });
+    } catch (error) {
+      writeCouponCode(null);
+      set({ coupon: null, couponNotice: `${code} was removed: ${error instanceof Error ? error.message : "it no longer applies"}` });
+    }
+  },
+
+  toggleWishlist: (productId) => {
+    const saved = !get().wishlist.includes(productId);
     set((state) => {
-      const wishlist = state.wishlist.includes(productId) ? state.wishlist.filter((id) => id !== productId) : [...state.wishlist, productId];
+      const wishlist = saved ? [...state.wishlist, productId] : state.wishlist.filter((id) => id !== productId);
       writeIds(WISHLIST_KEY, wishlist);
       return { wishlist };
-    }),
+    });
+    if (wishlistOnServer) void pushWishlist(productId, saved);
+  },
   // Product comparison has no server-side persistence by design (the
   // /products/compare endpoint is stateless, keyed by whatever ids the
   // client sends) - kept as local-only state, same as the mock version.
@@ -159,10 +220,59 @@ export const useCartStore = create<CartState>()((set, get) => ({
     }),
 }));
 
+// The wishlist lives in localStorage (works for guests); while a customer is signed in it is also
+// mirrored to their account, so it follows them across devices.
+let wishlistOnServer = false;
+
+function pushWishlist(productId: number, saved: boolean) {
+  return fetch("/api/customer-session/wishlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productId, saved }) }).catch(() => undefined);
+}
+
+/** Merges the account wishlist with this browser's (union - nothing a shopper saved is lost) and starts
+ * mirroring changes. Safe to call for guests: it does nothing. Call on load and right after sign-in. */
+export async function syncWishlist() {
+  try {
+    const response = await fetch("/api/customer-session/wishlist", { cache: "no-store" });
+    const body = response.ok ? await response.json() : null;
+    wishlistOnServer = Boolean(body?.signedIn);
+    if (!wishlistOnServer) return;
+    const remote: number[] = body.productIds;
+    const local = useCartStore.getState().wishlist;
+    const merged = [...new Set([...remote, ...local])];
+    writeIds(WISHLIST_KEY, merged);
+    useCartStore.setState({ wishlist: merged });
+    await Promise.all(local.filter((id) => !remote.includes(id)).map((id) => pushWishlist(id, true)));
+  } catch {
+    wishlistOnServer = false;
+  }
+}
+
+/** Sign-out: keep the browser's list but stop writing to the account. */
+export function stopWishlistSync() {
+  wishlistOnServer = false;
+}
+
 /** Call once on mount (see cart-hydration.tsx) - avoids every consumer
  * triggering its own fetch and racing the guest-token read. */
+let couponWatch = false;
+let localListsHydrated = false;
 export function hydrateCart() {
-  void useCartStore.getState().load();
+  if (typeof window === "undefined") return;
+  // Called from CartHydration's effect, after React's initial render. Restore
+  // local lists before account sync so saved guest items are included in the merge.
+  if (!localListsHydrated) {
+    localListsHydrated = true;
+    useCartStore.setState({ wishlist: readIds(WISHLIST_KEY), compare: readIds(COMPARE_KEY) });
+  }
+  void useCartStore.getState().load().then(() => useCartStore.getState().revalidateCoupon());
+  void syncWishlist();
+  if (!couponWatch) {
+    couponWatch = true;
+    // The discount depends on the basket: re-check it whenever the subtotal changes.
+    useCartStore.subscribe((state, previous) => {
+      if (state.raw?.subtotal !== previous.raw?.subtotal && previous.raw && (state.coupon || readCouponCode())) void state.revalidateCoupon();
+    });
+  }
 }
 
 function findRawLine(raw: CartData | null, line: CartLine): CartLineApi | undefined {
@@ -173,15 +283,15 @@ export function lineProduct(line: CartLine): CartLineProduct | undefined {
   const raw = useCartStore.getState().raw;
   const item = findRawLine(raw, line);
   if (!item) return undefined;
-  const priceExVat = Number(item.variant.salePrice ?? item.variant.price);
+  const price = Number(item.variant.salePrice ?? item.variant.price);
   return {
     id: item.productId,
     slug: item.variant.product.slug,
     name: item.variant.product.title,
     image: "",
     categorySlug: "",
-    priceIncVat: Math.round(priceExVat * (1 + DEFAULT_VAT_RATE) * 100) / 100,
-    compareAtIncVat: item.variant.salePrice ? Math.round(Number(item.variant.price) * (1 + DEFAULT_VAT_RATE) * 100) / 100 : undefined,
+    priceIncVat: price,
+    compareAtIncVat: item.variant.salePrice ? Number(item.variant.price) : undefined,
     vatRate: DEFAULT_VAT_RATE,
     stockQty: item.variant.stockQty,
     stockCount: item.variant.stockQty,
@@ -193,9 +303,9 @@ export function lineProduct(line: CartLine): CartLineProduct | undefined {
 export function lineUnitPrice(line: CartLine): number {
   const raw = useCartStore.getState().raw;
   const item = findRawLine(raw, line);
-  // item.unitPrice is the API's ex-VAT, tier/bundle-aware price - the
+  // item.unitPrice is the API's VAT-inclusive, tier/bundle-aware price - the
   // authoritative one to use, rather than re-deriving from variant.price.
-  return item ? Math.round(item.unitPrice * (1 + DEFAULT_VAT_RATE) * 100) / 100 : 0;
+  return item ? item.unitPrice : 0;
 }
 
 export function useCartTotals() {
@@ -203,9 +313,12 @@ export function useCartTotals() {
   const raw = useCartStore((s) => s.raw);
   const activeLines = lines.filter((l) => !l.savedForLater);
   const savedLines = lines.filter((l) => l.savedForLater);
-  const subtotal = raw ? Math.round(raw.subtotal * (1 + DEFAULT_VAT_RATE) * 100) / 100 : 0;
+  const coupon = useCartStore((s) => s.coupon);
+  const subtotal = raw ? raw.subtotal : 0;
   const count = activeLines.reduce((sum, l) => sum + l.qty, 0);
-  return { subtotal, count, activeLines, savedLines, multiBuySavings: lineMultiBuySavingsTotal(raw) };
+  // Free-shipping coupons carry no money-off amount; their effect is applied to the delivery charge instead.
+  const discount = coupon && !coupon.freeShipping ? Math.min(coupon.discountAmount, subtotal) : 0;
+  return { subtotal, discount, freeShippingCoupon: Boolean(coupon?.freeShipping), coupon, payable: Math.max(0, Math.round((subtotal - discount) * 100) / 100), count, activeLines, savedLines, multiBuySavings: lineMultiBuySavingsTotal(raw) };
 }
 
 /** Wholesale/bulk-pricing savings already applied server-side (price tiers) -
@@ -216,7 +329,7 @@ function lineMultiBuySavingsTotal(raw: CartData | null): number {
   return raw.items.reduce((sum, item) => {
     const regular = Number(item.variant.salePrice ?? item.variant.price);
     const saving = (regular - item.unitPrice) * item.quantity;
-    return sum + Math.max(0, saving) * (1 + DEFAULT_VAT_RATE);
+    return sum + Math.max(0, saving);
   }, 0);
 }
 
@@ -225,7 +338,7 @@ export function lineMultiBuySaving(line: CartLine): number {
   const item = findRawLine(raw, line);
   if (!item) return 0;
   const regular = Number(item.variant.salePrice ?? item.variant.price);
-  return Math.max(0, (regular - item.unitPrice) * item.quantity) * (1 + DEFAULT_VAT_RATE);
+  return Math.max(0, (regular - item.unitPrice) * item.quantity);
 }
 
 export { readGuestToken };

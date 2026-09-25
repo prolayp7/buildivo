@@ -1,0 +1,62 @@
+.mobile {
+  height: 148px;
+  background: var(--color-surface-white);
+  color: var(--color-text-primary);
+  border-bottom: 1px solid var(--color-border-default);
+}
+.mobile a:focus-visible, .mobile button:focus-visible {
+  outline: 2px solid var(--color-orange-500);
+  outline-offset: 2px;
+}
+.promo {
+  height: 22px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--color-graphite-800);
+  font-size: 9px;
+  color: var(--color-text-inverse-muted);
+  white-space: nowrap;
+}
+.promo p { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.promo strong { color: var(--color-text-inverse-muted); font-size: 9px; font-weight: 700; }
+.status { width: 4px; height: 4px; border-radius: 50%; background: var(--color-orange-500); flex-shrink: 0; }
+.promo > a { display: flex; align-items: center; gap: 3px; }
+.promo > a > span { font-size: 12px; color: var(--color-orange-500); }
+.mainRow { display: flex; align-items: center; height: 48px; padding: 0 8px; gap: 8px; }
+.menuButton { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: 1px solid var(--color-border-default); border-radius: 7px; background: var(--color-surface-white); color: var(--color-graphite-800); flex-shrink: 0; cursor: pointer; }
+.menuButton > span { font-size: 23px; }
+.logo { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.actions { color: var(--color-text-secondary); display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.actions > a { display: flex; align-items: center; justify-content: center; width: 36px; height: 40px; }
+.actions > a > span { font-size: 23px; }
+.actions .account > span { display: flex; align-items: center; justify-content: center; width: 27px; height: 27px; border-radius: 50%; border: 1px solid transparent; background: var(--color-graphite-100); color: var(--color-graphite-700); font-size: 20px; }
+.cart { display: flex; align-items: center; justify-content: center; min-width: 48px; height: 40px; padding: 8px 12px; border: 1px solid rgb(255 121 0 / 20%); border-radius: 8px; background: var(--color-orange-50); cursor: pointer; }
+.cart:hover { background: var(--color-orange-100); }
+.search { display: flex; align-items: center; height: 34px; margin: 0 10px 6px; border: 1px solid var(--color-border-default); border-radius: 6px; background: var(--color-surface-warm); }
+.search > span { margin-left: 8px; font-size: 18px; color: var(--color-graphite-400); }
+.search input { min-width: 0; flex: 1; height: 100%; padding: 0 8px; background: transparent; color: var(--color-text-primary); font-size: 16px; outline: none; }
+.search input::placeholder { font-size: 11px; color: var(--color-text-disabled); }
+.search:focus-within { border-color: var(--color-orange-500); outline: 1px solid var(--color-orange-500); }
+.search button { display: flex; align-items: center; justify-content: center; align-self: stretch; width: 36px; border-left: 1px solid var(--color-border-default); background: var(--color-orange-500); color: var(--color-text-inverse); cursor: pointer; }
+.search button span { font-size: 20px; }
+.shortcuts { display: flex; align-items: center; gap: 10px; height: 37px; padding: 0 10px; border-top: 1px solid var(--color-border-default); }
+.branch { display: flex; align-items: center; gap: 4px; flex-shrink: 0; font-size: 9px; min-height: 32px; }
+.branch > span:first-child { color: var(--color-orange-500); font-size: 13px; }
+.branch small { padding: 1px 4px; border-radius: 3px; color: var(--color-success-500); background: var(--color-success-100); font-size: 8px; }
+.quickLinks { display: flex; align-items: center; gap: 5px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.quickLinks::-webkit-scrollbar { display: none; }
+.quickLinks a { display: flex; align-items: center; justify-content: center; gap: 2px; flex-shrink: 0; min-height: 24px; padding: 0 8px; border: 1px solid var(--color-border-default); border-radius: 20px; color: var(--color-text-secondary); font-size: 9px; white-space: nowrap; }
+.quickLinks .deals, .quickLinks a[aria-current="page"] { color: var(--color-orange-500); border-color: var(--color-orange-600); }
+.deals span { font-size: 12px; }
+@media (width < 360px) {
+  .promo { font-size: 8px; gap: 4px; padding-inline: 8px; }
+  .promo strong { font-size: 8px; }
+  .mainRow { gap: 6px; }
+  .actions { gap: 0; }
+  .actions > a { width: 32px; }
+  .shortcuts { gap: 6px; }
+}
+@media (width >= 640px) { .mobile { display: none; } }

@@ -14,24 +14,11 @@ import { StepReview } from "@/components/checkout/steps/step-review";
 import { StepProcessing } from "@/components/checkout/steps/step-processing";
 import { StepFailed } from "@/components/checkout/steps/step-failed";
 import { useCartStore, useCartTotals } from "@/lib/cart-store";
-import { applyCoupon, DEFAULT_CHECKOUT_COUPON } from "@/lib/checkout";
 import { fetchShippingQuotes, placeOrder as placeOrderApi, type PlacedOrder, type ShippingQuote } from "@/lib/storefront-client";
 import { capturePaymentAttempt, createPaymentAttempt } from "@/lib/payments";
-import type { Address, DeliveryMethodId } from "@/types";
+import type { Address } from "@/types";
 
 const emptyAddress: Address = { fullName: "", line1: "", line2: "", city: "", postcode: "", phone: "" };
-
-// Maps this design's illustrative delivery-method cards onto a real
-// shipping-method quote from the API (standard = cheapest, express/saturday =
-// the fastest one, click-collect = whichever has no carrier cost). The cards
-// themselves stay exactly as designed; only the actual order submission
-// needs a real, numeric shippingMethodId.
-function pickShippingMethodId(method: DeliveryMethodId, quotes: ShippingQuote[]): number | undefined {
-  if (!quotes.length) return undefined;
-  const sorted = [...quotes].sort((a, b) => a.price - b.price);
-  if (method === "express" || method === "saturday") return sorted[sorted.length - 1].id;
-  return sorted[0].id;
-}
 
 type Phase = "identity" | "address" | "delivery" | "payment" | "review" | "processing" | "failed";
 
@@ -43,17 +30,17 @@ const RETURN_KEY = "buildivo.checkoutReturn";
 type SavedCheckout = { order: PlacedOrder; email: string; method: PaymentMethodId };
 
 export default function CheckoutPage() {
-  const { activeLines, subtotal } = useCartTotals();
-  const total = applyCoupon(subtotal, DEFAULT_CHECKOUT_COUPON);
+  const { activeLines, payable, coupon, freeShippingCoupon } = useCartTotals();
   const commitOrder = useCartStore((s) => s.commitOrder);
   const router = useRouter();
 
   const [phase, setPhase] = useState<Phase>("identity");
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState<Address>(emptyAddress);
-  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethodId>("standard");
+  const [shippingMethodId, setShippingMethodId] = useState<number | null>(null);
+  const [deliveryNote, setDeliveryNote] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodId>("stripe");
-  const [shippingQuotes, setShippingQuotes] = useState<ShippingQuote[]>([]);
+  const [shippingQuotes, setShippingQuotes] = useState<ShippingQuote[] | null>(null);
   const [order, setOrder] = useState<PlacedOrder | null>(null);
   const [failReason, setFailReason] = useState("");
   const [stage, setStage] = useState<"starting" | "confirming">("starting");
@@ -61,9 +48,20 @@ export default function CheckoutPage() {
   const checkoutKey = useRef(crypto.randomUUID());
   const starting = useRef(false);
 
+  // Real delivery methods and prices from the API; the cheapest is pre-selected.
   useEffect(() => {
-    fetchShippingQuotes().then(setShippingQuotes).catch(() => setShippingQuotes([]));
+    fetchShippingQuotes()
+      .then((quotes) => {
+        setShippingQuotes(quotes);
+        setShippingMethodId((current) => current ?? [...quotes].sort((a, b) => a.rate - b.rate)[0]?.id ?? null);
+      })
+      .catch(() => setShippingQuotes([]));
   }, []);
+
+  const selectedShipping = shippingQuotes?.find((quote) => quote.id === shippingMethodId);
+  const deliveryCharge = selectedShipping ? (freeShippingCoupon ? 0 : selectedShipping.rate) : 0;
+  // Same rule the API applies to the order: goods - coupon + delivery.
+  const total = Math.round((payable + deliveryCharge) * 100) / 100;
 
   function finishOrder(placed: PlacedOrder) {
     sessionStorage.removeItem(RETURN_KEY);
@@ -83,12 +81,13 @@ export default function CheckoutPage() {
     try {
       let current = order;
       if (!current) {
-        const shippingMethodId = pickShippingMethodId(deliveryMethod, shippingQuotes);
         if (!shippingMethodId) throw new Error("No delivery methods are available right now.");
         current = await placeOrderApi({
           email,
           shippingAddress: { fullName: address.fullName, line1: address.line1, line2: address.line2 || undefined, city: address.city, postcode: address.postcode, phone: address.phone },
           shippingMethodId,
+          couponCode: coupon?.code,
+          customerNote: deliveryNote.trim() || undefined,
         }, checkoutKey.current);
         setOrder(current);
       }
@@ -193,8 +192,11 @@ export default function CheckoutPage() {
           {phase === "delivery" && (
             <StepDelivery
               address={address}
-              value={deliveryMethod}
-              onChange={setDeliveryMethod}
+              quotes={shippingQuotes}
+              value={shippingMethodId}
+              onChange={setShippingMethodId}
+              note={deliveryNote}
+              onNoteChange={setDeliveryNote}
               onBack={() => setPhase("address")}
               onContinue={() => setPhase("payment")}
             />
@@ -210,11 +212,12 @@ export default function CheckoutPage() {
             />
           )}
 
-          {phase === "review" && (
+          {phase === "review" && selectedShipping && (
             <StepReview
               email={email}
               address={address}
-              deliveryMethod={deliveryMethod}
+              shipping={selectedShipping}
+              deliveryCharge={deliveryCharge}
               paymentMethod={paymentMethod}
               total={total}
               onBack={() => setPhase("payment")}
@@ -238,7 +241,7 @@ export default function CheckoutPage() {
           )}
         </div>
 
-        {phase !== "processing" && phase !== "failed" && <CheckoutOrderSummary showItems={phase !== "delivery"} className="h-fit" />}
+        {phase !== "processing" && phase !== "failed" && <CheckoutOrderSummary shipping={selectedShipping} showItems={phase !== "delivery"} className="h-fit" />}
       </div>
     </div>
   );

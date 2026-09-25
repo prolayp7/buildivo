@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { ComingSoon } from "@/components/layout/coming-soon";
+import { TrackOrder } from "@/components/orders/track-order";
 
-export const metadata: Metadata = { title: "Track Order" };
+export const metadata: Metadata = { title: "Track Order", robots: { index: false, follow: true } };
 
 export default function Page() {
-  return <ComingSoon icon="local_shipping" title="Track Order" description="Order tracking isn't wired to a real order system in this prototype." />;
+  return <TrackOrder />;
 }

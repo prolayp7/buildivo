@@ -12,11 +12,9 @@ import { Price } from "@/components/commerce/price";
 import { StockBadge } from "@/components/commerce/stock-badge";
 import { OrderSummary } from "@/components/commerce/order-summary";
 import { FreeDeliveryProgress } from "@/components/commerce/free-delivery-progress";
-import { DeliveryMethodSelector } from "@/components/checkout/delivery-method-selector";
-import { COUPONS } from "@/lib/checkout";
+import { QuoteRequestDialog } from "@/components/commerce/quote-request-dialog";
 import { lineProduct, lineUnitPrice, useCartStore, useCartTotals } from "@/lib/cart-store";
 import { formatPrice } from "@/lib/format";
-import type { DeliveryMethodId } from "@/types";
 
 const TRUST_STRIP = [
   { icon: "lock", label: "256-Bit SSL Encrypted Checkout" },
@@ -27,26 +25,27 @@ const TRUST_STRIP = [
 ];
 
 export default function CartPage() {
-  const { activeLines, savedLines, subtotal, multiBuySavings } = useCartTotals();
+  const { activeLines, savedLines, subtotal, discount, coupon, freeShippingCoupon, multiBuySavings } = useCartTotals();
+  const couponNotice = useCartStore((s) => s.couponNotice);
+  const applyCoupon = useCartStore((s) => s.applyCoupon);
+  const removeCoupon = useCartStore((s) => s.removeCoupon);
   const setQty = useCartStore((s) => s.setQty);
   const removeItem = useCartStore((s) => s.removeItem);
   const toggleSaveForLater = useCartStore((s) => s.toggleSaveForLater);
   const clear = useCartStore((s) => s.clear);
-  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethodId>("standard");
-  const [coupon, setCoupon] = useState<string | null>(null);
   const [voucherInput, setVoucherInput] = useState("");
+  const [applying, setApplying] = useState(false);
   const router = useRouter();
 
-  function applyVoucher() {
-    const code = voucherInput.trim().toUpperCase();
-    if (!code) return;
-    if (COUPONS[code]) {
-      setCoupon(code);
-      toast.success(COUPONS[code].label);
-    } else {
-      toast.error("That promo or trade code isn't valid.");
-    }
-    setVoucherInput("");
+  // The API decides whether a code is valid for this basket (dates, minimum spend, usage limits).
+  async function applyVoucher() {
+    const code = voucherInput.trim();
+    if (!code || applying) return;
+    setApplying(true);
+    const result = await applyCoupon(code);
+    setApplying(false);
+    if (result.ok) { toast.success(result.message); setVoucherInput(""); }
+    else toast.error(result.message);
   }
 
   if (activeLines.length === 0 && savedLines.length === 0) {
@@ -189,11 +188,12 @@ export default function CartPage() {
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-body-lg font-body-lg font-bold text-graphite-900">Vouchers, Trade Discounts &amp; Offers</h2>
               </div>
-              {coupon && COUPONS[coupon] ? (
+              {couponNotice && <p role="status" className="mb-3 rounded-lg bg-orange-50 px-3 py-2 text-label-sm font-label-sm text-orange-700">{couponNotice}</p>}
+              {coupon ? (
                 <span className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-success-500/40 bg-success-100 px-3 py-1 text-label-sm font-label-sm font-semibold text-success-500">
                   <span aria-hidden className="material-symbols-outlined text-[16px]">check_circle</span>
-                  {coupon}
-                  <button type="button" onClick={() => setCoupon(null)} aria-label="Remove voucher">
+                  {coupon.code}{coupon.freeShipping ? " · free delivery" : ` · -${formatPrice(discount)}`}
+                  <button type="button" onClick={removeCoupon} aria-label="Remove voucher">
                     <span aria-hidden className="material-symbols-outlined text-[14px]">close</span>
                   </button>
                 </span>
@@ -208,8 +208,8 @@ export default function CartPage() {
                   aria-label="Promo code or trade voucher"
                   onKeyDown={(e) => e.key === "Enter" && applyVoucher()}
                 />
-                <Button type="button" variant="outline" onClick={applyVoucher}>
-                  Apply
+                <Button type="button" variant="outline" onClick={applyVoucher} disabled={applying}>
+                  {applying ? "Checking…" : "Apply"}
                 </Button>
               </div>
             </div>
@@ -239,11 +239,6 @@ export default function CartPage() {
             </div>
           )}
 
-          <div className="mt-8 rounded-xl border border-border-default bg-surface-white p-5">
-            <h2 className="mb-3 text-body-lg font-body-lg font-bold text-graphite-900">Delivery &amp; Fulfilment Options</h2>
-            <DeliveryMethodSelector value={deliveryMethod} onChange={setDeliveryMethod} />
-          </div>
-
           {activeLines.length > 0 && (
             <div className="mt-8 flex flex-col items-start justify-between gap-4 rounded-xl border border-graphite-700 bg-graphite-900 p-5 text-text-inverse sm:flex-row sm:items-center">
               <div>
@@ -254,13 +249,13 @@ export default function CartPage() {
                 <p className="text-body-sm font-body-sm font-bold">Ordering in Bulk or Specifying a Jobsite Tender?</p>
                 <p className="text-label-sm font-label-sm text-text-inverse-muted">Transfer every item into a formal RFQ tender, locked in for 30 days with dedicated commercial trade assignment.</p>
               </div>
-              <Button
-                className="shrink-0 bg-orange-500 font-label-lg text-label-lg font-bold hover:bg-orange-600"
-                onClick={() => toast.info("RFQ tender conversion isn't wired up in this prototype — call the Trade Desk to arrange one.")}
+              <QuoteRequestDialog
+                lines={activeLines.map((line) => ({ variantId: line.variantId, label: lineProduct(line)?.name ?? `Item ${line.variantId}`, quantity: line.qty }))}
+                className="inline-flex min-h-10 shrink-0 cursor-pointer items-center gap-2 rounded-md bg-orange-500 px-4 font-label-lg text-label-lg font-bold text-white hover:bg-orange-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
               >
                 Convert Cart to RFQ
                 <span aria-hidden className="material-symbols-outlined text-[18px]">arrow_forward</span>
-              </Button>
+              </QuoteRequestDialog>
             </div>
           )}
 
@@ -277,23 +272,22 @@ export default function CartPage() {
         <div className="flex flex-col gap-4 lg:sticky lg:top-[172px]">
           <OrderSummary
             subtotal={subtotal}
-            deliveryMethod={deliveryMethod}
-            appliedCoupon={coupon}
-            onApplyCoupon={setCoupon}
-            showCouponInput={false}
-            showTradeAccountBadge
+            discount={discount}
+            couponCode={coupon?.code}
+            freeDeliveryCoupon={freeShippingCoupon}
             multiBuySavings={multiBuySavings}
-            showWalletPay
-            showDeliveryInfo
             itemCount={activeLines.reduce((n, l) => n + l.qty, 0)}
             primaryCtaLabel="Proceed to Secure Checkout"
             primaryCtaDisabled={activeLines.length === 0}
             onPrimaryCta={() => router.push("/checkout")}
-            secondaryCta={{
-              label: "Pay on Account (Net 30) · Trade Invoice",
-              onClick: () => toast.info("Net 30 account checkout requires a verified Trade sign-in — use Proceed to Secure Checkout for now."),
-            }}
           />
+          <QuoteRequestDialog
+            lines={activeLines.map((line) => ({ variantId: line.variantId, label: lineProduct(line)?.name ?? `Item ${line.variantId}`, quantity: line.qty }))}
+            className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-border-default bg-surface-white px-4 text-label-lg font-label-lg font-semibold text-graphite-900 transition-colors hover:border-orange-500 hover:text-orange-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <span aria-hidden className="material-symbols-outlined text-[20px]">request_quote</span>
+            Buying in bulk? Request a quote for this order
+          </QuoteRequestDialog>
           <div className="flex items-start gap-3 rounded-xl border border-border-default bg-surface-white p-4">
             <span aria-hidden className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-success-100 text-success-500">
               <span className="material-symbols-outlined text-[18px]">verified</span>

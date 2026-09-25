@@ -3,6 +3,7 @@ import { Inter, Sora } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { CartHydration } from "@/components/cart-hydration";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const inter = Inter({
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
   },
   description:
     "Buildivo is a large-scale DIY, tools and hardware ecommerce platform for retail, DIY and trade customers — 45,000+ technical SKUs with next-day delivery.",
-  metadataBase: new URL("https://www.buildivo.example"),
+  metadataBase: new URL(SITE_URL),
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

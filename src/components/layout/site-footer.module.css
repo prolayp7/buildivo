@@ -1,0 +1,36 @@
+.accordion { display: none; }
+
+@media (width < 640px) {
+  .footer { padding-bottom: calc(140px + env(safe-area-inset-bottom)); }
+  .trust { background: var(--color-graphite-800); border: 0; gap: 20px 12px; padding: 24px 16px; }
+  .trust > div { align-items: center; min-width: 0; }
+  .trust p:first-child { font-size: 12px; line-height: 18px; }
+  .trust p + p { margin-top: 4px; font-size: 10px; line-height: 15px; }
+  .main { padding: 24px 16px 12px; }
+  .columns { display: flex; flex-direction: column; gap: 12px; }
+  .desktopColumn { display: none; }
+  .accordion { display: block; border-radius: 8px; background: var(--color-graphite-800); }
+  .accordion summary { display: flex; min-height: 44px; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; color: white; font-size: 12px; font-weight: 700; cursor: pointer; list-style: none; }
+  .accordion summary::-webkit-details-marker { display: none; }
+  .accordion summary span { font-size: 18px; }
+  .accordion[open] summary span { transform: rotate(180deg); }
+  .accordion ul { padding: 0 12px 8px; }
+  .accordion a { display: flex; align-items: center; min-height: 44px; font-size: 12px; }
+  .footer a:focus-visible, .accordion summary:focus-visible { outline: 2px solid var(--color-orange-500); outline-offset: 3px; }
+  .about { margin-top: 18px; }
+  .about h2 { margin-bottom: 6px; font-size: 12px; }
+  .about p { margin-bottom: 12px; font-size: 12px; line-height: 19px; }
+  .about > div { gap: 8px; }
+  .about > div span { background: var(--color-graphite-800); padding: 3px 8px; font-size: 10px; color: #80e7cf; }
+  .payments { border: 0; }
+  .payments > div { padding-top: 0; padding-bottom: 0; gap: 24px; }
+  .methods { gap: 6px; }
+  .methods > span:first-child { flex-basis: 100%; margin-bottom: 3px; font-size: 10px; color: var(--color-text-inverse-muted); }
+  .methods > span:not(:first-child) { background: var(--color-graphite-800); font-size: 10px; font-weight: 700; }
+  .methods > span:not(:first-child):global(.bg-orange-500) { background: #38230e; color: #ff9a3d; }
+  .legal { gap: 2px 12px; font-size: 12px; line-height: 22px; }
+  .copyright { border: 0; }
+  .copyright > div { align-items: flex-start; padding-top: 8px; padding-bottom: 8px; font-size: 10px; line-height: 16px; color: var(--color-graphite-200); }
+  .copyright img { display: none; }
+  .copyright > div > span > span { color: #80e7cf; }
+}

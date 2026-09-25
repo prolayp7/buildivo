@@ -25,7 +25,7 @@ export function BackToTop() {
           behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
         });
       }}
-      className="fixed right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-30 flex size-12 items-center justify-center rounded-xl bg-graphite-800 text-white shadow-lg transition-colors hover:bg-orange-600 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-600 sm:right-6"
+      className="fixed right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-30 hidden sm:flex size-12 items-center justify-center rounded-xl bg-graphite-800 text-white shadow-lg transition-colors hover:bg-orange-600 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-600 sm:right-6"
     >
       <span aria-hidden="true" className="material-symbols-outlined text-[24px]">arrow_upward</span>
     </button>

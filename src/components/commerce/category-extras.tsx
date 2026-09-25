@@ -1,12 +1,12 @@
 "use client";
 import Link from "next/link";
 import { toast } from "sonner";
-import { products } from "@/data/products";
+import type { Product } from "@/types";
 import { useCartStore } from "@/lib/cart-store";
 import { ProductImage } from "@/components/commerce/product-image";
 import { formatPrice } from "@/lib/format";
-const accessories = products.filter((product) => product.categorySlug === "hardware-fixings");
-export function CategoryExtras() {
+// `accessories` are real hardware-fixings products, fetched by the category page.
+export function CategoryExtras({ accessories }: { accessories: Product[] }) {
  const addItem = useCartStore((state) => state.addItem);
  return <>
  <section className="mt-6 border-t border-border-default bg-white py-8">
@@ -15,14 +15,14 @@ export function CategoryExtras() {
  <h2 className="text-[20px] font-bold text-graphite-900">Frequently Paired Site Consumables &amp; Fixings</h2>
  <p className="text-sm text-text-secondary">Keep crews operational with high-cycle masonry bits, impact bits, and diamond blades</p>
  </div><Link href="/c/hardware-fixings" className="text-xs font-semibold text-orange-600 hover:underline">Explore All Accessories →</Link></div>
- <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+ {accessories.length > 0 && <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
  {accessories.map((product) => <article key={product.id} className="flex items-center gap-3 rounded-lg border border-border-default bg-surface-warm p-3">
  <ProductImage src={product.image} categorySlug={product.categorySlug} className="size-16 shrink-0 rounded border border-border-default bg-white object-contain p-1" />
  <div className="min-w-0 flex-1"><p className="text-[10px] text-text-secondary">{product.sku}</p><h3 className="truncate text-xs font-bold" title={product.name}><Link href={`/p/${product.slug}`} className="hover:underline">{product.name}</Link></h3>
- <div className="mt-1 flex flex-wrap items-baseline gap-2"><span className="text-xs font-bold">{formatPrice(product.priceIncVat)}</span><span className="text-[10px] text-orange-700">Trade: {formatPrice(product.tradePriceIncVat! / 1.2)}</span></div></div>
+ <div className="mt-1 flex flex-wrap items-baseline gap-2"><span className="text-xs font-bold">{formatPrice(product.priceIncVat)}</span></div></div>
  <button type="button" aria-label={`Add ${product.name} to basket`} onClick={() => { if (product.defaultVariantId) void addItem(product.defaultVariantId, 1); toast.success(`Added ${product.name} to basket`); }} className="flex size-9 shrink-0 items-center justify-center rounded-md bg-orange-500 text-white hover:bg-orange-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"><span aria-hidden className="material-symbols-outlined text-[18px]">add</span></button>
  </article>)}
- </div></div></section>
+ </div>}</div></section>
 
 <section className="w-full bg-surface-sunken border-t border-border-default py-10">
 <div className="max-w-[1600px] mx-auto px-4 sm:px-margin-desktop">
@@ -35,7 +35,7 @@ export function CategoryExtras() {
           Selecting a battery infrastructure impacts tooling investment for up to a decade. Here is Buildivo&apos;s authoritative technical breakdown across motors, ampere-hours, and continuous load factors.
         </p>
 </div>
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+<div aria-label="Contractor intelligence guides" tabIndex={0} className="flex snap-x snap-proximity gap-4 overflow-x-auto overscroll-x-contain pb-3 touch-auto focus-visible:outline-2 focus-visible:outline-orange-500 [&>div]:w-[86%] [&>div]:shrink-0 [&>div]:snap-start sm:grid sm:grid-cols-1 sm:overflow-visible sm:pb-0 sm:[&>div]:w-auto md:grid-cols-2 lg:grid-cols-4">
 <div className="bg-surface-white border border-border-default rounded-xl p-4">
 <div className="w-8 h-8 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center font-mono font-bold text-label-md mb-3">01</div>
 <h3 className="font-headline-sm text-[16px] font-bold text-graphite-900 mb-1.5">Platform &amp; System Lock-In</h3>
@@ -70,10 +70,10 @@ export function CategoryExtras() {
 <span className="material-symbols-outlined text-orange-500 text-[18px]">verified</span>
 <span>Technical guide reviewed by Master Electrician &amp; Site Engineer C. Vance, March 2025</span>
 </div>
-<a className="font-label-sm text-label-sm text-orange-600 hover:text-orange-700 font-bold flex items-center gap-1" href="/guides">
+<Link className="font-label-sm text-label-sm text-orange-600 hover:text-orange-700 font-bold flex items-center gap-1" href="/guides">
           Read Complete 2025 Power Tools Technical Specification Whitepaper
           <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-</a>
+</Link>
 </div>
 </div>
 </section>

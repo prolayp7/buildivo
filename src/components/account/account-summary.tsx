@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BadgeCheck, FileText, Heart, House, LayoutDashboard, MapPin, Package, Truck, UserRound, Zap } from "lucide-react";
+import { stopWishlistSync } from "@/lib/cart-store";
 import styles from "./account-summary.module.css";
 import { AccountOrders } from "./account-orders";
 import { AccountWishlist } from "./account-wishlist";
@@ -55,6 +56,7 @@ export function AccountSummary() {
     try {
       const res = await fetch("/api/customer-session", { method: "DELETE" });
       if (!res.ok) throw Error();
+      stopWishlistSync();
       router.replace("/login");
       router.refresh();
     } catch {

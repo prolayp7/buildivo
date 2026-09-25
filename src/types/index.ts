@@ -13,6 +13,7 @@ export interface ProductVariant {
   priceIncVat: number;
   compareAtIncVat?: number;
   stockQty?: number;
+  quantityTiers?: QuantityTier[];
 }
 
 export interface Product {
@@ -27,6 +28,9 @@ export interface Product {
   categoryLabel: string;
   image: string;
   images: string[];
+  videos?: string[];
+  /** Battery/tool ecosystem this product belongs to, e.g. "DeWalt 18V XR" - undefined if it isn't part of one. */
+  toolPlatform?: string;
   priceIncVat: number;
   compareAtIncVat?: number;
   vatRate: number;
@@ -43,6 +47,10 @@ export interface Product {
   quantityTiers?: QuantityTier[];
   description: string;
   whatsInTheBox: string[];
+  mpn?: string;
+  gtin?: string;
+  /** Search-engine metadata from the admin; `indexable: false` means the page must not be indexed. */
+  seo?: { title?: string; description?: string; indexable: boolean };
 }
 
 export interface Category {
@@ -69,7 +77,6 @@ export interface Address {
   phone: string;
 }
 
-export type DeliveryMethodId = "standard" | "express" | "saturday" | "click-collect";
 
 export interface Review {
   id: number;
