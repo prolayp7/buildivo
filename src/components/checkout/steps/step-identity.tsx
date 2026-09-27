@@ -27,7 +27,7 @@ export function StepIdentity({ email, onContinue }: StepIdentityProps) {
       const response = await fetch("/api/customer-session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: signInEmail.trim(), password: signInPassword, remember: false }) });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.message || "Unable to sign in. Please try again.");
-      void syncWishlist();
+      await syncWishlist();
       onContinue(body.customer?.email ?? signInEmail.trim());
     } catch (error) {
       setSignInError(error instanceof Error ? error.message : "Unable to sign in. Please try again.");

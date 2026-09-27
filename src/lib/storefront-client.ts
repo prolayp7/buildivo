@@ -3,11 +3,9 @@
 /**
  * Client-side transport for the storefront API's interactive surface (cart,
  * shipping quotes, coupons, checkout) - everything that needs a real browser
- * session (guest token), unlike the read-only catalog fetchers in
- * src/lib/api.ts which run server-side. Adapted from ukcshop's
- * storefront-client.ts, trimmed to guest-only: this design's Account page is
- * explicitly out of scope ("anonymous storefront journey" only), so there is
- * no bearer-token/login flow here, only the guest cart token.
+ * session (customer or guest cart), unlike the read-only catalog fetchers in
+ * src/lib/api.ts which run server-side. Cart calls use a same-origin proxy so
+ * the server can attach the HTTP-only customer session when one exists.
  */
 
 const GUEST_TOKEN_KEY = "buildivo.guestToken";
@@ -37,6 +35,10 @@ function writeGuestToken(value: string | null) {
   lsSet(GUEST_TOKEN_KEY, value);
 }
 
+function isCartRequest(path: string) {
+  return path === "cart" || path.startsWith("cart/") || /^bundles\/[^/]+\/add-to-cart$/.test(path);
+}
+
 export class ApiError extends Error {
   status: number;
   constructor(message: string, status: number) {
@@ -58,7 +60,8 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   const guestToken = readGuestToken();
   if (guestToken) headers.set("X-Guest-Token", guestToken);
 
-  const res = await fetch(apiUrl(path), { ...init, headers });
+  const url = isCartRequest(path) ? `/api/storefront-cart/${path}` : apiUrl(path);
+  const res = await fetch(url, { ...init, headers });
   if (res.status === 204) return undefined as T;
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -105,6 +108,12 @@ export function updateCartItem(productVariantId: number, patch: { quantity?: num
 }
 export function removeCartItem(productVariantId: number): Promise<CartData> {
   return request<CartData>(`cart/items/${productVariantId}`, { method: "DELETE" });
+}
+export async function mergeGuestCart(): Promise<void> {
+  const guestToken = readGuestToken();
+  if (!guestToken) return;
+  await request<CartData>("cart/merge", { method: "POST", body: JSON.stringify({ guestToken }) });
+  writeGuestToken(null);
 }
 export function addBundleToCart(slug: string): Promise<CartData> {
   return request<CartData>(`bundles/${encodeURIComponent(slug)}/add-to-cart`, { method: "POST" });

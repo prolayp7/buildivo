@@ -80,6 +80,8 @@ export interface ApiProductBase {
   gtin?: string | null;
   metaTitle?: string | null;
   metaDescription?: string | null;
+  socialShareImage?: string | null;
+  productCondition?: { title: string; slug: string } | null;
   isIndexable?: boolean;
   outOfStockLabel?: string | null;
   inStockDeliveryTime?: string | null;
@@ -216,8 +218,13 @@ export function toProduct(api: ApiProductBase, apiOrigin: string): Product {
   const vatRate = api.taxRate ? Number(api.taxRate.ratePercent) / 100 : 0.2;
   const stockQty = api.variants ? api.variants.reduce((sum, v) => sum + v.stockQty, 0) : api.stockQty ?? (api.inStock ? Infinity : 0);
   const images = (api.images ?? []).map((image) => resolveMediaUrl(apiOrigin, image.url) ?? image.url);
+  const imageAltTexts = Object.fromEntries((api.images ?? []).map((image, index) => [images[index], image.altText?.trim() || api.title]));
   const videos = (api.videos ?? []).map((video) => resolveMediaUrl(apiOrigin, video.url) ?? video.url);
   const defaultVariant = api.variants?.find((v) => v.isDefault) ?? api.variants?.[0];
+  const itemCondition = api.productCondition?.slug === "new" ? "NewCondition"
+    : api.productCondition?.slug === "refurbished" ? "RefurbishedCondition"
+      : api.productCondition?.slug === "used" ? "UsedCondition"
+        : undefined;
 
   return {
     id: api.id,
@@ -230,7 +237,9 @@ export function toProduct(api: ApiProductBase, apiOrigin: string): Product {
     categoryLabel: api.category.title,
     image: resolveMediaUrl(apiOrigin, productImage(api)) ?? images[0] ?? "",
     images: images.length ? images : [""],
+    imageAltTexts,
     videos,
+    itemCondition,
     toolPlatform: api.toolPlatform ?? undefined,
     priceIncVat: sale ?? price,
     compareAtIncVat: sale !== null ? price : undefined,
@@ -257,7 +266,12 @@ export function toProduct(api: ApiProductBase, apiOrigin: string): Product {
     description: api.description ?? api.shortDescription ?? "",
     mpn: api.mpn ?? undefined,
     gtin: api.gtin ?? undefined,
-    seo: { title: api.metaTitle ?? undefined, description: api.metaDescription ?? api.shortDescription ?? undefined, indexable: api.isIndexable !== false },
+    seo: {
+      title: api.metaTitle ?? undefined,
+      description: api.metaDescription ?? api.shortDescription ?? undefined,
+      socialImage: api.socialShareImage ? resolveMediaUrl(apiOrigin, api.socialShareImage) ?? undefined : undefined,
+      indexable: api.isIndexable !== false,
+    },
     whatsInTheBox: (api.faqs ?? []).find((faq) => /included|box/i.test(faq.question))?.answer.split("\n") ?? [],
   };
 }

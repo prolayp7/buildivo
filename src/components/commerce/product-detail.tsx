@@ -54,8 +54,8 @@ export function ProductDetail({ product, related, productReviews, platformMatche
 
   const galleryImages = Array.from(new Set([product.image, ...product.images].filter(Boolean)));
   const galleryItems = [
-    ...galleryImages.map((url) => ({ kind: "image" as const, url })),
-    ...(product.videos ?? []).map((url) => ({ kind: "video" as const, url })),
+    ...galleryImages.map((url) => ({ kind: "image" as const, url, alt: product.imageAltTexts?.[url] || product.name })),
+    ...(product.videos ?? []).map((url) => ({ kind: "video" as const, url, alt: "" })),
   ];
   const itemCount = Math.max(galleryItems.length, 1);
   const selectedItem = galleryItems[activeImage] ?? galleryItems[0];
@@ -108,7 +108,7 @@ export function ProductDetail({ product, related, productReviews, platformMatche
                     <span aria-hidden className="material-symbols-outlined absolute inset-0 flex items-center justify-center bg-graphite-900/30 text-[20px] text-white">play_circle</span>
                   </>
                 ) : (
-                  <ProductImage src={item?.url} categorySlug={product.categorySlug} className="flex h-full w-full items-center justify-center bg-white object-contain p-1" />
+                  <ProductImage src={item?.url} alt={item?.alt} categorySlug={product.categorySlug} className="flex h-full w-full items-center justify-center bg-white object-contain p-1" />
                 )}
               </button>
             );
@@ -126,14 +126,14 @@ export function ProductDetail({ product, related, productReviews, platformMatche
             <Dialog open={zoomOpen} onOpenChange={setZoomOpen}>
               <DialogTrigger asChild>
                 <button type="button" className={styles.zoomButton} aria-label="Open image zoom">
-                  <ProductImage src={selectedItem?.url} categorySlug={product.categorySlug} className={styles.mainImage} iconClassName="text-[72px]" />
+                  <ProductImage src={selectedItem?.url} alt={selectedItem?.kind === "image" ? selectedItem.alt : product.name} categorySlug={product.categorySlug} className={styles.mainImage} iconClassName="text-[72px]" />
                 </button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>{product.name}</DialogTitle>
                 </DialogHeader>
-                <ProductImage src={selectedItem?.url} categorySlug={product.categorySlug} className="flex aspect-square w-full items-center justify-center rounded-xl bg-white object-contain p-4" iconClassName="text-[96px]" />
+                <ProductImage src={selectedItem?.url} alt={selectedItem?.kind === "image" ? selectedItem.alt : product.name} categorySlug={product.categorySlug} className="flex aspect-square w-full items-center justify-center rounded-xl bg-white object-contain p-4" iconClassName="text-[96px]" />
               </DialogContent>
             </Dialog>
           )}

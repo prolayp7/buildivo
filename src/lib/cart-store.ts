@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import type { CartLine } from "@/types";
-import { addBundleToCart, addCartItem, fetchCart, readGuestToken, removeCartItem, updateCartItem, validateCoupon, type CartData, type CartLineApi } from "./storefront-client";
+import { addBundleToCart, addCartItem, fetchCart, mergeGuestCart, readGuestToken, removeCartItem, updateCartItem, validateCoupon, type CartData, type CartLineApi } from "./storefront-client";
 
 // Every price the API returns (catalogue, cart line, subtotal, shipping) is VAT-INCLUSIVE, so the
 // storefront never adds VAT on top. The cart response has no per-line tax rate, so this default UK rate
@@ -220,6 +220,15 @@ export const useCartStore = create<CartState>()((set, get) => ({
     }),
 }));
 
+export async function syncCartAfterSignIn() {
+  try {
+    await mergeGuestCart();
+  } catch {
+    // Keep the guest token so the merge can be retried at the next sign-in.
+  }
+  await useCartStore.getState().load();
+}
+
 // The wishlist lives in localStorage (works for guests); while a customer is signed in it is also
 // mirrored to their account, so it follows them across devices.
 let wishlistOnServer = false;
@@ -236,6 +245,7 @@ export async function syncWishlist() {
     const body = response.ok ? await response.json() : null;
     wishlistOnServer = Boolean(body?.signedIn);
     if (!wishlistOnServer) return;
+    await syncCartAfterSignIn();
     const remote: number[] = body.productIds;
     const local = useCartStore.getState().wishlist;
     const merged = [...new Set([...remote, ...local])];

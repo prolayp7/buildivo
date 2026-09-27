@@ -8,7 +8,7 @@ import { request } from "@/lib/storefront-client";
 import type { Product } from "@/types";
 import { ProductImage } from "@/components/commerce/product-image";
 import { formatPrice } from "@/lib/format";
-import { useCartStore } from "@/lib/cart-store";
+import { syncWishlist, useCartStore } from "@/lib/cart-store";
 import type { RegisterPageContent } from "@/lib/api";
 import { useFreeDeliveryThreshold } from "@/lib/use-free-delivery";
 import { OtpBoxes } from "./otp-boxes";
@@ -91,7 +91,7 @@ export function Registration({ products, content }: { products: Product[]; conte
         <BadgeCheck size={32} />
         <h2>Check your email</h2>
         <p>We&rsquo;ve sent a 6-digit code to <strong>{email}</strong>. Enter it below to activate your account and sign in.</p>
-        <form className={styles.form} noValidate  onSubmit={async (event) => {event.preventDefault(); if (verifyBusy) return; const code = otpCode.trim(); if (!code) { setVerifyFieldError("Please enter the 6-digit code."); return; } if (!/^\d{6}$/.test(code)) { setVerifyFieldError("Enter the 6-digit code exactly as emailed to you."); return; } setVerifyFieldError(""); setVerifyError(""); setVerifyBusy(true); try { const res = await fetch("/api/customer-session/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, code }) }); const result = await res.json(); if (!res.ok) throw new Error(result.message); toast.success("Account verified — you're signed in"); router.replace("/account"); router.refresh(); } catch (err) { setVerifyError(err instanceof Error ? err.message : "That code is invalid or has expired."); } finally { setVerifyBusy(false); }}}>
+        <form className={styles.form} noValidate  onSubmit={async (event) => {event.preventDefault(); if (verifyBusy) return; const code = otpCode.trim(); if (!code) { setVerifyFieldError("Please enter the 6-digit code."); return; } if (!/^\d{6}$/.test(code)) { setVerifyFieldError("Enter the 6-digit code exactly as emailed to you."); return; } setVerifyFieldError(""); setVerifyError(""); setVerifyBusy(true); try { const res = await fetch("/api/customer-session/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, code }) }); const result = await res.json(); if (!res.ok) throw new Error(result.message); toast.success("Account verified — you're signed in"); await syncWishlist(); router.replace("/account"); router.refresh(); } catch (err) { setVerifyError(err instanceof Error ? err.message : "That code is invalid or has expired."); } finally { setVerifyBusy(false); }}}>
           <div><span>Verification code <b>*</b></span><OtpBoxes value={otpCode} onChange={(next) => { setOtpCode(next); if (verifyFieldError) setVerifyFieldError(""); }} disabled={verifyBusy} invalid={!!verifyFieldError} /></div>
           {verifyFieldError && <small role="alert" className={styles.fieldError}>{verifyFieldError}</small>}
           {verifyError && <p role="alert" className={styles.error}><AlertCircle size={16} /><span>{verifyError}</span></p>}

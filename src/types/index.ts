@@ -28,7 +28,9 @@ export interface Product {
   categoryLabel: string;
   image: string;
   images: string[];
+  imageAltTexts?: Record<string, string>;
   videos?: string[];
+  itemCondition?: "NewCondition" | "RefurbishedCondition" | "UsedCondition";
   /** Battery/tool ecosystem this product belongs to, e.g. "DeWalt 18V XR" - undefined if it isn't part of one. */
   toolPlatform?: string;
   priceIncVat: number;
@@ -50,7 +52,7 @@ export interface Product {
   mpn?: string;
   gtin?: string;
   /** Search-engine metadata from the admin; `indexable: false` means the page must not be indexed. */
-  seo?: { title?: string; description?: string; indexable: boolean };
+  seo?: { title?: string; description?: string; socialImage?: string; indexable: boolean };
 }
 
 export interface Category {

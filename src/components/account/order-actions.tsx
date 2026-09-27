@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { AccountOrder, AccountOrderItem } from "./order-types";
 
-const CANCELLABLE = ["PENDING", "AWAITING_PAYMENT", "PROCESSING"];
+const CANCELLABLE = ["PENDING", "AWAITING_PAYMENT", "PROCESSING", "FAILED"];
 const RETURN_REASONS = ["Item is faulty or damaged", "Wrong item received", "Item not as described", "No longer needed", "Ordered by mistake", "Other"];
 const ACTIVE_RETURN = ["REQUESTED", "APPROVED", "RECEIVED"];
 const label = (value: string) => value.toLowerCase().replaceAll("_", " ");
@@ -29,7 +29,8 @@ export function OrderActions({ order, onChange }: { order: AccountOrder; onChang
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
-  const cancellable = CANCELLABLE.includes(order.status);
+  const cancellable = CANCELLABLE.includes(order.status) && (order.status !== "FAILED" || order.paymentStatus === "FAILED");
+  const failedUnpaid = order.status === "FAILED" && order.paymentStatus === "FAILED";
   const returnable = order.status === "DELIVERED" && order.items.some(canReturn);
   const withReturns = order.items.filter((item) => item.returns.length > 0);
   if (!cancellable && !returnable && !withReturns.length && !message) return null;
@@ -64,7 +65,7 @@ export function OrderActions({ order, onChange }: { order: AccountOrder; onChang
   return (
     <section aria-label={`Manage order ${order.orderNumber}`} className="border-t border-border-default px-[22px] pb-5 pt-4">
       <div className="flex flex-wrap items-center gap-2">
-        {cancellable && <button type="button" className={button} onClick={() => { setPanel(panel === "cancel" ? "none" : "cancel"); setMessage(null); }}>Cancel order</button>}
+        {cancellable && <button type="button" className={button} onClick={() => { setPanel(panel === "cancel" ? "none" : "cancel"); setMessage(null); }}>{failedUnpaid ? "Remove failed order" : "Cancel order"}</button>}
         {returnable && <button type="button" className={button} onClick={() => { setPanel(panel === "return" ? "none" : "return"); setMessage(null); }}>Return items</button>}
         {withReturns.map((item) => <span key={item.id} className="rounded-full bg-orange-50 px-3 py-1 text-[12.5px] font-semibold text-orange-700">{item.titleSnapshot}: return {label(item.returns[item.returns.length - 1].returnStatus)}</span>)}
       </div>
@@ -73,12 +74,12 @@ export function OrderActions({ order, onChange }: { order: AccountOrder; onChang
 
       {panel === "cancel" && (
         <div className={box}>
-          <p className="font-semibold">Cancel order #{order.orderNumber}?</p>
-          <p className="mt-1 text-text-secondary">The items go back into stock. If you have already paid, please contact us about your refund.</p>
+          <p className="font-semibold">{failedUnpaid ? "Remove failed order" : "Cancel order"} #{order.orderNumber}?</p>
+          <p className="mt-1 text-text-secondary">{failedUnpaid ? "This unpaid order will be marked cancelled and its reserved items returned to stock. It will remain in your order history." : "The items go back into stock. If you have already paid, please contact us about your refund."}</p>
           <label htmlFor={`cancel-reason-${order.uuid}`} className="mt-3 block text-[12.5px] font-semibold">Reason (optional)</label>
           <textarea id={`cancel-reason-${order.uuid}`} value={reason} onChange={(event) => setReason(event.target.value)} maxLength={500} rows={2} className="mt-1 w-full rounded-md border border-border-default px-3 py-2" />
           <div className="mt-3 flex gap-2">
-            <button type="button" className={`${button} bg-graphite-900 text-white hover:border-graphite-900`} disabled={busy} onClick={cancel}>{busy ? "Cancelling…" : "Yes, cancel order"}</button>
+            <button type="button" className={`${button} bg-graphite-900 text-white hover:border-graphite-900`} disabled={busy} onClick={cancel}>{busy ? "Cancelling…" : failedUnpaid ? "Yes, remove order" : "Yes, cancel order"}</button>
             <button type="button" className={button} disabled={busy} onClick={() => setPanel("none")}>Keep order</button>
           </div>
         </div>

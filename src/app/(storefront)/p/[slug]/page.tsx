@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   if (!product) return { title: "Product" };
   const title = product.seo?.title || product.name;
   const description = product.seo?.description?.replace(/\s+/g, " ").trim().slice(0, 160) || undefined;
-  const image = product.image || undefined;
+  const image = product.seo?.socialImage || product.image || undefined;
   return {
     title,
     description,
@@ -49,7 +49,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         image: product.images.filter(Boolean),
         sku: product.sku || undefined, mpn: product.mpn, gtin: product.gtin,
         brand: product.brand !== "Unbranded" ? { "@type": "Brand", name: product.brand } : undefined,
-        offers: { "@type": "Offer", url: absoluteUrl(`/p/${product.slug}`), priceCurrency: CURRENCY, price: product.priceIncVat.toFixed(2), availability: `https://schema.org/${availability}`, itemCondition: "https://schema.org/NewCondition", seller: { "@type": "Organization", name: SITE_NAME } },
+        offers: { "@type": "Offer", url: absoluteUrl(`/p/${product.slug}`), priceCurrency: CURRENCY, price: product.priceIncVat.toFixed(2), availability: `https://schema.org/${availability}`, itemCondition: product.itemCondition ? `https://schema.org/${product.itemCondition}` : undefined, seller: { "@type": "Organization", name: SITE_NAME } },
         aggregateRating: product.reviewCount > 0 ? { "@type": "AggregateRating", ratingValue: product.rating, reviewCount: product.reviewCount } : undefined,
       }} />
       <ProductDetail product={product} related={related} productReviews={apiReviews.map(toReview)} platformMatches={platformMatches} questions={questions} />

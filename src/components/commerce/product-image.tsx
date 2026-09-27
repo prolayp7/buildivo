@@ -20,6 +20,7 @@ export const CATEGORY_ICON: Record<string, string> = {
 
 interface ProductImageProps {
   src?: string;
+  alt?: string;
   categorySlug: string;
   className?: string;
   iconClassName?: string;
@@ -31,10 +32,10 @@ interface ProductImageProps {
  * labelled placeholder boundary; the icon is decorative (product identity is
  * always conveyed by adjacent visible text), so it stays out of the a11y tree.
  */
-export function ProductImage({ src, categorySlug, className, iconClassName }: ProductImageProps) {
+export function ProductImage({ src, alt, categorySlug, className, iconClassName }: ProductImageProps) {
   if (src) {
     // eslint-disable-next-line @next/next/no-img-element -- mock data never provides a real src today
-    return <img src={src} alt="" aria-hidden className={className} />;
+    return <img src={src} alt={alt ?? ""} aria-hidden={alt ? undefined : true} className={className} />;
   }
   const icon = CATEGORY_ICON[categorySlug] ?? "inventory_2";
   return (
