@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { fetchBrandsClient, fetchProductSuggestions, type ApiBrandRef } from "@/lib/storefront-client";
@@ -8,8 +8,10 @@ import { ProductImage } from "@/components/commerce/product-image";
 import { formatPrice } from "@/lib/format";
 import type { Category, Product } from "@/types";
 
-export function SearchBox({ departments }: { departments: Category[] }) {
+export function SearchBox({ departments, variant = "desktop" }: { departments: Category[]; variant?: "desktop" | "mobile" }) {
   const router = useRouter();
+  const inputId = useId();
+  const mobile = variant === "mobile";
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
@@ -51,20 +53,22 @@ export function SearchBox({ departments }: { departments: Category[] }) {
   const hasMatches = products.length > 0 || categoryMatches.length > 0 || brandMatches.length > 0;
 
   return (
-    <div className="relative hidden max-w-2xl flex-1 md:block">
+    <div className={mobile ? "relative mx-[10px] mb-[6px]" : "relative hidden max-w-2xl flex-1 md:block"}>
       <form
         role="search"
         onSubmit={(event) => { event.preventDefault(); runSearch(q); }}
-        className="relative flex w-full items-center"
+        className={mobile
+          ? "relative flex h-[34px] w-full items-center overflow-hidden rounded-[6px] border border-border-default bg-surface-warm focus-within:border-orange-500 focus-within:outline focus-within:outline-1 focus-within:outline-orange-500"
+          : "relative flex w-full items-center"}
       >
-        <span aria-hidden className="material-symbols-outlined pointer-events-none absolute left-3.5 text-[20px] text-graphite-400">
+        <span aria-hidden className={`material-symbols-outlined pointer-events-none ${mobile ? "ml-2 text-[18px] text-graphite-400" : "absolute left-3.5 text-[20px] text-graphite-400"}`}>
           search
         </span>
-        <label htmlFor="site-search" className="sr-only">
+        <label htmlFor={inputId} className="sr-only">
           Search products, SKUs and guides
         </label>
         <input
-          id="site-search"
+          id={inputId}
           name="q"
           type="search"
           autoComplete="off"
@@ -72,11 +76,19 @@ export function SearchBox({ departments }: { departments: Category[] }) {
           onChange={(event) => { setQ(event.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
-          className="h-11 w-full rounded-lg border border-border-default bg-surface-warm pl-10 pr-24 text-body-sm font-body-sm text-text-primary placeholder:text-text-disabled focus:border-orange-500 focus:bg-surface-white focus:outline-none"
-          placeholder="Search 45,000+ power tools, fixings, plumbing, SKUs, MPNs..."
+          className={mobile
+            ? "h-full min-w-0 flex-1 bg-transparent px-2 text-base text-text-primary outline-none placeholder:text-[11px] placeholder:text-text-disabled"
+            : "h-11 w-full rounded-lg border border-border-default bg-surface-warm pl-10 pr-24 text-body-sm font-body-sm text-text-primary placeholder:text-text-disabled focus:border-orange-500 focus:bg-surface-white focus:outline-none"}
+          placeholder={mobile ? "Search by SKU, tools, cordless…" : "Search power tools, fixings, plumbing, SKUs, MPNs..."}
         />
-        <button type="submit" className="absolute right-1 rounded bg-orange-500 px-3 py-1.5 text-label-sm font-label-sm font-semibold text-text-inverse hover:bg-orange-600">
-          Search
+        <button
+          type="submit"
+          aria-label={mobile ? "Search products" : undefined}
+          className={mobile
+            ? "flex h-full w-9 shrink-0 items-center justify-center border-l border-border-default bg-orange-500 text-text-inverse hover:bg-orange-600"
+            : "absolute right-1 rounded bg-orange-500 px-3 py-1.5 text-label-sm font-label-sm font-semibold text-text-inverse hover:bg-orange-600"}
+        >
+          {mobile ? <span aria-hidden className="material-symbols-outlined text-[20px]">arrow_forward</span> : "Search"}
         </button>
       </form>
 

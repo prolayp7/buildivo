@@ -5,6 +5,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import type { Product, Review } from "@/types";
+import type { ProductQuestion } from "@/lib/api";
+import { ProductQuestions } from "@/components/commerce/product-questions";
 import { ProductImage } from "@/components/commerce/product-image";
 import { Rating } from "@/components/commerce/rating";
 import { StockBadge } from "@/components/commerce/stock-badge";
@@ -14,8 +16,7 @@ import { ProductCard } from "@/components/commerce/product-card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { WriteReviewDialog } from "@/components/commerce/write-review-dialog";
 import { formatPrice } from "@/lib/format";
 import { useCartStore } from "@/lib/cart-store";
 import { useRouter } from "next/navigation";
@@ -25,10 +26,11 @@ interface ProductDetailProps {
   product: Product;
   related: Product[];
   productReviews: Review[];
+  questions: ProductQuestion[];
   platformMatches: Product[];
 }
 
-export function ProductDetail({ product, related, productReviews, platformMatches }: ProductDetailProps) {
+export function ProductDetail({ product, related, productReviews, platformMatches, questions }: ProductDetailProps) {
   const [activeImage, setActiveImage] = useState(0);
   // Product identifiers shown at the top of the specifications tab (barcode and manufacturer part number).
   const identifiers = [
@@ -352,9 +354,9 @@ export function ProductDetail({ product, related, productReviews, platformMatche
       {related.length > 0 && (
         <section className={styles.section}>
           <h2 className="mb-4 text-headline-sm font-headline-sm font-bold text-graphite-900">You May Also Need</h2>
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
             {related.map((p) => (
-              <ProductCard key={p.id} product={p} />
+              <ProductCard key={p.id} product={p} mobileCategory className={styles.relatedCard} />
             ))}
           </div>
         </section>
@@ -363,7 +365,7 @@ export function ProductDetail({ product, related, productReviews, platformMatche
       <section id="reviews" className={styles.section}>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-headline-sm font-headline-sm font-bold text-graphite-900">Customer Reviews &amp; Ratings</h2>
-          <WriteReviewDialog productName={product.name} />
+          <WriteReviewDialog productId={product.id} productName={product.name} productSlug={product.slug} />
         </div>
         <div className={styles.reviewLayout}>
           <div className={styles.reviewScore}>
@@ -394,54 +396,8 @@ export function ProductDetail({ product, related, productReviews, platformMatche
           </ul>
         </div>
       </section>
+
+      <ProductQuestions productSlug={product.slug} questions={questions} className={styles.section} />
     </div>
-  );
-}
-
-function WriteReviewDialog({ productName }: { productName: string }) {
-  const [open, setOpen] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        setOpen(next);
-        if (!next) setSubmitted(false);
-      }}
-    >
-      <DialogTrigger asChild>
-        <Button variant="outline">Write a Review</Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Review {productName}</DialogTitle>
-        </DialogHeader>
-        {submitted ? (
-          <p className="py-4 text-body-sm font-body-sm text-success-500">Thanks — your review has been submitted for moderation.</p>
-        ) : (
-          <form
-            className="flex flex-col gap-3"
-            onSubmit={(e) => {
-              e.preventDefault();
-              setSubmitted(true);
-              toast.success("Review submitted");
-            }}
-          >
-            <div>
-              <Label htmlFor="review-title" className="mb-1">Title</Label>
-              <input id="review-title" required className="h-10 w-full rounded-md border border-border-default px-3 text-body-sm" />
-            </div>
-            <div>
-              <Label htmlFor="review-body" className="mb-1">Your review</Label>
-              <Textarea id="review-body" required rows={4} />
-            </div>
-            <Button type="submit" className="bg-orange-500 hover:bg-orange-600">
-              Submit Review
-            </Button>
-          </form>
-        )}
-      </DialogContent>
-    </Dialog>
   );
 }

@@ -51,7 +51,14 @@ function SlideBody({ slide, priority }: { slide: HeroSlide; priority?: boolean }
           </span>
         </div>
       )}
-      {slide.title ? <HeroInfoOverlay slide={slide} /> : null}
+      {slide.title ? <HeroInfoOverlay slide={slide} /> : (
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/65 to-transparent px-4 pb-10 pt-14 text-white sm:hidden">
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-orange-100">{slide.eyebrow}</p>
+          <p className="max-w-md text-[24px] font-bold leading-tight tracking-tight">
+            {slide.heading} <span className="text-orange-500">{slide.highlight}</span> {slide.ending}
+          </p>
+        </div>
+      )}
     </>
   );
 }

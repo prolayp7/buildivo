@@ -45,3 +45,11 @@
     opacity: 0.14;
   }
 }
+
+@media (width < 640px) {
+  .panel { margin-inline: -16px; }
+  .stage { perspective: none !important; }
+  .panelAngle { transform: none !important; }
+  .viewport { border-radius: 0; box-shadow: none; }
+  .viewport > div { border-radius: 0; }
+}

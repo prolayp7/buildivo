@@ -1,8 +1,7 @@
 import type { ShippingQuote } from "@/lib/storefront-client";
 
-// Delivery methods, their prices and coupon codes all come from the API (admin > Shipping / Coupons);
-// nothing about them is defined here. This threshold only drives the cart's "free delivery" progress hint.
-export const FREE_DELIVERY_THRESHOLD = 75;
+// Delivery methods, their prices, the free-delivery threshold and coupon codes all come from the API
+// (admin > Shipping / Coupons); nothing about them is defined here.
 
 /** The VAT already contained in a VAT-inclusive amount (prices are never VAT-exclusive on this site). */
 export function vatAmount(amountIncVat: number, vatRate = 0.2) {

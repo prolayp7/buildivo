@@ -1,8 +1,47 @@
 import type { Metadata } from "next";
-import { ComingSoon } from "@/components/layout/coming-soon";
+import Link from "next/link";
+import { fetchBlogPosts } from "@/lib/api";
 
-export const metadata: Metadata = { title: "DIY Guides" };
+export const metadata: Metadata = {
+  title: "DIY Guides",
+  description: "Step-by-step DIY project guides with materials lists from the Buildivo team.",
+  alternates: { canonical: "/guides" },
+};
 
-export default function Page() {
-  return <ComingSoon icon="menu_book" title="DIY Guides" description="Project guides and how-tos aren't built yet in this prototype. This link is a placeholder for the future guides hub." />;
+const minutes = (value: number) => (value >= 60 ? `${Math.floor(value / 60)} h${value % 60 ? ` ${value % 60} min` : ""}` : `${value} min`);
+
+export default async function GuidesPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
+  const params = await searchParams;
+  const page = Math.max(1, Math.floor(Number(params.page) || 1));
+  const result = await fetchBlogPosts({ guides: true, page, perPage: 12 }).catch(() => null);
+
+  return (
+    <div className="mx-auto w-full max-w-[1100px] px-4 py-10 sm:px-8">
+      <h1 className="text-3xl font-bold">DIY Guides</h1>
+      <p className="mt-2 text-text-secondary">Step-by-step project guides with a full list of what you&apos;ll need.</p>
+      {!result ? <p role="status" className="mt-8">Guides are temporarily unavailable. Please try again shortly.</p> : result.items.length === 0 ? (
+        <p className="mt-8">No guides have been published yet. In the meantime, browse the <Link href="/blog" className="text-orange-700 underline">blog</Link>.</p>
+      ) : (
+        <div className="mt-8 grid gap-6 sm:grid-cols-2">
+          {result.items.map((post) => (
+            <article key={post.slug} className="flex flex-col rounded-xl border border-border-default bg-white p-6">
+              <ul className="flex flex-wrap gap-2 text-xs font-semibold text-orange-700">
+                {post.difficulty && <li className="rounded-full bg-orange-50 px-2.5 py-1">{post.difficulty}</li>}
+                {post.estimatedTimeMinutes ? <li className="rounded-full bg-orange-50 px-2.5 py-1">{minutes(post.estimatedTimeMinutes)}</li> : null}
+                {post.steps?.length ? <li className="rounded-full bg-orange-50 px-2.5 py-1">{post.steps.length} steps</li> : null}
+              </ul>
+              <h2 className="mt-3 text-xl font-bold"><Link href={`/blog/${post.slug}`} className="hover:text-orange-700 focus-visible:outline-orange-600">{post.title}</Link></h2>
+              {post.excerpt && <p className="mt-2 text-text-secondary">{post.excerpt}</p>}
+            </article>
+          ))}
+        </div>
+      )}
+      {result && result.meta.totalPages > 1 && (
+        <nav aria-label="Guide pages" className="mt-8 flex gap-6 text-orange-700">
+          {page > 1 && <Link href={`/guides?page=${page - 1}`} className="underline">Previous page</Link>}
+          {page < result.meta.totalPages && <Link href={`/guides?page=${page + 1}`} className="underline">Next page</Link>}
+        </nav>
+      )}
+    </div>
+  );
 }

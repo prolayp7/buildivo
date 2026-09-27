@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import styles from "./home-hero.module.css";
 import type { HeroSlide } from "./hero-slides";
 import { HeroSlideMedia } from "./hero-slide-media";
 import { HeroCarouselControls } from "./hero-carousel-controls";
@@ -45,9 +46,10 @@ export function HeroPanel({ carousel, slides, floatingBadge }: { carousel: Retur
   const activeSlide = slides[carousel.index];
 
   return (
-    <div className="relative lg:col-span-5">
+    <div className={`${styles.panel} relative order-1 sm:order-none lg:col-span-5`}>
       <div
         ref={stageRef}
+        className={styles.stage}
         style={{ perspective: HERO_PERSPECTIVE } as React.CSSProperties}
         {...(multiSlide
           ? {
@@ -59,6 +61,7 @@ export function HeroPanel({ carousel, slides, floatingBadge }: { carousel: Retur
           : {})}
       >
         <div
+          className={styles.panelAngle}
           style={
             {
               transform: `rotateY(${HERO_ROTATE_Y}) rotateX(${HERO_ROTATE_X})`,
@@ -67,7 +70,7 @@ export function HeroPanel({ carousel, slides, floatingBadge }: { carousel: Retur
           }
         >
           <div className="relative" style={{ transformStyle: "preserve-3d" } as React.CSSProperties}>
-            <div className="relative aspect-[5/4] w-full overflow-hidden rounded-2xl shadow-[0_30px_60px_-20px_rgba(8,13,18,0.45),0_12px_24px_-10px_rgba(8,13,18,0.3)]">
+            <div className={`${styles.viewport} relative aspect-[16/9] min-h-[220px] sm:min-h-0 sm:aspect-[5/4] w-full overflow-hidden rounded-2xl shadow-[0_30px_60px_-20px_rgba(8,13,18,0.45),0_12px_24px_-10px_rgba(8,13,18,0.3)]`}>
               {multiSlide ? (
                 <HeroSlideMedia
                   slide={activeSlide}
@@ -105,7 +108,7 @@ export function HeroPanel({ carousel, slides, floatingBadge }: { carousel: Retur
                 under the shared rotateY rather than a flat rectangle. */}
             <div
               aria-hidden
-              className="pointer-events-none absolute inset-y-0 left-0 rounded-l-2xl bg-gradient-to-r from-graphite-700 via-graphite-800 to-graphite-900 shadow-[inset_0_0_10px_rgba(0,0,0,0.6)]"
+              className="pointer-events-none absolute inset-y-0 left-0 hidden sm:block rounded-l-2xl bg-gradient-to-r from-graphite-700 via-graphite-800 to-graphite-900 shadow-[inset_0_0_10px_rgba(0,0,0,0.6)]"
               style={
                 {
                   width: EDGE_DEPTH,

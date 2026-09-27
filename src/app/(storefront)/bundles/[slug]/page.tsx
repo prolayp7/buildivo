@@ -56,7 +56,7 @@ export default async function BundleDetailPage({ params }: { params: Promise<{ s
             <span className="text-[32px] leading-none font-bold text-graphite-900">{formatPrice(bundle.bundlePriceIncVat)}</span>
             <span className="text-body-md text-text-secondary line-through">{formatPrice(bundle.regularTotalIncVat)}</span>
           </div>
-          <p className="text-label-sm font-label-sm text-text-secondary">Bundle price inc. VAT · {bundle.items.length} products · free next-day delivery over £75</p>
+          <p className="text-label-sm font-label-sm text-text-secondary">Bundle price inc. VAT · {bundle.items.length} products</p>
           <BundleAddButton slug={bundle.slug} title={bundle.title} className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-orange-500 text-label-lg font-label-lg font-semibold text-text-inverse transition-colors hover:bg-orange-600 disabled:opacity-60">Add bundle to cart</BundleAddButton>
           <QuoteRequestDialog
             lines={bundle.items.map((item) => ({ variantId: item.productVariantId, label: item.productName, quantity: item.quantity }))}

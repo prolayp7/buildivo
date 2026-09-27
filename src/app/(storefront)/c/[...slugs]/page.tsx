@@ -4,8 +4,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ProductListing } from "@/components/commerce/product-listing";
-import { fetchCategoryBySlug, fetchCategoryTree, fetchDepartments, fetchProducts, fetchToolPlatforms } from "@/lib/api";
+import { fetchCategoryBySlug, fetchCategoryTree, fetchDepartments, fetchFreeDeliveryThreshold, fetchProducts, fetchToolPlatforms } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { formatPrice } from "@/lib/format";
 
 interface CategoryPageProps {
   params: Promise<{ slugs: string[] }>;
@@ -13,10 +14,9 @@ interface CategoryPageProps {
 }
 
 const POWER_TOOLS_DESCRIPTION =
-  "Industrial cordless platforms, brushless SDS rotary hammers, high-torque impact drivers, and precision cutting tools certified to EN 60745 industrial site standards. Guaranteed next-day depot dispatch across Great Britain.";
+  "Industrial cordless platforms, brushless SDS rotary hammers, high-torque impact drivers, and precision cutting tools certified to EN 60745 industrial site standards.";
 
 const POWER_TOOLS_FEATURES = [
-  { icon: "local_shipping", title: "Free Next-Day Delivery", caption: "Orders over £75 ex.VAT" },
   { icon: "receipt_long", title: "15% Trade Net 30", caption: "Direct billing available" },
   { icon: "verified_user", title: "3-Yr Warranty", caption: "Direct manufacturer backed" },
 ];
@@ -33,12 +33,13 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   const { slugs } = await params;
   const { platform } = await searchParams;
   const activeSlug = slugs[slugs.length - 1];
-  const [category, departments, tree, initialProducts, platforms, accessories] = await Promise.all([
+  const [category, departments, tree, initialProducts, platforms, freeOver, accessories] = await Promise.all([
     fetchCategoryBySlug(activeSlug),
     fetchDepartments(),
     fetchCategoryTree(),
     fetchProducts({ category: activeSlug, platform, page: 1, perPage: 12, sort: "newest" }),
     fetchToolPlatforms(activeSlug),
+    fetchFreeDeliveryThreshold(),
     activeSlug === "power-tools" ? fetchProducts({ category: "hardware-fixings", page: 1, perPage: 4, sort: "newest" }).then((result) => result.items).catch(() => []) : Promise.resolve([]),
   ]);
   if (!category) notFound();
@@ -100,7 +101,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
               <p className="text-body-sm font-body-sm text-text-secondary lg:max-w-md">{POWER_TOOLS_DESCRIPTION}</p>
 
               <div className="flex flex-wrap gap-3">
-                {POWER_TOOLS_FEATURES.map((feature) => (
+                {[...(freeOver !== null ? [{ icon: "local_shipping", title: "Free Delivery", caption: `Orders over ${formatPrice(freeOver)}` }] : []), ...POWER_TOOLS_FEATURES].map((feature) => (
                   <div key={feature.title} className="flex items-start gap-2 rounded-lg border border-border-default bg-surface-white px-3 py-2.5">
                     <span aria-hidden className="material-symbols-outlined mt-0.5 text-[18px] text-orange-600">{feature.icon}</span>
                     <div>

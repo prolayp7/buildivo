@@ -1,5 +1,6 @@
 "use client";
 
+import { FreeDeliveryOver } from "@/components/commerce/free-delivery-over";
 import { useState } from "react";
 import styles from "./site-header.module.css";
 import Link from "next/link";
@@ -38,7 +39,7 @@ export function SiteHeader({ departments, mainMenu }: { departments: Category[];
 
       <div className={styles.mobile}>
         <div className={styles.promo}>
-          <p><span className={styles.status} /><strong>FREE NEXT-DAY</strong> over £75 <span>· Click &amp; Collect 30m</span></p>
+          <p><span className={styles.status} /><FreeDeliveryOver strong /></p>
           <Link href="/trade"><span aria-hidden className="material-symbols-outlined">verified</span>Pro Net 30</Link>
         </div>
         <div className={styles.mainRow}>
@@ -59,14 +60,9 @@ export function SiteHeader({ departments, mainMenu }: { departments: Category[];
             </button>
           </div>
         </div>
-        <form role="search" aria-label="Mobile product search" action="/search" className={styles.search}>
-          <span aria-hidden className="material-symbols-outlined">search</span>
-          <label htmlFor="mobile-header-search" className="sr-only">Search by SKU, tools or cordless products</label>
-          <input id="mobile-header-search" type="search" name="q" placeholder="Search by SKU, tools, cordless…" required />
-          <button type="submit" aria-label="Search products"><span aria-hidden className="material-symbols-outlined">arrow_forward</span></button>
-        </form>
+        <SearchBox departments={departments} variant="mobile" />
         <nav aria-label="Mobile store shortcuts" className={styles.shortcuts}>
-          <Link href="/branches" className={styles.branch}><span aria-hidden className="material-symbols-outlined">near_me</span><span>London SW1A (Central)</span><small>30m</small></Link>
+          <Link href="/branches" className={styles.branch}><span aria-hidden className="material-symbols-outlined">near_me</span><span>Find a branch</span></Link>
           <div className={styles.quickLinks}>
             <Link href="/deals" className={styles.deals}><span aria-hidden className="material-symbols-outlined">local_fire_department</span>Deals</Link>
             {categoryLinks.slice(0, 3).map((item) => <Link key={item.href} href={item.href} aria-current={pathname.startsWith(item.href) ? "page" : undefined}>{item.label}</Link>)}
@@ -78,11 +74,9 @@ export function SiteHeader({ departments, mainMenu }: { departments: Category[];
         <div className="mx-auto flex h-full max-w-[1600px] items-center justify-between px-margin-desktop text-label-sm font-label-sm">
           <div className="flex items-center gap-space-sm overflow-hidden text-ellipsis whitespace-nowrap">
             <span aria-hidden className="inline-block h-2 w-2 rounded-full bg-orange-500" />
-            <span className="font-normal text-text-inverse-muted">Free next-day delivery over £75</span>
+            <span className="font-normal text-text-inverse-muted"><FreeDeliveryOver /></span>
             <span className="text-graphite-600">·</span>
             <span className="font-medium text-text-inverse">Trade accounts save up to 15%</span>
-            <span className="hidden text-graphite-600 md:inline">·</span>
-            <span className="hidden font-normal text-text-inverse-muted md:inline">Click &amp; Collect in 30 mins</span>
           </div>
           <div className="hidden items-center gap-space-lg md:flex">
             <Link href="/help" className="flex items-center gap-1 text-text-inverse-muted transition-colors hover:text-text-inverse">
@@ -133,16 +127,6 @@ export function SiteHeader({ departments, mainMenu }: { departments: Category[];
           >
             <span aria-hidden className="material-symbols-outlined text-[24px]">search</span>
           </button>
-
-          <div className="hidden shrink-0 items-center gap-2 border-l border-border-default pl-2 text-left xl:flex">
-            <span aria-hidden className="material-symbols-outlined text-[22px] text-orange-500">near_me</span>
-            <div>
-              <p className="text-label-sm font-label-sm leading-tight text-text-secondary">
-                Deliver to: <span className="font-semibold text-text-primary">SW1A 1AA</span>
-              </p>
-              <p className="text-label-sm font-label-sm font-medium leading-tight text-success-500">Central London Depot</p>
-            </div>
-          </div>
 
           <div className="ml-auto flex shrink-0 items-center gap-space-md md:ml-0">
             <Link href="/trade" className="group hidden flex-col items-center text-text-secondary transition-colors hover:text-text-primary md:flex">

@@ -3,12 +3,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { AlertCircle, ArrowRight, BadgeCheck, Eye, EyeOff, Flame, Gift, Heart, LockKeyhole, Mail, ShieldCheck, Truck, Undo2, Wrench } from "lucide-react";
+import { AlertCircle, ArrowRight, BadgeCheck, Eye, EyeOff, Flame, Gift, Heart, LockKeyhole, Mail, ShieldCheck, Undo2 } from "lucide-react";
 import { request } from "@/lib/storefront-client";
 import type { Product } from "@/types";
 import { ProductImage } from "@/components/commerce/product-image";
 import { formatPrice } from "@/lib/format";
 import { useCartStore } from "@/lib/cart-store";
+import type { RegisterPageContent } from "@/lib/api";
+import { useFreeDeliveryThreshold } from "@/lib/use-free-delivery";
 import { OtpBoxes } from "./otp-boxes";
 import styles from "./registration.module.css";
 
@@ -48,7 +50,20 @@ function validate(data: FormData): Record<string, string> {
   return errors;
 }
 
-export function Registration({ products }: { products: Product[] }) {
+// Material Symbols icon for an admin-configured list item.
+function Symbol({ name }: { name: string }) {
+  return <span aria-hidden className="material-symbols-outlined" style={{ fontSize: 16, color: "#ff7900" }}>{name}</span>;
+}
+function FreeDeliveryTrust({ icon }: { icon: string }) {
+  const threshold = useFreeDeliveryThreshold();
+  return threshold === null ? null : <span><Symbol name={icon} />Free delivery over {formatPrice(threshold)}</span>;
+}
+
+export function Registration({ products, content }: { products: Product[]; content: RegisterPageContent | null }) {
+  // Each promotional section is optional and managed in the admin (Marketing > Account creation page).
+  const incentive = content?.incentive.enabled ? content.incentive : null;
+  const spotlight = content?.spotlight.enabled ? content.spotlight : null;
+  const trust = content?.trust.enabled && content.trust.items.length > 0 ? content.trust : null;
   const router = useRouter();
   const [visible, setVisible] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -69,9 +84,9 @@ export function Registration({ products }: { products: Product[] }) {
   const toggleWishlist = useCartStore((s) => s.toggleWishlist);
   const shown = products.filter((p) => filter === "Featured Kits" || (filter === "Combi Drills" ? /combi/i.test(p.name) : filter === "Twin Packs" ? /twin|2.pack|2.piece/i.test(p.name) : /18v/i.test(p.name)));
   return <div className={styles.page}><div className="border-b border-border-default bg-surface-white"><div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-2 px-4 py-3 text-label-sm font-label-sm text-text-secondary sm:px-margin-desktop"><nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1"><Link href="/" className="flex items-center hover:underline"><span aria-hidden className="material-symbols-outlined text-[16px]">home</span><span className="sr-only">Home</span></Link><span aria-hidden>/</span><span className="font-semibold text-text-primary">Create Account</span></nav></div></div>
-    <div className={styles.layout}><div><section className={styles.formCard} aria-labelledby="register-heading">
-      <div className={styles.topline}><span><Gift size={12} />NEW ACCOUNT INCENTIVE</span><small>{step === "verify" ? "Step 2 of 2: Verify your email" : "Step 1 of 2: Setup Credentials"}</small></div>
-      <h1 id="register-heading">Power Your Jobsite &amp; Home.<br /><em>Claim 15% Off</em> First Order.</h1><p className={styles.intro}>Join 45,000+ UK contractors, mechanical teams, and master builders. Get commercial net-30 terms, direct trade discounts, and live delivery dispatch tracking.</p>
+    <div className={styles.layout} style={spotlight || trust ? undefined : { gridTemplateColumns: "minmax(0, 880px)", justifyContent: "center" }}><div><section className={styles.formCard} aria-labelledby="register-heading">
+      <div className={styles.topline} style={incentive?.badge ? undefined : { justifyContent: "flex-end" }}>{incentive?.badge ? <span><Gift size={12} />{incentive.badge}</span> : null}<small>{step === "verify" ? "Step 2 of 2: Verify your email" : "Step 1 of 2: Setup Credentials"}</small></div>
+      {incentive ? <h1 id="register-heading">{incentive.headingLine1}{incentive.headingLine1 && (incentive.highlight || incentive.headingRest) ? <br /> : null}{incentive.highlight ? <em>{incentive.highlight}</em> : null}{incentive.highlight && incentive.headingRest ? " " : ""}{incentive.headingRest}</h1> : <h1 id="register-heading">Create your account</h1>}{incentive?.intro ? <p className={styles.intro}>{incentive.intro}</p> : null}
       {step === "verify" ? <div className={styles.success} role="status">
         <BadgeCheck size={32} />
         <h2>Check your email</h2>
@@ -85,7 +100,7 @@ export function Registration({ products }: { products: Product[] }) {
         <button type="button" disabled={resendBusy} onClick={async () => {setResendBusy(true); setResendNotice(""); setVerifyError(""); try { await request("auth/otp/send", { method: "POST", body: JSON.stringify({ email, purpose: "email_verification" }) }); setResendNotice("A new code has been sent."); setOtpCode(""); } catch (err) { setVerifyError(err instanceof Error ? err.message : "Could not resend the code."); } finally { setResendBusy(false); }}} className="mt-4 text-xs font-semibold text-orange-600 disabled:opacity-50">{resendBusy ? "Sending…" : "Resend code"}</button>
         {resendNotice && <p role="status" className={styles.notice}>{resendNotice}</p>}
       </div> : <>
-      <div className={styles.notice}><ShieldCheck size={18} /><p><strong>Create your account today.</strong>Save your favourite tools and keep your details ready for your next order.</p></div>
+      {incentive && (incentive.noticeTitle || incentive.noticeText) ? <div className={styles.notice}><ShieldCheck size={18} /><p>{incentive.noticeTitle ? <strong>{incentive.noticeTitle}</strong> : null}{incentive.noticeText}</p></div> : null}
       <form className={styles.form} noValidate onChange={(event) => {const name = (event.target as unknown as HTMLInputElement).name; if (name && fieldErrors[name]) setFieldErrors((prev) => {const next = {...prev}; delete next[name]; return next;});}} onSubmit={async (event) => {event.preventDefault(); if(busy)return; const data = new FormData(event.currentTarget); const errors = validate(data); if (Object.keys(errors).length) {setFieldErrors(errors); return;} setFieldErrors({});setError("");setBusy(true);try { await request("auth/register", { method: "POST", body: JSON.stringify({ firstName: String(data.get("firstName")).trim(), lastName: String(data.get("lastName")).trim(), email: email.trim(), password: data.get("password"), phone: String(data.get("phone") || "").trim() || undefined }) });setStep("verify");}catch(err){setError(err instanceof Error ? err.message : "Registration failed. Please try again.");}finally{setBusy(false);}}}>
         <div className={styles.twoColumns}><label>First Name <b>*</b><input name="firstName" autoComplete="given-name" placeholder="e.g. David" maxLength={120} aria-invalid={!!fieldErrors.firstName} />{fieldErrors.firstName && <small role="alert" className={styles.fieldError}>{fieldErrors.firstName}</small>}</label><label>Last Name <b>*</b><input name="lastName" autoComplete="family-name" placeholder="e.g. Sterling" maxLength={120} aria-invalid={!!fieldErrors.lastName} />{fieldErrors.lastName && <small role="alert" className={styles.fieldError}>{fieldErrors.lastName}</small>}</label></div>
         <label>Work / Business Email <b>*</b><div className={styles.inputIcon}><Mail size={15} /><input name="email" type="email" autoComplete="email" placeholder="d.sterling@apexmechanical.co.uk" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={255} aria-invalid={!!fieldErrors.email} /></div>{fieldErrors.email && <small role="alert" className={styles.fieldError}>{fieldErrors.email}</small>}</label>
@@ -93,15 +108,14 @@ export function Registration({ products }: { products: Product[] }) {
         <label>Create Password <b>*</b><small className={styles.passwordHint}>At least 10 characters</small><div className={styles.inputIcon}><LockKeyhole size={15} /><input name="password" type={visible ? "text" : "password"} autoComplete="new-password" maxLength={128} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Minimum 10 characters" aria-invalid={!!fieldErrors.password} /><button type="button" onClick={() => setVisible(!visible)} aria-label={visible ? "Hide password" : "Show password"}>{visible ? <EyeOff size={16} /> : <Eye size={16} />}</button></div>
         {strength && <div className={styles.strength}><div className={styles.strengthBars}>{[0, 1, 2, 3].map((i) => <span key={i} style={i < strength.score ? {background: strength.color} : undefined} />)}</div><small style={{color: strength.color}}>{strength.label}</small></div>}
         {fieldErrors.password && <small role="alert" className={styles.fieldError}>{fieldErrors.password}</small>}</label>
-        <div className={styles.offer}><Gift size={23} /><div><strong>BLV-WELCOME15</strong><p>Welcome offer subject to eligibility and checkout validation.</p></div><b>−15%</b></div>
+        {incentive?.offerEnabled && incentive.offerCode ? <div className={styles.offer}><Gift size={23} /><div><strong>{incentive.offerCode}</strong>{incentive.offerText ? <p>{incentive.offerText}</p> : null}</div>{incentive.offerAmount ? <b>{incentive.offerAmount}</b> : null}</div> : null}
         <label className={styles.check}><input type="checkbox" name="agree" aria-invalid={!!fieldErrors.agree} />I confirm these details are correct and want to create a Buildivo account.</label>
         {fieldErrors.agree && <small role="alert" className={styles.fieldError}>{fieldErrors.agree}</small>}
         {error && <p role="alert" className={styles.error}><AlertCircle size={16} /><span>{error}</span></p>}<button className={styles.submit} disabled={busy} type="submit">{busy ? "Creating your account…" : "Create Free Account"}<ArrowRight size={16} /></button>
       </form><p className="mt-5 text-center text-xs text-text-secondary">Already have an account? <Link href="/login" className="font-semibold text-orange-600">Sign in here</Link></p><div className={styles.social}><span>OR RAPID REGISTER WITH</span><div><button disabled>Google Workspace</button><button disabled>Apple ID</button></div><small>Social registration is not available yet.</small></div></>}
     </section><div className={styles.trust}>{[[LockKeyhole,"256-Bit SSL","Bank-grade vault"],[BadgeCheck,"ISO 9001:2015","Quality certified"],[ShieldCheck,"Cyber Essentials","UK secured"],[Undo2,"30-Day Returns","Jobsite collection"]].map(([Icon,title,caption]) => {const Symbol=Icon as typeof LockKeyhole;return <div key={String(title)}><Symbol size={16}/><span><strong>{String(title)}</strong><small>{String(caption)}</small></span></div>;})}</div></div>
-    <aside className={styles.sidebar} aria-label="Trending jobsite essentials"><header><Flame size={22}/><div><h2>Trending Jobsite Essentials</h2><p>Explore popular tools and jobsite essentials for your first order</p><small>Live Dispatch: Ready</small></div></header><div className={styles.filters}>{["Featured Kits","Combi Drills","Twin Packs","Heavy Duty 18V"].map((name)=><button key={name} aria-pressed={filter===name} onClick={()=>setFilter(name)}>{name}</button>)}</div>
+    {spotlight || trust ? <aside className={styles.sidebar} aria-label={spotlight ? spotlight.title : "Account benefits"}>{spotlight ? <><header><Flame size={22}/><div><h2>{spotlight.title}</h2>{spotlight.description ? <p>{spotlight.description}</p> : null}{spotlight.status ? <small>{spotlight.status}</small> : null}</div></header><div className={styles.filters}>{["Featured Kits","Combi Drills","Twin Packs","Heavy Duty 18V"].map((name)=><button key={name} aria-pressed={filter===name} onClick={()=>setFilter(name)}>{name}</button>)}</div>
       {shown.map((p)=><article className={styles.product} key={p.id}><Link href={`/p/${p.slug}`} className={styles.productImage}><ProductImage src={p.image} categorySlug={p.categorySlug} className={styles.image}/><span>SKU: {p.sku}</span></Link><div><button className={styles.wishlist} aria-label={`Save ${p.name}`} aria-pressed={wishlist.includes(p.id)} onClick={()=>toggleWishlist(p.id)}><Heart size={14} fill={wishlist.includes(p.id)?"currentColor":"none"}/></button><small className={styles.rating}>★★★★★ <span>{p.rating.toFixed(1)} ({p.reviewCount} reviews)</span></small><h3><Link href={`/p/${p.slug}`}>{p.name}</Link></h3><p>{p.specs.slice(0,3).map(s=>s.value).join(" · ")}</p><strong className={styles.price}>{formatPrice(p.priceIncVat)}</strong>{p.compareAtIncVat && <s>{formatPrice(p.compareAtIncVat)}</s>}<small className={styles.stock}>{p.stockCount !== undefined ? `${p.stockCount} in stock` : p.deliveryEta}</small></div></article>)}
       {!shown.length && <p className={styles.empty}>No products in this selection. Try Featured Kits.</p>}
-      <div className={styles.sidebarTrust}><span><BadgeCheck/>100% Genuine OEM Warranties</span><span><Truck/>Free Next-Day Delivery £75</span><span><Undo2/>30-Day Hassle-Free Returns</span><span><Wrench/>Dedicated trade support</span></div>
-    </aside></div></div>;
+      </> : null}{trust ? <div className={styles.sidebarTrust}>{trust.items.map((item, index) => item.kind === "freeDelivery" ? <FreeDeliveryTrust key={index} icon={item.icon} /> : <span key={index}><Symbol name={item.icon} />{item.text}</span>)}</div> : null}</aside> : null}</div></div>;
 }

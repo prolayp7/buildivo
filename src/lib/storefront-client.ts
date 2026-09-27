@@ -124,6 +124,10 @@ export interface ShippingQuote {
   estimatedDaysMin: number | null;
   estimatedDaysMax: number | null;
 }
+/** Lowest order value that qualifies for free delivery on any method (null = no free-delivery offer). */
+export function fetchFreeDeliveryThreshold(): Promise<{ threshold: number | null }> {
+  return request<{ threshold: number | null }>("shipping-methods/free-delivery-threshold");
+}
 export function fetchShippingQuotes(): Promise<ShippingQuote[]> {
   return request<ShippingQuote[]>("shipping-methods");
 }
@@ -180,6 +184,35 @@ export async function placeOrder(input: CheckoutInput, idempotencyKey?: string):
     throw new ApiError((Array.isArray(errors) ? errors[0] : undefined) ?? body?.error?.message ?? body?.message ?? `Request failed (${res.status})`, res.status);
   }
   return (body.data ?? body) as PlacedOrder;
+}
+
+/* ------------------------- DIY materials calculator ------------------------ */
+
+export interface CalculatorProduct {
+  id: number;
+  slug: string;
+  title: string;
+  category: string;
+  coverageValue: number;
+  coverageUnit: string | null;
+  variantId: number | null;
+  unitPrice: number | null;
+}
+export interface MaterialsResult {
+  productTitle: string;
+  coverageValue: string | number;
+  coverageUnit: string | null;
+  area: number;
+  wastagePercent: number;
+  unitsNeeded: number;
+  variantId: number | null;
+  estimatedCost: number | null;
+}
+export function fetchCalculatorProducts(): Promise<CalculatorProduct[]> {
+  return request<CalculatorProduct[]>("calculators/products");
+}
+export function calculateMaterials(productSlug: string, area: number, wastagePercent: number): Promise<MaterialsResult> {
+  return request<MaterialsResult>(`calculators/materials?productSlug=${encodeURIComponent(productSlug)}&area=${area}&wastagePercent=${wastagePercent}`);
 }
 
 /* ---------------------------- Order tracking ------------------------------ */

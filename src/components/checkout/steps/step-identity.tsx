@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { syncWishlist } from "@/lib/cart-store";
 import { Button } from "@/components/ui/button";
@@ -10,17 +10,6 @@ import { Label } from "@/components/ui/label";
 interface StepIdentityProps {
   email: string;
   onContinue: (email: string) => void;
-}
-
-function useCountdown(startSeconds: number) {
-  const [seconds, setSeconds] = useState(startSeconds);
-  useEffect(() => {
-    const id = window.setInterval(() => setSeconds((s) => (s > 0 ? s - 1 : 0)), 1000);
-    return () => window.clearInterval(id);
-  }, []);
-  const mm = String(Math.floor(seconds / 60)).padStart(2, "0");
-  const ss = String(seconds % 60).padStart(2, "0");
-  return `${mm}:${ss}`;
 }
 
 export function StepIdentity({ email, onContinue }: StepIdentityProps) {
@@ -46,7 +35,6 @@ export function StepIdentity({ email, onContinue }: StepIdentityProps) {
       setSigningIn(false);
     }
   }
-  const countdown = useCountdown(28 * 60 + 42);
 
   return (
     <div className="flex flex-col gap-6">
@@ -59,14 +47,7 @@ export function StepIdentity({ email, onContinue }: StepIdentityProps) {
           <h1 className="text-headline-lg-mobile font-headline-lg-mobile font-bold text-graphite-900 sm:text-headline-lg sm:font-headline-lg">
             How would you like to continue?
           </h1>
-          <p className="mt-1 text-body-md font-body-md text-text-secondary">Choose your preferred access tier. Your high-demand items are reserved for you.</p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2 rounded-lg bg-orange-50 px-3 py-2 text-orange-700">
-          <span aria-hidden className="material-symbols-outlined text-[20px]">timer</span>
-          <div>
-            <p className="text-label-sm font-label-sm font-semibold uppercase tracking-wide">Cart Locked</p>
-            <p className="font-mono text-body-md font-bold">{countdown}</p>
-          </div>
+          <p className="mt-1 text-body-md font-body-md text-text-secondary">Choose how you would like to check out.</p>
         </div>
       </div>
 

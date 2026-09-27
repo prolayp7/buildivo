@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     template: "%s | Buildivo",
   },
   description:
-    "Buildivo is a large-scale DIY, tools and hardware ecommerce platform for retail, DIY and trade customers — 45,000+ technical SKUs with next-day delivery.",
+    "Buildivo is a large-scale DIY, tools and hardware ecommerce platform for retail, DIY and trade customers.",
   metadataBase: new URL(SITE_URL),
 };
 

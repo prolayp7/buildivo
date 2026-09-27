@@ -1,4 +1,4 @@
-import { BadgeCheck, ClipboardPlus, ShieldCheck, Store, Truck } from "lucide-react";
+import { BadgeCheck, ClipboardPlus, ShieldCheck, Truck } from "lucide-react";
 import styles from "./clearance-protection.module.css";
 
 const protections = [
@@ -13,14 +13,9 @@ const protections = [
     description: "Surplus clearance units unopened in original packaging can be returned with free courier pickup or depot drop-off.",
   },
   {
-    icon: Store,
-    title: "30-Min Click & Collect",
-    description: "Reserve clearance items online for immediate collection across our 48 regional distribution branches nationwide.",
-  },
-  {
     icon: Truck,
-    title: "Next-Day UK Site Delivery",
-    description: "Order before 18:00 for guaranteed next-working-day parcel dispatch or tracked pallet logistics.",
+    title: "Tracked UK Delivery",
+    description: "Choose from the delivery options at checkout - every parcel is tracked, and some orders qualify for free delivery.",
   },
 ];
 

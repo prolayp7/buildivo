@@ -15,17 +15,18 @@ import { FreeDeliveryProgress } from "@/components/commerce/free-delivery-progre
 import { QuoteRequestDialog } from "@/components/commerce/quote-request-dialog";
 import { lineProduct, lineUnitPrice, useCartStore, useCartTotals } from "@/lib/cart-store";
 import { formatPrice } from "@/lib/format";
+import { useFreeDeliveryThreshold } from "@/lib/use-free-delivery";
 
 const TRUST_STRIP = [
   { icon: "lock", label: "256-Bit SSL Encrypted Checkout" },
   { icon: "cached", label: "30-Day Returns Policy" },
   { icon: "workspace_premium", label: "Official Manufacturer Warranty" },
-  { icon: "local_shipping", label: "Free Next-Day Orders Over £75" },
   { icon: "support_agent", label: "Trade Desk 0800 456 7890" },
 ];
 
 export default function CartPage() {
   const { activeLines, savedLines, subtotal, discount, coupon, freeShippingCoupon, multiBuySavings } = useCartTotals();
+  const freeOver = useFreeDeliveryThreshold();
   const couponNotice = useCartStore((s) => s.couponNotice);
   const applyCoupon = useCartStore((s) => s.applyCoupon);
   const removeCoupon = useCartStore((s) => s.removeCoupon);
@@ -166,7 +167,7 @@ export default function CartPage() {
                     <div className="ml-auto flex flex-wrap items-center gap-3">
                       <span className="flex items-center gap-1 text-label-sm font-label-sm text-text-secondary">
                         <span aria-hidden className="material-symbols-outlined text-[16px]">local_shipping</span>
-                        Standard Next-Day Courier
+                        Delivery options at checkout
                       </span>
                       <button type="button" onClick={() => toggleSaveForLater(line.productId, line.variantId)} className="flex items-center gap-1 text-label-sm font-label-sm text-text-secondary hover:text-text-primary">
                         <span aria-hidden className="material-symbols-outlined text-[16px]">bookmark</span>
@@ -260,6 +261,7 @@ export default function CartPage() {
           )}
 
           <div className="mt-8 grid grid-cols-2 gap-3 rounded-xl border border-border-default bg-surface-white p-4 sm:grid-cols-5">
+            {freeOver !== null && <div className="flex flex-col items-center gap-1 text-center"><span aria-hidden className="material-symbols-outlined text-[20px] text-orange-600">local_shipping</span><p className="text-label-sm font-label-sm text-text-secondary">Free delivery over {formatPrice(freeOver)}</p></div>}
             {TRUST_STRIP.map((item) => (
               <div key={item.label} className="flex flex-col items-center gap-1 text-center">
                 <span aria-hidden className="material-symbols-outlined text-[20px] text-orange-600">{item.icon}</span>

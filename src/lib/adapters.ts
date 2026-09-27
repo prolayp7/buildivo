@@ -127,6 +127,8 @@ export interface ApiReview {
   comment: string | null;
   reviewerName: string;
   createdAt: string;
+  /** Set when the review is linked to a real purchase by the reviewer. */
+  orderItemId?: number | null;
 }
 
 export function toCategory(api: ApiCategory): Category {
@@ -263,8 +265,8 @@ export function toProduct(api: ApiProductBase, apiOrigin: string): Product {
 export function toReview(api: ApiReview): Review {
   return {
     id: api.id,
-    author: api.reviewerName || "Verified buyer",
-    verified: true,
+    author: api.reviewerName || "Customer",
+    verified: Boolean(api.orderItemId),
     rating: api.rating,
     title: api.title ?? "",
     body: api.comment ?? "",

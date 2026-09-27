@@ -7,6 +7,7 @@
  * fetchers in lib/storefront-client.ts.
  */
 import type { Category, Product } from "@/types";
+import type { CalculatorProduct } from "./storefront-client";
 import { type ApiHeroSlide, type HeroSlide, toHeroSlide } from "@/components/home/hero/hero-slides";
 import { ECOSYSTEM_MATCHER_DEFAULTS, type EcosystemMatcherContent } from "@/components/home/ecosystem-matcher-content";
 import {
@@ -354,6 +355,12 @@ export interface ToolPlatform {
 
 // Real distinct tool platforms in the catalogue, with product counts - powers
 // the homepage battery/platform matcher instead of a hardcoded brand list.
+/** Lowest order value that qualifies for free delivery, from the admin's shipping methods (null = none). */
+export async function fetchFreeDeliveryThreshold(): Promise<number | null> {
+  const res = await apiGet<{ data: { threshold: number | null } }>("shipping-methods/free-delivery-threshold").catch(() => null);
+  return res?.data.threshold ?? null;
+}
+
 export async function fetchToolPlatforms(category?: string): Promise<ToolPlatform[]> {
   const res = await apiGet<{ data: ToolPlatform[] }>(`products/tool-platforms${category ? `?category=${encodeURIComponent(category)}` : ""}`).catch(() => ({ data: [] as ToolPlatform[] }));
   return res.data;
@@ -438,6 +445,37 @@ export async function fetchReviews(productId: number, page = 1, perPage = 20): P
   return res.data;
 }
 
+/** Admin-managed content of the account creation page; each section can be switched off. */
+export interface RegisterPageContent {
+  incentive: { enabled: boolean; badge: string; headingLine1: string; highlight: string; headingRest: string; intro: string; noticeTitle: string; noticeText: string; offerEnabled: boolean; offerCode: string; offerText: string; offerAmount: string };
+  spotlight: { enabled: boolean; title: string; description: string; status: string };
+  trust: { enabled: boolean; items: { icon: string; kind: "text" | "freeDelivery"; text: string }[] };
+}
+/** null when the API is unreachable - the page then shows the plain sign-up form without the promotional sections. */
+export async function fetchRegisterPageContent(): Promise<RegisterPageContent | null> {
+  const res = await apiGet<{ data: RegisterPageContent }>("settings/register-page").catch(() => null);
+  return res?.data ?? null;
+}
+
+/** Products with calculator coverage data (set in the admin product form). */
+export async function fetchCalculatorProducts(): Promise<CalculatorProduct[]> {
+  const res = await apiGet<{ data: CalculatorProduct[] }>("calculators/products").catch(() => ({ data: [] as CalculatorProduct[] }));
+  return res.data;
+}
+
+export interface ProductQuestion {
+  id: number;
+  name: string;
+  question: string;
+  createdAt: string;
+  answers: { id: number; answer: string; createdAt: string }[];
+}
+/** Published questions (with the shop's answers) for a product. */
+export async function fetchProductQuestions(slug: string): Promise<ProductQuestion[]> {
+  const res = await apiGet<{ data: ProductQuestion[] }>(`products/${encodeURIComponent(slug)}/questions`, 30).catch(() => ({ data: [] as ProductQuestion[] }));
+  return res.data;
+}
+
 export { toReview };
 
 export interface GeneralSettings {
@@ -470,6 +508,11 @@ export interface BlogPost {
   metaTitle: string | null;
   metaDescription: string | null;
   blogCategory: { title: string; slug: string } | null;
+  /** Step-by-step guide data (empty/absent for ordinary posts). */
+  steps?: { title?: string; description?: string; imageUrl?: string }[] | null;
+  materials?: { label?: string; quantity?: string; productSlug?: string }[] | null;
+  difficulty?: string | null;
+  estimatedTimeMinutes?: number | null;
   author: { name: string; role: string | null; bio?: string | null } | null;
 }
 export interface CmsPage {
@@ -481,11 +524,12 @@ export interface CmsPage {
   updatedAt: string;
 }
 
-export async function fetchBlogPosts(params: { page?: number; perPage?: number; category?: string } = {}): Promise<{ items: BlogPost[]; meta: { page: number; totalPages: number; total: number } }> {
+export async function fetchBlogPosts(params: { page?: number; perPage?: number; category?: string; guides?: boolean } = {}): Promise<{ items: BlogPost[]; meta: { page: number; totalPages: number; total: number } }> {
   const query = new URLSearchParams();
   if (params.page) query.set("page", String(params.page));
   if (params.perPage) query.set("perPage", String(params.perPage));
   if (params.category) query.set("category", params.category);
+  if (params.guides) query.set("guides", "true");
   const res = await apiGet<{ data: BlogPost[]; meta: { page: number; totalPages: number; total: number } }>(`blog${query.size ? `?${query}` : ""}`);
   return { items: res.data, meta: res.meta };
 }

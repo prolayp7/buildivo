@@ -75,3 +75,7 @@
   .buyRow { flex-wrap: wrap; }
   .sectionTitle { font-size: 24px; }
 }
+
+@media (width < 640px) {
+  .relatedCard [data-card-specs] { display: none; }
+}
