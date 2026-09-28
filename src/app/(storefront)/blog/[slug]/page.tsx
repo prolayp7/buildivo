@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { RichContent } from "@/components/content/rich-content";
 import { JsonLd } from "@/components/seo/json-ld";
-import { fetchBlogPost } from "@/lib/api";
+import { API_ORIGIN, fetchBlogPost } from "@/lib/api";
 import { cleanHtml } from "@/lib/cms-content";
 import { SITE_NAME, absoluteUrl } from "@/lib/site";
 
@@ -16,14 +16,17 @@ const date = (value: string | null) => (value ? new Date(value).toLocaleDateStri
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
   const { slug } = await params;
   const post = await fetchBlogPost(slug);
-  if (!post) return { title: "Post not found" };
+  if (!post) return { title: "Post not found", robots: { index: false, follow: false } };
   const title = post.metaTitle || post.title;
   const description = post.metaDescription || post.excerpt || undefined;
+  const image = post.socialShareImage ? (post.socialShareImage.startsWith("/uploads/") ? `${API_ORIGIN}${post.socialShareImage}` : post.socialShareImage) : undefined;
+  const url = `/blog/${post.slug}`;
   return {
     title,
     description,
-    alternates: { canonical: `/blog/${post.slug}` },
-    openGraph: { type: "article", title, description, url: `/blog/${post.slug}`, publishedTime: post.publishedAt ?? undefined, modifiedTime: post.updatedAt, authors: post.author ? [post.author.name] : undefined },
+    alternates: { canonical: url },
+    openGraph: { type: "article", title, description, url, publishedTime: post.publishedAt ?? undefined, modifiedTime: post.updatedAt, authors: post.author ? [post.author.name] : undefined, images: image ? [{ url: image, alt: post.socialShareImageAlt || title }] : undefined },
+    twitter: { card: post.twitterCard === "SUMMARY" ? "summary" : "summary_large_image", title, description, images: image ? [image] : undefined },
   };
 }
 
@@ -40,6 +43,9 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       <JsonLd data={{
         "@context": "https://schema.org", "@type": "BlogPosting",
         headline: post.title, description: post.metaDescription || post.excerpt || undefined,
+        image: post.socialShareImage ? absoluteUrl(post.socialShareImage) : undefined,
+        articleSection: post.blogCategory?.title,
+        keywords: tags.length ? tags.join(", ") : undefined,
         datePublished: post.publishedAt ?? undefined, dateModified: post.updatedAt,
         author: post.author ? { "@type": "Person", name: post.author.name } : { "@type": "Organization", name: SITE_NAME },
         publisher: { "@type": "Organization", name: SITE_NAME },
@@ -50,8 +56,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           "@context": "https://schema.org", "@type": "HowTo",
           name: post.title, description: post.metaDescription || post.excerpt || undefined,
           totalTime: post.estimatedTimeMinutes ? `PT${post.estimatedTimeMinutes}M` : undefined,
-          supply: materials.map((item) => ({ "@type": "HowToSupply", name: item.label })),
-          step: steps.map((step, index) => ({ "@type": "HowToStep", position: index + 1, name: step.title, text: step.description || step.title })),
+          supply: materials.map((item) => ({ "@type": "HowToSupply", name: item.label, ...(item.productSlug ? { url: absoluteUrl(`/p/${item.productSlug}`) } : {}) })),
+          step: steps.map((step, index) => ({ "@type": "HowToStep", position: index + 1, name: step.title, text: step.description || step.title, ...(step.imageUrl ? { image: step.imageUrl } : {}) })),
         }} />
       )}
       <nav aria-label="Breadcrumb" className="text-sm text-text-secondary">

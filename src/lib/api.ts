@@ -54,6 +54,8 @@ function resolveCategoryImages(category: ApiCategory): ApiCategory {
     ...category,
     coverImage: category.coverImage?.startsWith("/uploads/") ? `${API_ORIGIN}${category.coverImage}` : category.coverImage,
     thumbnailImage: category.thumbnailImage?.startsWith("/uploads/") ? `${API_ORIGIN}${category.thumbnailImage}` : category.thumbnailImage,
+    ogImage: category.ogImage?.startsWith("/uploads/") ? `${API_ORIGIN}${category.ogImage}` : category.ogImage,
+    twitterImage: category.twitterImage?.startsWith("/uploads/") ? `${API_ORIGIN}${category.twitterImage}` : category.twitterImage,
     children: (category.children ?? []).map(resolveCategoryImages),
   };
 }
@@ -184,10 +186,24 @@ export interface ProjectKitsContent {
   heading: string;
   description: string;
   footnote: string;
+  kits: ProjectKit[];
   kit1Name: string; kit1Description: string; kit1SpecLabel: string; kit1SpecValue: string; kit1Est: string; kit1ItemCount: string;
   kit2Name: string; kit2Description: string; kit2SpecLabel: string; kit2SpecValue: string; kit2Est: string; kit2ItemCount: string;
   kit3Name: string; kit3Description: string; kit3SpecLabel: string; kit3SpecValue: string; kit3Est: string; kit3ItemCount: string;
   kit4Name: string; kit4Description: string; kit4SpecLabel: string; kit4SpecValue: string; kit4Est: string; kit4ItemCount: string;
+}
+
+export interface ProjectKit {
+  id: string;
+  name: string;
+  description: string;
+  specLabel: string;
+  specValue: string;
+  est: string;
+  itemCount: string;
+  image: string;
+  imageAlt?: string;
+  active: boolean;
 }
 
 const PROJECT_KITS_DEFAULTS: ProjectKitsContent = {
@@ -195,6 +211,12 @@ const PROJECT_KITS_DEFAULTS: ProjectKitsContent = {
   heading: "Shop by Complete Job",
   description: "Standardized bills of materials curated with vetted tradespeople. Eliminate missed fixings, incorrect gauge wiring, and return trips.",
   footnote: "All bundles include 5% bulk rebate",
+  kits: [
+    { id: "legacy-1", name: "Decking & Outdoor Framing", description: "C24 treated joists, deck boards, weed membrane, joist tape & coach screws.", specLabel: "Estimated Area", specValue: "25 - 35 m²", est: "£1,420.00", itemCount: "24", image: "/images/projects/decking.jpg", active: true },
+    { id: "legacy-2", name: "Complete Bathroom Refit", description: "Tanking kit, 15mm/22mm copper, JG Speedfit manifolds, tile backer boards.", specLabel: "Typical Room Size", specValue: "Standard 3-piece", est: "£2,180.00", itemCount: "48", image: "/images/projects/bathroom.jpg", active: true },
+    { id: "legacy-3", name: "Jobsite Electrical Rough-In", description: "100m drums 2.5mm² T&E, 1.5mm² lighting, dry lining boxes, RCBOs.", specLabel: "Scope", specValue: "4-Zone Extension", est: "£895.00", itemCount: "32", image: "/images/projects/electrical.jpg", active: true },
+    { id: "legacy-4", name: "Workshop Storage Build", description: "Birch plywood sheets, heavy duty steel angle brackets, heavy-duty castors.", specLabel: "Bench Spec", specValue: "2.4m Heavy Workbench", est: "£640.00", itemCount: "18", image: "/images/projects/workshop.jpg", active: true },
+  ],
   kit1Name: "Decking & Outdoor Framing", kit1Description: "C24 treated joists, deck boards, weed membrane, joist tape & coach screws.", kit1SpecLabel: "Estimated Area", kit1SpecValue: "25 - 35 m²", kit1Est: "£1,420.00", kit1ItemCount: "24",
   kit2Name: "Complete Bathroom Refit", kit2Description: "Tanking kit, 15mm/22mm copper, JG Speedfit manifolds, tile backer boards.", kit2SpecLabel: "Typical Room Size", kit2SpecValue: "Standard 3-piece", kit2Est: "£2,180.00", kit2ItemCount: "48",
   kit3Name: "Jobsite Electrical Rough-In", kit3Description: "100m drums 2.5mm² T&E, 1.5mm² lighting, dry lining boxes, RCBOs.", kit3SpecLabel: "Scope", kit3SpecValue: "4-Zone Extension", kit3Est: "£895.00", kit3ItemCount: "32",
@@ -204,7 +226,19 @@ const PROJECT_KITS_DEFAULTS: ProjectKitsContent = {
 export async function fetchProjectKitsContent(): Promise<ProjectKitsContent> {
   const sections = await fetchHomepageSections();
   const section = sections.find((item) => item.type === "PROJECT_KITS");
-  return { ...PROJECT_KITS_DEFAULTS, ...section?.config };
+  const content = { ...PROJECT_KITS_DEFAULTS, ...section?.config } as ProjectKitsContent;
+  const kits = Array.isArray(content.kits) && content.kits.length > 0
+    ? content.kits
+    : PROJECT_KITS_DEFAULTS.kits.map((kit, index) => ({
+        ...kit,
+        name: content[`kit${index + 1}Name` as keyof ProjectKitsContent] as string,
+        description: content[`kit${index + 1}Description` as keyof ProjectKitsContent] as string,
+        specLabel: content[`kit${index + 1}SpecLabel` as keyof ProjectKitsContent] as string,
+        specValue: content[`kit${index + 1}SpecValue` as keyof ProjectKitsContent] as string,
+        est: content[`kit${index + 1}Est` as keyof ProjectKitsContent] as string,
+        itemCount: content[`kit${index + 1}ItemCount` as keyof ProjectKitsContent] as string,
+      }));
+  return { ...content, kits: kits.map((kit) => ({ ...kit, active: kit.active !== false, image: resolveMediaUrl(API_ORIGIN, kit.image) ?? "" })) };
 }
 
 export async function fetchEcosystemMatcherContent(): Promise<EcosystemMatcherContent> {
@@ -507,6 +541,9 @@ export interface BlogPost {
   updatedAt: string;
   metaTitle: string | null;
   metaDescription: string | null;
+  socialShareImage: string | null;
+  socialShareImageAlt: string | null;
+  twitterCard: "SUMMARY" | "SUMMARY_LARGE_IMAGE";
   blogCategory: { title: string; slug: string } | null;
   /** Step-by-step guide data (empty/absent for ordinary posts). */
   steps?: { title?: string; description?: string; imageUrl?: string }[] | null;

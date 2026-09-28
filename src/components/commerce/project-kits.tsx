@@ -1,14 +1,13 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ProductImage } from "@/components/commerce/product-image";
+import type { ProjectKitsContent } from "@/lib/api";
 
-type ProjectKit = {
+export type ProjectKit = {
   slug: string;
   image: string;
   categorySlug: string;
-  itemCount: number;
+  itemCount: string;
+  imageAlt?: string;
   name: string;
   description: string;
   specLabel: string;
@@ -17,38 +16,21 @@ type ProjectKit = {
 };
 
 
-export default function ProjectKits() {
-  const [kits, setKits] = useState<ProjectKit[]>([]);
-
-  useEffect(() => {
-    const fetchKits = async () => {
-      try {
-        const response = await fetch("/api/project-kits");
-        const data = await response.json();
-        console.log("Fetched project kits:", data);
-        setKits(data);
-      } catch (error) {
-        console.error("Error fetching project kits:", error);
-      }
-    };
-
-    fetchKits();
-  }, []);
-
+export default function ProjectKits({ content, kits }: { content: ProjectKitsContent; kits: ProjectKit[] }) {
   return (
     <section id="project-kits" className="w-full bg-white py-12 sm:py-16" style={{ backgroundColor: "#ffffff" }}>
         <div className="mx-auto max-w-[1600px] px-4 sm:px-margin-desktop">
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="mb-1 text-label-md font-label-md font-semibold uppercase tracking-wide text-orange-600">Project Kits</p>
+              <p className="mb-1 text-label-md font-label-md font-semibold uppercase tracking-wide text-orange-600">{content.badgeLabel}</p>
               <h2 className="mb-1 text-headline-lg-mobile font-headline-lg-mobile font-bold text-graphite-900 sm:text-headline-lg sm:font-headline-lg">
-                Project Kits
+                {content.heading}
               </h2>
               <p className="max-w-2xl text-body-md font-body-md text-text-secondary">
-                Curated bundles of materials to help you plan and complete your next project.
+                {content.description}
               </p>
             </div>
-            <p className="text-label-sm font-label-sm text-text-secondary">Curated material bundles for your next project.</p>
+            <p className="text-label-sm font-label-sm text-text-secondary">{content.footnote}</p>
           </div>
           <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:pb-0 lg:grid-cols-4">
             {kits.map((project) => (
@@ -59,6 +41,7 @@ export default function ProjectKits() {
                 <div className="relative">
                   <ProductImage
                     src={project.image}
+                    alt={project.imageAlt || project.name}
                     categorySlug={project.categorySlug}
                     className="aspect-[3/2] w-full object-cover"
                   />

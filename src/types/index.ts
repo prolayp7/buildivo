@@ -61,6 +61,24 @@ export interface Category {
   icon: string;
   productCount: number;
   parentSlug?: string;
+  seo?: {
+    pageHeader?: string;
+    title?: string;
+    description?: string;
+    indexable: boolean;
+    ogTitle?: string;
+    ogDescription?: string;
+    ogImage?: string;
+    ogImageAlt?: string;
+    twitterTitle?: string;
+    twitterDescription?: string;
+    twitterCard?: "SUMMARY" | "SUMMARY_LARGE_IMAGE";
+    twitterImage?: string;
+    schemaType?: "AUTOMATIC" | "CUSTOM";
+    customSchema?: string;
+    faqSchema?: string;
+    faqs?: { question: string; answer: string }[];
+  };
 }
 
 export interface CartLine {

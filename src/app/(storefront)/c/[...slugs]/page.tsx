@@ -25,8 +25,62 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   const { slugs } = await params;
   const category = await fetchCategoryBySlug(slugs[slugs.length - 1]);
   if (!category) return { title: "Category" };
-  const description = `Shop ${category.name} at Buildivo${category.productCount ? ` - ${category.productCount} products` : ""} with fast delivery and trade pricing.`;
-  return { title: category.name, description, alternates: { canonical: `/c/${category.slug}` }, openGraph: { title: category.name, description, url: `/c/${category.slug}` } };
+  const seo = category.seo;
+  const title = seo?.title?.trim() || category.name;
+  const description = seo?.description?.trim() || `Shop ${category.name} at Buildivo${category.productCount ? ` - ${category.productCount} products` : ""} with fast delivery and trade pricing.`;
+  const socialTitle = seo?.ogTitle?.trim() || title;
+  const socialDescription = seo?.ogDescription?.trim() || description;
+  const socialImage = seo?.ogImage || seo?.twitterImage;
+  const twitterImage = seo?.twitterImage || seo?.ogImage;
+  const url = `/c/${category.slug}`;
+  return {
+    title,
+    description,
+    robots: seo?.indexable === false ? { index: false, follow: false } : { index: true, follow: true },
+    alternates: { canonical: url },
+    openGraph: {
+      title: socialTitle,
+      description: socialDescription,
+      url,
+      images: socialImage ? [{ url: socialImage, alt: seo?.ogImageAlt || socialTitle }] : undefined,
+    },
+    twitter: {
+      card: seo?.twitterCard === "SUMMARY" ? "summary" : "summary_large_image",
+      title: seo?.twitterTitle?.trim() || title,
+      description: seo?.twitterDescription?.trim() || description,
+      images: twitterImage ? [twitterImage] : undefined,
+    },
+  };
+}
+
+function categoryJsonLd(category: NonNullable<Awaited<ReturnType<typeof fetchCategoryBySlug>>>) {
+  const seo = category.seo;
+  let graph: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: seo?.pageHeader?.trim() || category.name,
+    url: `/c/${category.slug}`,
+    description: seo?.description?.trim(),
+  };
+  if (seo?.schemaType === "CUSTOM" && seo.customSchema?.trim()) {
+    try {
+      graph = JSON.parse(seo.customSchema) as Record<string, unknown>;
+    } catch {
+      return null;
+    }
+  }
+  if (!seo?.faqSchema?.trim() && seo?.faqs?.length) {
+    graph.mainEntity = seo.faqs.map((faq) => ({ "@type": "Question", name: faq.question, acceptedAnswer: { "@type": "Answer", text: faq.answer } }));
+  }
+  if (seo?.faqSchema?.trim()) {
+    try {
+      const faqGraph = JSON.parse(seo.faqSchema);
+      return { "@context": "https://schema.org", "@graph": [graph, faqGraph] };
+    } catch {
+      return null;
+    }
+  }
+  return graph;
 }
 
 export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
@@ -43,6 +97,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
     activeSlug === "power-tools" ? fetchProducts({ category: "hardware-fixings", page: 1, perPage: 4, sort: "newest" }).then((result) => result.items).catch(() => []) : Promise.resolve([]),
   ]);
   if (!category) notFound();
+  const jsonLd = categoryJsonLd(category);
 
   const parentDepartment = category.parentSlug ? departments.find((d) => d.slug === category.parentSlug) : undefined;
   const isPowerTools = category.slug === "power-tools";
@@ -50,6 +105,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
 
   return (
     <div className={styles.page}>
+      {jsonLd ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} /> : null}
       <div data-category-breadcrumb className="border-b border-border-default bg-surface-white">
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-2 px-4 py-3 text-label-sm font-label-sm text-text-secondary sm:px-margin-desktop">
           <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1">
@@ -89,7 +145,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
         <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-margin-desktop">
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-headline-lg-mobile font-headline-lg-mobile font-bold text-graphite-900 sm:text-headline-lg sm:font-headline-lg">
-              {category.name}
+              {category.seo?.pageHeader?.trim() || category.name}
             </h1>
             <span className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-label-sm font-label-sm font-semibold text-orange-600">
               {initialProducts.meta.total.toLocaleString()} <span className="sm:hidden">SKUs</span><span className="hidden sm:inline">{isPowerTools ? "Professional & DIY Models" : "Active Products"}</span>

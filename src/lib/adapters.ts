@@ -29,6 +29,21 @@ export interface ApiCategory extends ApiCategoryRef {
   icon: string | null;
   thumbnailImage: string | null;
   coverImage: string | null;
+  pageHeader: string | null;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  isIndexable: boolean;
+  ogTitle: string | null;
+  ogImage: string | null;
+  ogImageAlt: string | null;
+  ogDescription: string | null;
+  twitterTitle: string | null;
+  twitterCard: "SUMMARY" | "SUMMARY_LARGE_IMAGE" | null;
+  twitterImage: string | null;
+  twitterDescription: string | null;
+  schemaType: "AUTOMATIC" | "CUSTOM" | null;
+  customSchema: string | null;
+  faqSchema: string | null;
   faqs?: { question: string; answer: string }[];
   parent?: ApiCategoryRef | null;
   children: ApiCategory[];
@@ -140,6 +155,24 @@ export function toCategory(api: ApiCategory): Category {
     icon: api.icon ?? "category",
     productCount: api.productCount,
     parentSlug: api.parentId != null ? api.parent?.slug : undefined,
+    seo: {
+      pageHeader: api.pageHeader ?? undefined,
+      title: api.metaTitle ?? undefined,
+      description: api.metaDescription ?? undefined,
+      indexable: api.isIndexable !== false,
+      ogTitle: api.ogTitle ?? undefined,
+      ogDescription: api.ogDescription ?? undefined,
+      ogImage: api.ogImage ?? undefined,
+      ogImageAlt: api.ogImageAlt ?? undefined,
+      twitterTitle: api.twitterTitle ?? undefined,
+      twitterDescription: api.twitterDescription ?? undefined,
+      twitterCard: api.twitterCard ?? undefined,
+      twitterImage: api.twitterImage ?? undefined,
+      schemaType: api.schemaType ?? undefined,
+      customSchema: api.customSchema ?? undefined,
+      faqSchema: api.faqSchema ?? undefined,
+      faqs: api.faqs,
+    },
   };
 }
 
