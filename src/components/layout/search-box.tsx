@@ -11,6 +11,7 @@ import type { Category, Product } from "@/types";
 export function SearchBox({ departments, variant = "desktop" }: { departments: Category[]; variant?: "desktop" | "mobile" }) {
   const router = useRouter();
   const inputId = useId();
+  const dropdownId = `${inputId}-suggestions`;
   const mobile = variant === "mobile";
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
@@ -71,11 +72,22 @@ export function SearchBox({ departments, variant = "desktop" }: { departments: C
           id={inputId}
           name="q"
           type="search"
+          role="combobox"
           autoComplete="off"
+          aria-autocomplete="list"
+          aria-controls={showDropdown ? dropdownId : undefined}
+          aria-expanded={showDropdown}
           value={q}
           onChange={(event) => { setQ(event.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") { setOpen(false); return; }
+            if (event.key === "ArrowDown") {
+              event.preventDefault();
+              document.querySelector<HTMLElement>(`#${dropdownId} [role="option"]`)?.focus();
+            }
+          }}
           className={mobile
             ? "h-full min-w-0 flex-1 bg-transparent px-2 text-base text-text-primary outline-none placeholder:text-[11px] placeholder:text-text-disabled"
             : "h-11 w-full rounded-lg border border-border-default bg-surface-warm pl-10 pr-24 text-body-sm font-body-sm text-text-primary placeholder:text-text-disabled focus:border-orange-500 focus:bg-surface-white focus:outline-none"}
@@ -93,7 +105,7 @@ export function SearchBox({ departments, variant = "desktop" }: { departments: C
       </form>
 
       {showDropdown ? (
-        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-40 overflow-hidden rounded-xl border border-border-default bg-surface-white shadow-lg">
+        <div id={dropdownId} role="listbox" aria-label="Search suggestions" className="absolute left-0 right-0 top-[calc(100%+6px)] z-40 overflow-hidden rounded-xl border border-border-default bg-surface-white shadow-lg">
           {loading && !hasMatches ? (
             <p className="p-4 text-body-sm font-body-sm text-text-secondary">Searching…</p>
           ) : hasMatches ? (
@@ -108,6 +120,7 @@ export function SearchBox({ departments, variant = "desktop" }: { departments: C
                       onMouseDown={(event) => event.preventDefault()}
                       onClick={() => setOpen(false)}
                       className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-surface-container-low"
+                      role="option"
                     >
                       <ProductImage src={product.image} categorySlug={product.categorySlug} className="h-10 w-10 shrink-0 overflow-hidden rounded-md object-cover" />
 
@@ -132,6 +145,7 @@ export function SearchBox({ departments, variant = "desktop" }: { departments: C
                           onMouseDown={(event) => event.preventDefault()}
                           onClick={() => setOpen(false)}
                           className="block truncate rounded-lg px-2.5 py-1.5 text-body-sm font-body-sm text-text-primary transition-colors hover:bg-surface-container-low"
+                          role="option"
                         >
                           {category.name}
                         </Link>
@@ -148,6 +162,7 @@ export function SearchBox({ departments, variant = "desktop" }: { departments: C
                           onMouseDown={(event) => event.preventDefault()}
                           onClick={() => setOpen(false)}
                           className="block truncate rounded-lg px-2.5 py-1.5 text-body-sm font-body-sm text-text-primary transition-colors hover:bg-surface-container-low"
+                          role="option"
                         >
                           {brand.title}
                         </Link>

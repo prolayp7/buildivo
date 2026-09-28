@@ -4,18 +4,18 @@ import styles from "./clearance-protection.module.css";
 const protections = [
   {
     icon: BadgeCheck,
-    title: "100% Genuine OEM Warranty",
-    description: "Every clearance item carries the original manufacturer warranty (1 to 3 years) from approved brand distributors.",
+    title: "Manufacturer warranty details",
+    description: "Coverage and exclusions vary by product. Check the product details for applicable manufacturer terms.",
   },
   {
     icon: ClipboardPlus,
-    title: "30-Day Jobsite Returns",
-    description: "Surplus clearance units unopened in original packaging can be returned with free courier pickup or depot drop-off.",
+    title: "Item-specific return eligibility",
+    description: "Eligible delivered items show their return window in your account. Conditions vary by item.",
   },
   {
     icon: Truck,
-    title: "Tracked UK Delivery",
-    description: "Choose from the delivery options at checkout - every parcel is tracked, and some orders qualify for free delivery.",
+    title: "Delivery options at checkout",
+    description: "Available delivery methods and charges are shown before payment. Tracking appears when carrier details are available.",
   },
 ];
 

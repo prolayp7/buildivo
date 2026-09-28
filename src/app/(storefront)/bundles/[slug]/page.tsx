@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { BundleAddButton } from "@/components/bundles/bundle-add-button";
 import { ProductImage } from "@/components/commerce/product-image";
 import { QuoteRequestDialog } from "@/components/commerce/quote-request-dialog";
+import { BreadcrumbJsonLd } from "@/components/seo/breadcrumb-json-ld";
 import { fetchBundleBySlug } from "@/lib/api";
 import { formatPrice } from "@/lib/format";
 
@@ -20,6 +21,7 @@ export default async function BundleDetailPage({ params }: { params: Promise<{ s
 
   return (
     <div className="mx-auto max-w-[1600px] px-4 py-10 sm:px-margin-desktop">
+      <BreadcrumbJsonLd items={[{ name: "Home", url: "/" }, { name: "Project bundles", url: "/bundles" }, { name: bundle.title, url: `/bundles/${bundle.slug}` }]} />
       <nav aria-label="Breadcrumb" className="mb-4 flex flex-wrap items-center gap-1 text-label-sm font-label-sm text-text-secondary">
         <Link href="/" className="hover:underline">Home</Link>
         <span aria-hidden>/</span>

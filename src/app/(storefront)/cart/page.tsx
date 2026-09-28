@@ -18,10 +18,10 @@ import { formatPrice } from "@/lib/format";
 import { useFreeDeliveryThreshold } from "@/lib/use-free-delivery";
 
 const TRUST_STRIP = [
-  { icon: "lock", label: "256-Bit SSL Encrypted Checkout" },
-  { icon: "cached", label: "30-Day Returns Policy" },
-  { icon: "workspace_premium", label: "Official Manufacturer Warranty" },
-  { icon: "support_agent", label: "Trade Desk 0800 456 7890" },
+  { icon: "receipt_long", label: "Prices confirmed by the shop" },
+  { icon: "local_shipping", label: "Delivery shown before payment" },
+  { icon: "workspace_premium", label: "Warranty terms vary by product" },
+  { icon: "inventory_2", label: "Order history for signed-in customers" },
 ];
 
 export default function CartPage() {

@@ -16,7 +16,9 @@ export function ComparisonBar() {
 
   useEffect(() => {
     let cancelled = false;
-    fetchProductsByIds(selected).then((items) => { if (!cancelled) setCompared(items); });
+    fetchProductsByIds(selected)
+      .then((items) => { if (!cancelled) setCompared(items); })
+      .catch(() => { if (!cancelled) setCompared([]); });
     return () => { cancelled = true; };
   }, [selected]);
 

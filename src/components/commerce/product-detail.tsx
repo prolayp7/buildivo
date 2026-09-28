@@ -13,6 +13,7 @@ import { StockBadge } from "@/components/commerce/stock-badge";
 import { QuantityInput } from "@/components/commerce/quantity-input";
 import { QuoteRequestDialog } from "@/components/commerce/quote-request-dialog";
 import { ProductCard } from "@/components/commerce/product-card";
+import { RecentlyViewed } from "@/components/commerce/recently-viewed";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -32,6 +33,7 @@ interface ProductDetailProps {
 
 export function ProductDetail({ product, related, productReviews, platformMatches, questions }: ProductDetailProps) {
   const [activeImage, setActiveImage] = useState(0);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
   // Product identifiers shown at the top of the specifications tab (barcode and manufacturer part number).
   const identifiers = [
     product.sku ? { label: "SKU", value: product.sku } : null,
@@ -60,6 +62,10 @@ export function ProductDetail({ product, related, productReviews, platformMatche
   const itemCount = Math.max(galleryItems.length, 1);
   const selectedItem = galleryItems[activeImage] ?? galleryItems[0];
   const isWished = wishlist.includes(product.id);
+
+  function changeGalleryBy(delta: number) {
+    setActiveImage((current) => Math.min(Math.max(current + delta, 0), galleryItems.length - 1));
+  }
 
   function handleAddToCart() {
     const targetVariantId = variantId ?? product.defaultVariantId;
@@ -104,7 +110,7 @@ export function ProductDetail({ product, related, productReviews, platformMatche
               >
                 {item?.kind === "video" ? (
                   <>
-                    <video src={item.url} muted playsInline className="h-full w-full object-cover" />
+                    <video src={item.url} muted playsInline preload="metadata" className="h-full w-full object-cover" />
                     <span aria-hidden className="material-symbols-outlined absolute inset-0 flex items-center justify-center bg-graphite-900/30 text-[20px] text-white">play_circle</span>
                   </>
                 ) : (
@@ -125,8 +131,13 @@ export function ProductDetail({ product, related, productReviews, platformMatche
           ) : (
             <Dialog open={zoomOpen} onOpenChange={setZoomOpen}>
               <DialogTrigger asChild>
-                <button type="button" className={styles.zoomButton} aria-label="Open image zoom">
-                  <ProductImage src={selectedItem?.url} alt={selectedItem?.kind === "image" ? selectedItem.alt : product.name} categorySlug={product.categorySlug} className={styles.mainImage} iconClassName="text-[72px]" />
+                <button type="button" className={styles.zoomButton} aria-label="Open image zoom" onTouchStart={(event) => setTouchStartX(event.changedTouches[0]?.clientX ?? null)} onTouchEnd={(event) => {
+                  if (touchStartX === null) return;
+                  const distance = event.changedTouches[0]?.clientX - touchStartX;
+                  if (Math.abs(distance) > 40) changeGalleryBy(distance < 0 ? 1 : -1);
+                  setTouchStartX(null);
+                }}>
+                  <ProductImage src={selectedItem?.url} alt={selectedItem?.kind === "image" ? selectedItem.alt : product.name} categorySlug={product.categorySlug} loading="eager" className={styles.mainImage} iconClassName="text-[72px]" />
                 </button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
@@ -303,6 +314,7 @@ export function ProductDetail({ product, related, productReviews, platformMatche
             <TabsTrigger value="specs">Technical Specifications</TabsTrigger>
             <TabsTrigger value="box">What&apos;s in the Box</TabsTrigger>
             <TabsTrigger value="compat">System Compatibility</TabsTrigger>
+            <TabsTrigger value="policy">Warranty &amp; Returns</TabsTrigger>
           </TabsList>
           <TabsContent value="specs" className={styles.tabContent}>
             <h2 className={styles.sectionTitle}>Technical Specifications</h2>
@@ -336,7 +348,7 @@ export function ProductDetail({ product, related, productReviews, platformMatche
                   <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
                     {platformMatches.map((match) => <ProductCard key={match.id} product={match} />)}
                   </div>
-                ) : null}
+                ) : <p className="mt-4 rounded-lg bg-surface-warm p-4 text-body-sm font-body-sm text-text-secondary">No verified products match this platform yet. Try another category or contact support before substituting a battery or charger.</p>}
                 <Link href={`/c/${product.categorySlug}?platform=${encodeURIComponent(product.toolPlatform)}`} className="mt-4 inline-flex items-center gap-1 text-label-sm font-label-sm font-semibold text-orange-600 hover:underline">
                   Shop all {product.toolPlatform} tools
                   <span aria-hidden className="material-symbols-outlined text-[16px]">arrow_forward</span>
@@ -344,9 +356,22 @@ export function ProductDetail({ product, related, productReviews, platformMatche
               </div>
             ) : (
               <p className="py-6 text-body-sm font-body-sm text-text-secondary">
-                Compatibility information is not available for this product yet.
+                This product is not assigned to a manufacturer battery platform. Treat it as universal only when the product specification explicitly says so; otherwise contact support before purchasing a substitute.
               </p>
             )}
+          </TabsContent>
+          <TabsContent value="policy" className={styles.tabContent}>
+            <h2 className={styles.sectionTitle}>Warranty and returns</h2>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-xl border border-border-default bg-surface-warm p-4">
+                <h3 className="font-semibold text-graphite-900">Manufacturer warranty</h3>
+                <p className="mt-2 text-body-sm font-body-sm text-text-secondary">Warranty coverage follows the manufacturer terms for this product. Keep your order number and proof of purchase for any claim.</p>
+              </div>
+              <div className="rounded-xl border border-border-default bg-surface-warm p-4">
+                <h3 className="font-semibold text-graphite-900">Returns</h3>
+                <p className="mt-2 text-body-sm font-body-sm text-text-secondary">Eligible items can be requested for return from your account after delivery. The order record determines the return window, eligibility and refund status.</p>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </section>
@@ -398,6 +423,7 @@ export function ProductDetail({ product, related, productReviews, platformMatche
       </section>
 
       <ProductQuestions productSlug={product.slug} questions={questions} className={styles.section} />
+      <RecentlyViewed product={product} />
     </div>
   );
 }

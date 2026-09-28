@@ -1,4 +1,7 @@
+"use client";
+
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 export const CATEGORY_ICON: Record<string, string> = {
   "power-tools": "bolt",
@@ -24,6 +27,7 @@ interface ProductImageProps {
   categorySlug: string;
   className?: string;
   iconClassName?: string;
+  loading?: "lazy" | "eager";
 }
 
 /**
@@ -32,10 +36,13 @@ interface ProductImageProps {
  * labelled placeholder boundary; the icon is decorative (product identity is
  * always conveyed by adjacent visible text), so it stays out of the a11y tree.
  */
-export function ProductImage({ src, alt, categorySlug, className, iconClassName }: ProductImageProps) {
-  if (src) {
+export function ProductImage({ src, alt, categorySlug, className, iconClassName, loading = "lazy" }: ProductImageProps) {
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const failed = Boolean(src && failedSrc === src);
+
+  if (src && !failed) {
     // eslint-disable-next-line @next/next/no-img-element -- mock data never provides a real src today
-    return <img src={src} alt={alt ?? ""} aria-hidden={alt ? undefined : true} className={className} />;
+    return <img src={src} alt={alt ?? ""} aria-hidden={alt ? undefined : true} loading={loading} decoding="async" onError={() => setFailedSrc(src)} className={className} />;
   }
   const icon = CATEGORY_ICON[categorySlug] ?? "inventory_2";
   return (

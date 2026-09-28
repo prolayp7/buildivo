@@ -117,11 +117,11 @@ export function CheckoutOrderSummary({ shipping, showItems = true, className }: 
         <ul className="flex flex-col gap-1.5 text-label-sm font-label-sm text-text-secondary">
           <li className="flex items-center gap-1.5">
             <span aria-hidden className="material-symbols-outlined text-[14px] text-success-500">verified_user</span>
-            100% Authorized UK Dealer Warranty Included
+            Warranty terms vary by product; check the product details
           </li>
           <li className="flex items-center gap-1.5">
             <span aria-hidden className="material-symbols-outlined text-[14px] text-success-500">description</span>
-            Instant Automated HMRC VAT Receipt Download
+            VAT invoices are available for paid orders in your account
           </li>
         </ul>
       </div>

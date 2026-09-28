@@ -1,19 +1,41 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-
-const ADHESIVE_COVERAGE_M2_PER_BAG = 5;
+import { useCartStore } from "@/lib/cart-store";
+import { fetchCalculatorProducts, type CalculatorProduct } from "@/lib/storefront-client";
 
 export function TileCalculator() {
+  const addItem = useCartStore((state) => state.addItem);
   const [roomWidth, setRoomWidth] = useState("4.5");
   const [roomLength, setRoomLength] = useState("3.2");
   const [tileSize, setTileSize] = useState("600x600");
   const [includeWaste, setIncludeWaste] = useState(true);
+  const [adhesives, setAdhesives] = useState<CalculatorProduct[]>([]);
+  const [adhesiveSlug, setAdhesiveSlug] = useState("");
+  const [loadingAdhesives, setLoadingAdhesives] = useState(true);
+  const [adding, setAdding] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    fetchCalculatorProducts()
+      .then((products) => {
+        if (!active) return;
+        const options = products.filter((product) => /adhesive/i.test(`${product.category} ${product.title}`) && product.coverageUnit?.startsWith("m2_per_"));
+        setAdhesives(options);
+        setAdhesiveSlug(options[0]?.slug ?? "");
+      })
+      .catch(() => { if (active) setAdhesives([]); })
+      .finally(() => { if (active) setLoadingAdhesives(false); });
+    return () => { active = false; };
+  }, []);
+
+  const adhesive = adhesives.find((product) => product.slug === adhesiveSlug) ?? adhesives[0] ?? null;
+  const coverageUnit = adhesive?.coverageUnit?.split("_per_")[1] ?? "bag";
 
   const result = useMemo(() => {
     const width = Math.max(0, Number(roomWidth) || 0);
@@ -23,9 +45,22 @@ export function TileCalculator() {
     const totalAreaM2 = rawAreaM2 * (includeWaste ? 1.1 : 1);
     const tileAreaM2 = ((tw || 1) / 1000) * ((tl || 1) / 1000);
     const tilesNeeded = tileAreaM2 > 0 ? Math.ceil(Number((totalAreaM2 / tileAreaM2).toFixed(6))) : 0;
-    const adhesiveBags = Math.ceil(Number((totalAreaM2 / ADHESIVE_COVERAGE_M2_PER_BAG).toFixed(6)));
-    return { totalAreaM2, tilesNeeded, adhesiveBags };
-  }, [roomWidth, roomLength, tileSize, includeWaste]);
+    const adhesiveUnits = adhesive ? Math.ceil(Number((totalAreaM2 / adhesive.coverageValue).toFixed(6))) : null;
+    return { totalAreaM2, tilesNeeded, adhesiveUnits };
+  }, [roomWidth, roomLength, tileSize, includeWaste, adhesive]);
+
+  async function addAdhesive() {
+    if (!adhesive?.variantId || !result.adhesiveUnits || adding) return;
+    setAdding(true);
+    try {
+      await addItem(adhesive.variantId, result.adhesiveUnits);
+      toast.success(`Added ${result.adhesiveUnits} × ${adhesive.title} to your basket`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not add adhesive to your basket.");
+    } finally {
+      setAdding(false);
+    }
+  }
 
   return (
     <div className="flex h-full flex-col rounded-2xl bg-surface-white p-5 shadow-[0_1px_2px_rgb(0_0_0/0.05)] sm:p-6 lg:min-h-[416px]">
@@ -111,18 +146,24 @@ export function TileCalculator() {
         </div>
         <div className="text-right">
           <p className="text-label-sm font-label-sm text-text-secondary">Adhesive Required:</p>
-          <p className="text-body-md font-body-md font-bold text-graphite-900">{result.adhesiveBags} x 20kg Bags</p>
+          <p className="text-body-md font-body-md font-bold text-graphite-900">{result.adhesiveUnits ?? "—"} {coverageUnit}{result.adhesiveUnits === 1 ? "" : "s"}</p>
+          {adhesive && <p className="mt-1 text-label-sm font-label-sm text-text-secondary">{adhesive.title} · {adhesive.coverageValue} m² per {coverageUnit}</p>}
         </div>
       </div>
 
       <div className="mt-auto flex flex-wrap items-center justify-between gap-3">
-        <p className="text-label-sm font-label-sm text-text-secondary">Instant SKU pack adder available</p>
+        {adhesives.length > 1 ? <label className="min-w-0 flex-1 text-label-sm font-label-sm text-text-secondary">Adhesive product
+          <select value={adhesive?.slug ?? ""} onChange={(event) => setAdhesiveSlug(event.target.value)} className="mt-1 h-9 w-full rounded-md border border-border-default bg-white px-2 text-text-primary">
+            {adhesives.map((product) => <option key={product.slug} value={product.slug}>{product.title}</option>)}
+          </select>
+        </label> : <p role={loadingAdhesives ? "status" : "note"} className="text-label-sm font-label-sm text-text-secondary">{loadingAdhesives ? "Loading adhesive products…" : adhesive ? "Uses current product coverage and price." : "No calculator-ready adhesive is available."}</p>}
         <Button
           type="button"
           className="h-8 rounded-lg bg-orange-500 px-5 text-[12px] font-bold hover:bg-orange-600"
-          onClick={() => toast.success(`Added ${result.adhesiveBags} bags of adhesive to your cart estimate`)}
+          disabled={loadingAdhesives || !adhesive?.variantId || !result.adhesiveUnits || adding}
+          onClick={() => void addAdhesive()}
         >
-          Add All to Basket
+          {adding ? "Adding…" : result.adhesiveUnits ? `Add ${result.adhesiveUnits} to Basket` : "Add Adhesive to Basket"}
         </Button>
       </div>
     </div>

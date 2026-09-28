@@ -561,12 +561,13 @@ export interface CmsPage {
   updatedAt: string;
 }
 
-export async function fetchBlogPosts(params: { page?: number; perPage?: number; category?: string; guides?: boolean } = {}): Promise<{ items: BlogPost[]; meta: { page: number; totalPages: number; total: number } }> {
+export async function fetchBlogPosts(params: { page?: number; perPage?: number; category?: string; guides?: boolean; search?: string } = {}): Promise<{ items: BlogPost[]; meta: { page: number; totalPages: number; total: number } }> {
   const query = new URLSearchParams();
   if (params.page) query.set("page", String(params.page));
   if (params.perPage) query.set("perPage", String(params.perPage));
   if (params.category) query.set("category", params.category);
   if (params.guides) query.set("guides", "true");
+  if (params.search?.trim()) query.set("search", params.search.trim().slice(0, 120));
   const res = await apiGet<{ data: BlogPost[]; meta: { page: number; totalPages: number; total: number } }>(`blog${query.size ? `?${query}` : ""}`);
   return { items: res.data, meta: res.meta };
 }

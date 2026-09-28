@@ -1,18 +1,12 @@
-import { cookies } from "next/headers";
-import { apiBase, sessionJson } from "@/lib/customer-session";
+import { sessionFetch, sessionJson } from "@/lib/customer-session";
 import type { AccountOrder } from "@/components/account/order-types";
 
 export async function GET(request: Request) {
-  const token = (await cookies()).get("buildivo.access")?.value;
-  if (!token) return sessionJson({ message: "Please sign in to view your orders." }, 401);
   const page = Number(new URL(request.url).searchParams.get("page") ?? "1");
   if (!Number.isSafeInteger(page) || page < 1) return sessionJson({ message: "Invalid page." }, 400);
   try {
-    const response = await fetch(`${apiBase()}/orders?page=${page}&perPage=100`, {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-      signal: AbortSignal.timeout(15000),
-    });
+    const response = await sessionFetch(`orders?page=${page}&perPage=100`);
+    if (!response) return sessionJson({ message: "Please sign in to view your orders." }, 401);
     if (!response.ok) return sessionJson({ message: response.status === 401 ? "Your session expired. Please sign in again." : "Could not load your orders. Please try again." }, response.status);
     const body = await response.json();
     // Return only the fields this panel needs; never forward internal order notes.

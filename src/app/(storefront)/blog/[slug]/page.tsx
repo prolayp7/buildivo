@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { RichContent } from "@/components/content/rich-content";
+import { GuideActions } from "@/components/content/guide-actions";
+import { BreadcrumbJsonLd } from "@/components/seo/breadcrumb-json-ld";
 import { JsonLd } from "@/components/seo/json-ld";
 import { API_ORIGIN, fetchBlogPost } from "@/lib/api";
 import { cleanHtml } from "@/lib/cms-content";
@@ -40,6 +42,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   return (
     <article className="mx-auto w-full max-w-[760px] px-4 py-10 sm:px-8">
+      <BreadcrumbJsonLd items={[{ name: "Home", url: "/" }, { name: "Blog", url: "/blog" }, { name: post.title, url: `/blog/${post.slug}` }]} />
       <JsonLd data={{
         "@context": "https://schema.org", "@type": "BlogPosting",
         headline: post.title, description: post.metaDescription || post.excerpt || undefined,
@@ -61,11 +64,12 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         }} />
       )}
       <nav aria-label="Breadcrumb" className="text-sm text-text-secondary">
-        <Link href="/" className="hover:underline">Home</Link> / <Link href="/blog" className="hover:underline">Blog</Link>
+        <Link href="/" className="hover:underline">Home</Link> / <Link href="/blog" className="hover:underline">Blog</Link> / <span aria-current="page">{post.title}</span>
       </nav>
       {post.blogCategory && <p className="mt-6 text-xs font-semibold uppercase tracking-wide text-orange-700"><Link href={`/blog?category=${encodeURIComponent(post.blogCategory.slug)}`}>{post.blogCategory.title}</Link></p>}
       <h1 className="mt-2 text-3xl font-bold leading-tight">{post.title}</h1>
       <p className="mt-3 text-sm text-text-secondary">{[post.author?.name, date(post.publishedAt)].filter(Boolean).join(" · ")}</p>
+      {steps.length > 0 && <div className="mt-4"><GuideActions title={post.title} /></div>}
       {(post.difficulty || post.estimatedTimeMinutes) && (
         <ul aria-label="Guide summary" className="mt-4 flex flex-wrap gap-2 text-sm">
           {post.difficulty && <li className="rounded-full bg-orange-50 px-3 py-1 font-semibold text-orange-700">Difficulty: {post.difficulty}</li>}

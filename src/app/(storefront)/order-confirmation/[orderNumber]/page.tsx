@@ -1,30 +1,48 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ProductImage } from "@/components/commerce/product-image";
 import { formatPrice } from "@/lib/format";
-import { useCartStore } from "@/lib/cart-store";
+import { useCartStore, type LastOrder } from "@/lib/cart-store";
 import { toast } from "sonner";
 
 interface OrderConfirmationPageProps {
   params: Promise<{ orderNumber: string }>;
 }
 
+function subscribeToBrowser() { return () => {}; }
+function getBrowserSnapshot() { return true; }
+function getServerSnapshot() { return false; }
+function getReceiptSnapshot() {
+  try { return sessionStorage.getItem("buildivo.lastOrderReceipt"); } catch { return null; }
+}
+
 export default function OrderConfirmationPage({ params }: OrderConfirmationPageProps) {
   const { orderNumber } = use(params);
   const lastOrder = useCartStore((s) => s.lastOrder);
+  const hydrated = useSyncExternalStore(subscribeToBrowser, getBrowserSnapshot, getServerSnapshot);
+  const receiptJson = useSyncExternalStore(subscribeToBrowser, getReceiptSnapshot, () => null);
+  let savedReceipt: LastOrder | null = null;
+  try { savedReceipt = receiptJson ? JSON.parse(receiptJson) as LastOrder : null; } catch { savedReceipt = null; }
   const [password, setPassword] = useState("");
   const [activated, setActivated] = useState(false);
 
-  const items = lastOrder?.orderNumber === orderNumber ? lastOrder.items : [];
-  const subtotal = lastOrder?.orderNumber === orderNumber ? lastOrder.subtotal : 0;
-  const vat = lastOrder?.orderNumber === orderNumber ? lastOrder.vatTotal : 0;
-  const total = lastOrder?.orderNumber === orderNumber ? lastOrder.total : 0;
+  const receipt = lastOrder?.orderNumber === orderNumber
+    ? lastOrder
+    : savedReceipt?.orderNumber === orderNumber ? savedReceipt : null;
+  const items = receipt?.items ?? [];
+  const subtotal = receipt?.subtotal ?? 0;
+  const vat = receipt?.vatTotal ?? 0;
+  const total = receipt?.total ?? 0;
 
-  if (!lastOrder || lastOrder.orderNumber !== orderNumber) {
+  if (!hydrated && !receipt) {
+    return <p role="status" className="mx-auto max-w-xl px-4 py-24 text-center text-body-md font-body-md text-text-secondary">Loading your order receipt…</p>;
+  }
+
+  if (!receipt) {
     return (
       <div className="mx-auto flex max-w-xl flex-col items-center gap-4 px-4 py-24 text-center">
         <span aria-hidden className="material-symbols-outlined text-[56px] text-success-500">

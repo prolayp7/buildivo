@@ -3,7 +3,7 @@
 import { CURRENCY } from "@/lib/format";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, BadgeCheck, Check, ClipboardCheck, Download, Headset, MapPin, Package, Printer, RotateCcw, Search, ShieldCheck, ShoppingCart, SlidersHorizontal, Truck, Wrench, Zap } from "lucide-react";
+import { ArrowRight, BadgeCheck, Check, ClipboardCheck, Download, Headset, History, MapPin, Package, Printer, RotateCcw, Search, ShieldCheck, ShoppingCart, SlidersHorizontal, Truck, Wrench, Zap } from "lucide-react";
 import { useCartStore } from "@/lib/cart-store";
 import type { AccountOrder, AccountOrderItem, AccountOrderPage } from "./order-types";
 import styles from "./account-orders.module.css";
@@ -14,6 +14,7 @@ const money = (value: string | number) => new Intl.NumberFormat("en-GB", { style
 const statusLabel = (value: string) => value.toLowerCase().replaceAll("_", " ");
 const filters = ["All Orders", "In Transit", "Delivered", "Awaiting Dispatch"] as const;
 type Filter = typeof filters[number];
+type OrderStatusEvent = { toStatus: string; createdAt: string };
 const awaiting = ["PENDING", "AWAITING_PAYMENT", "PROCESSING", "PACKED"];
 const matchesFilter = (order: AccountOrder, filter: Filter) => filter === "All Orders" || (filter === "In Transit" ? order.status === "SHIPPED" : filter === "Delivered" ? order.status === "DELIVERED" : awaiting.includes(order.status));
 
@@ -34,6 +35,11 @@ export function AccountOrders({ view = "orders", onViewOrders }: { view?: "overv
   const [site, setSite] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
+  const [historyOrder, setHistoryOrder] = useState<string | null>(null);
+  const [historyByOrder, setHistoryByOrder] = useState<Record<string, OrderStatusEvent[]>>({});
+  const [historyLoading, setHistoryLoading] = useState<string | null>(null);
+  const [historyError, setHistoryError] = useState("");
+  const [historyNeedsSignIn, setHistoryNeedsSignIn] = useState(false);
   const addItem = useCartStore((state) => state.addItem);
 
   useEffect(() => {
@@ -65,6 +71,24 @@ export function AccountOrders({ view = "orders", onViewOrders }: { view?: "overv
       setMeta(data.meta);
     } catch (err) { setError(err instanceof Error ? err.message : "Could not load more orders."); }
     finally { setLoading(false); }
+  }
+
+  async function toggleStatusHistory(uuid: string) {
+    if (historyOrder === uuid) { setHistoryOrder(null); return; }
+    setHistoryOrder(uuid);
+    setHistoryError("");
+    setHistoryNeedsSignIn(false);
+    if (historyByOrder[uuid]) return;
+    setHistoryLoading(uuid);
+    try {
+      const response = await fetch(`/api/customer-session/orders/${uuid}`, { cache: "no-store" });
+      const data = await response.json().catch(() => ({}));
+      if (response.status === 401) setHistoryNeedsSignIn(true);
+      if (!response.ok) throw new Error(data.message ?? "Could not load order updates.");
+      setHistoryByOrder((previous) => ({ ...previous, [uuid]: Array.isArray(data.history) ? data.history : [] }));
+    } catch (err) {
+      setHistoryError(err instanceof Error ? err.message : "Could not load order updates.");
+    } finally { setHistoryLoading(null); }
   }
 
   async function reorder(items: AccountOrderItem[], key: string) {
@@ -135,6 +159,19 @@ export function AccountOrders({ view = "orders", onViewOrders }: { view?: "overv
             <div className={styles.items}>
               {!delivered && <p className={styles.itemsLabel}>Consigned equipment &amp; fasteners ({order.items.length} line items · {order.items.reduce((sum, item) => sum + item.quantity, 0)} total units)</p>}
               <div className={delivered ? styles.compactItems : styles.itemList}>{order.items.map((item) => <div className={styles.item} key={item.id}><span className={styles.productImage}><Package aria-label="Product image unavailable" /></span><div className={styles.itemInfo}><small>{item.skuSnapshot ? `SKU: ${item.skuSnapshot}` : "Ordered item"}</small><h4>{item.titleSnapshot}</h4><p>{item.variantTitleSnapshot}</p><p><strong>Qty: {item.quantity}</strong><span>Unit: {money(Number(item.subtotal) / item.quantity)} incl. VAT</span></p></div><div className={styles.price}><strong>{money(item.subtotal)}</strong><small>{money(Number(item.subtotal) - Number(item.vatAmount))} ex. VAT</small></div></div>)}</div>
+            </div>
+            <div className="px-5.5 pb-4">
+              <button type="button" className="inline-flex min-h-9 items-center gap-2 text-[13px] font-semibold text-orange-700 hover:underline" aria-expanded={historyOrder === order.uuid} disabled={historyLoading !== null && historyLoading !== order.uuid} onClick={() => void toggleStatusHistory(order.uuid)}>
+                <History aria-hidden="true" className="size-4" />
+                {historyLoading === order.uuid ? "Loading updates…" : historyOrder === order.uuid ? "Hide status history" : "View status history"}
+              </button>
+              {historyOrder === order.uuid && <div id={`order-history-${order.uuid}`} className="border-t border-border-default pt-3">
+                {historyError ? <p role="alert" className="text-[13px] text-error-500">{historyError}{historyNeedsSignIn && <> <Link className="font-semibold underline" href="/login?next=%2Faccount">Sign in again</Link></>}</p>
+                  : historyLoading === order.uuid ? <p role="status" className="text-[13px] text-text-secondary">Loading order updates…</p>
+                    : historyByOrder[order.uuid]?.length ? <ol aria-label={`Status history for order ${order.orderNumber}`} className="flex flex-col gap-2">
+                      {historyByOrder[order.uuid].map((event, index) => <li key={`${event.createdAt}-${index}`} className="flex flex-wrap items-baseline justify-between gap-x-4 text-[13px]"><strong>{statusLabel(event.toStatus)}</strong><time dateTime={event.createdAt} className="text-text-secondary">{new Date(event.createdAt).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}</time></li>)}
+                    </ol> : <p className="text-[13px] text-text-secondary">No status updates are available yet.</p>}
+              </div>}
             </div>
             <footer className={styles.orderFooter}><div><small>Subtotal ex. VAT</small><strong>{money(Number(order.subtotal) - Number(order.vatTotal))}</strong></div><div className={styles.total}><small>Total payable incl. VAT</small><strong>{money(order.total)}</strong></div><div><small>Payment status</small><strong className={styles.payment}>{statusLabel(order.paymentStatus)}</strong></div><div className={styles.orderActions}><button onClick={() => window.print()}><Printer />Print summaries</button><button className={styles.orangeButton} disabled={busy !== null || !order.items.length} onClick={() => reorder(order.items, order.uuid)}><RotateCcw />{busy === order.uuid ? "Adding to basket…" : delivered ? "Quick Reorder" : "Reorder Consignment"}</button>{["PAID", "PARTIALLY_REFUNDED", "REFUNDED"].includes(order.paymentStatus) && <Link className={styles.invoiceLink} href={`/account/orders/${order.uuid}/invoice`}>View invoice</Link>}</div></footer>
             <OrderActions order={order} onChange={updateOrder} />

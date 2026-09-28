@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductDetail } from "@/components/commerce/product-detail";
+import { BreadcrumbJsonLd } from "@/components/seo/breadcrumb-json-ld";
 import { JsonLd } from "@/components/seo/json-ld";
 import { CURRENCY } from "@/lib/format";
 import { SITE_NAME, absoluteUrl } from "@/lib/site";
@@ -42,6 +43,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const availability = product.stock === "out-of-stock" ? "OutOfStock" : product.stock === "low-stock" ? "LimitedAvailability" : "InStock";
   return (
     <>
+      <BreadcrumbJsonLd items={[{ name: "Home", url: "/" }, { name: product.categorySlug.replaceAll("-", " "), url: `/c/${product.categorySlug}` }, { name: product.name, url: `/p/${product.slug}` }]} />
       <JsonLd data={{
         "@context": "https://schema.org", "@type": "Product",
         name: product.name,

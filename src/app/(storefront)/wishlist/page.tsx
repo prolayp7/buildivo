@@ -20,6 +20,7 @@ export default function WishlistPage() {
       setLoading(true);
       fetchProductsByIds(wishlist)
         .then((items) => { if (!cancelled) setSaved(items); })
+        .catch(() => { if (!cancelled) setSaved([]); })
         .finally(() => { if (!cancelled) setLoading(false); });
     }, 0);
     return () => { cancelled = true; window.clearTimeout(timer); };

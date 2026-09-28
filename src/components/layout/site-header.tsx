@@ -183,6 +183,7 @@ export function SiteHeader({ departments, mainMenu }: { departments: Category[];
                     "flex h-full shrink-0 items-center whitespace-nowrap text-label-md font-label-md text-text-secondary transition-colors hover:text-text-primary",
                     active && "border-b-2 border-orange-500 font-bold text-orange-600",
                   )}
+                  aria-current={active ? "page" : undefined}
                 >
                   {item.label}
                 </Link>
@@ -195,6 +196,7 @@ export function SiteHeader({ departments, mainMenu }: { departments: Category[];
                 key={item.href}
                 href={item.href}
                 className="flex items-center gap-1 whitespace-nowrap text-label-md font-label-md font-semibold text-text-primary hover:underline [&:first-child]:text-orange-600"
+                aria-current={pathname === item.href || pathname?.startsWith(`${item.href}/`) ? "page" : undefined}
               >
                 <span aria-hidden className="material-symbols-outlined text-[16px]">{item.icon}</span>
                 {item.label}

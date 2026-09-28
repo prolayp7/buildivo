@@ -141,7 +141,7 @@ export function StepIdentity({ email, onContinue }: StepIdentityProps) {
               "Instant 1-click reordering by industrial SKU",
               "Live dispatch tracking & SMS delivery windows",
               "Saved project material lists & fleet tool registries",
-              "Instant eligibility review for Trade Net 30 terms",
+              "Trade pricing and credit terms depend on account eligibility",
             ].map((item) => (
               <li key={item} className="flex items-start gap-2">
                 <span aria-hidden className="material-symbols-outlined text-[16px] text-success-500">check_circle</span>
@@ -160,9 +160,9 @@ export function StepIdentity({ email, onContinue }: StepIdentityProps) {
 
       <div className="grid grid-cols-1 gap-3 rounded-xl border border-border-default bg-surface-white p-4 sm:grid-cols-3">
         {[
-          { icon: "lock", title: "256-Bit SSL Layer", caption: "Banking-grade transaction vault" },
-          { icon: "privacy_tip", title: "Strict Privacy Pledge", caption: "No data sharing or trade marketing lists" },
-          { icon: "cached", title: "30-Day Hassle Returns", caption: "Direct contractor restocking credit" },
+          { icon: "lock", title: "Private account session", caption: "Sign-in uses HTTP-only cookies" },
+          { icon: "payments", title: "Payment options", caption: "Available methods are shown at checkout" },
+          { icon: "cached", title: "Item-specific returns", caption: "Eligibility and deadlines vary by product" },
         ].map((item) => (
           <div key={item.title} className="flex items-center gap-2">
             <span aria-hidden className="material-symbols-outlined text-[18px] text-orange-600">{item.icon}</span>

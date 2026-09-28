@@ -4,13 +4,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ProductListing } from "@/components/commerce/product-listing";
+import { BreadcrumbJsonLd } from "@/components/seo/breadcrumb-json-ld";
 import { fetchCategoryBySlug, fetchCategoryTree, fetchDepartments, fetchFreeDeliveryThreshold, fetchProducts, fetchToolPlatforms } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { formatPrice } from "@/lib/format";
 
 interface CategoryPageProps {
   params: Promise<{ slugs: string[] }>;
-  searchParams: Promise<{ platform?: string }>;
+  searchParams: Promise<{ platform?: string; [key: string]: string | string[] | undefined }>;
 }
 
 const POWER_TOOLS_DESCRIPTION =
@@ -21,8 +22,9 @@ const POWER_TOOLS_FEATURES = [
   { icon: "verified_user", title: "3-Yr Warranty", caption: "Direct manufacturer backed" },
 ];
 
-export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
-  const { slugs } = await params;
+export async function generateMetadata({ params, searchParams }: CategoryPageProps): Promise<Metadata> {
+  const [{ slugs }, query] = await Promise.all([params, searchParams]);
+  const hasQueryVariant = Object.values(query).some((value) => Array.isArray(value) ? value.length > 0 : Boolean(value?.trim()));
   const category = await fetchCategoryBySlug(slugs[slugs.length - 1]);
   if (!category) return { title: "Category" };
   const seo = category.seo;
@@ -36,7 +38,7 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   return {
     title,
     description,
-    robots: seo?.indexable === false ? { index: false, follow: false } : { index: true, follow: true },
+    robots: seo?.indexable === false || hasQueryVariant ? { index: false, follow: true } : { index: true, follow: true },
     alternates: { canonical: url },
     openGraph: {
       title: socialTitle,
@@ -106,6 +108,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   return (
     <div className={styles.page}>
       {jsonLd ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} /> : null}
+      <BreadcrumbJsonLd items={[{ name: "Home", url: "/" }, ...(parentDepartment ? [{ name: parentDepartment.name, url: `/c/${parentDepartment.slug}` }] : []), { name: category.name, url: `/c/${category.slug}` }]} />
       <div data-category-breadcrumb className="border-b border-border-default bg-surface-white">
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-2 px-4 py-3 text-label-sm font-label-sm text-text-secondary sm:px-margin-desktop">
           <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1">
