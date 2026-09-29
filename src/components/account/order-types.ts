@@ -10,7 +10,7 @@ export type AccountOrderItem = {
   returnEligible: boolean;
   /** Last day a return can be requested (ISO date), if the item has a deadline. */
   returnDeadline: string | null;
-  returns: { id: number; returnStatus: string }[];
+  returnItems: { quantity: number; returnRequest: { returnNumber: string; status: string } }[];
 };
 
 export type AccountOrder = {

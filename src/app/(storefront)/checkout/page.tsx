@@ -63,6 +63,7 @@ export default function CheckoutPage() {
   const [stage, setStage] = useState<"starting" | "confirming">("starting");
   const [recoveryReady, setRecoveryReady] = useState(false);
   const starting = useRef(false);
+  const paymentRequested = useRef(false);
 
   // Real delivery methods and prices from the API; the cheapest is pre-selected.
   useEffect(() => {
@@ -141,10 +142,18 @@ export default function CheckoutPage() {
       }
       window.location.href = attempt.redirectUrl;
     } catch (error) {
+      paymentRequested.current = false;
       console.error("Payment could not be started:", error);
       setFailReason(error instanceof Error ? error.message : "We couldn't start the payment.");
       setPhase("failed");
     }
+  }
+
+  function requestPayment() {
+    if (paymentRequested.current) return;
+    paymentRequested.current = true;
+    setStage("starting");
+    setPhase("processing");
   }
 
   // Restore the pending order after a refresh, and confirm provider returns against the API.
@@ -298,7 +307,7 @@ export default function CheckoutPage() {
               total={total}
               onBack={() => setPhase("payment")}
               onEdit={(step) => setPhase((["identity", "address", "delivery", "payment"] as const)[step - 1])}
-              onPlaceOrder={() => { setStage("starting"); setPhase("processing"); }}
+              onPlaceOrder={requestPayment}
             />
           )}
 
@@ -311,7 +320,7 @@ export default function CheckoutPage() {
               total={order ? Number(order.total) : total}
               reason={failReason}
               orderPlaced={order !== null}
-              onRetry={() => { setStage("starting"); setPhase("processing"); }}
+              onRetry={requestPayment}
               onChangeMethod={() => setPhase("payment")}
             />
           )}

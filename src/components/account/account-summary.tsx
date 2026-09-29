@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BadgeCheck, FileText, Heart, House, LayoutDashboard, MapPin, Package, Truck, UserRound, Zap } from "lucide-react";
+import { BadgeCheck, FileText, Heart, House, LayoutDashboard, MapPin, Package, RotateCcw, Truck, UserRound, Zap } from "lucide-react";
 import { stopWishlistSync } from "@/lib/cart-store";
 import styles from "./account-summary.module.css";
 import { AccountOrders } from "./account-orders";
@@ -11,6 +11,7 @@ import { AccountWishlist } from "./account-wishlist";
 import { AccountAddresses } from "./account-addresses";
 import { AccountQuotes } from "./account-quotes";
 import { AccountDetails } from "./account-details";
+import { AccountReturns } from "./returns-shared";
 
 type Customer = {
   firstName: string;
@@ -20,11 +21,12 @@ type Customer = {
   phone?: string | null;
 };
 
-type View = "overview" | "orders" | "wishlist" | "addresses" | "quotes" | "details";
+type View = "overview" | "orders" | "returns" | "wishlist" | "addresses" | "quotes" | "details";
 
 const VIEW_LABELS: Record<View, string> = {
   overview: "Account Overview",
   orders: "Orders & Jobsite Dispatches",
+  returns: "Returns & Refunds",
   wishlist: "Wishlists & Saved Materials",
   addresses: "Jobsite Addresses",
   quotes: "Quote Requests",
@@ -100,6 +102,7 @@ export function AccountSummary() {
           <nav className={styles.navigation} aria-label="Customer account">
             <button className={view === "overview" ? styles.active : undefined} aria-pressed={view === "overview"} aria-controls="account-panel" onClick={() => setView("overview")}><LayoutDashboard aria-hidden="true" />Account Overview</button>
             <button className={view === "orders" ? styles.active : undefined} aria-pressed={view === "orders"} aria-controls="account-panel" onClick={() => setView("orders")}><Package aria-hidden="true" />Orders &amp; Dispatches</button>
+            <button className={view === "returns" ? styles.active : undefined} aria-pressed={view === "returns"} aria-controls="account-panel" onClick={() => setView("returns")}><RotateCcw aria-hidden="true" />Returns</button>
             <button className={view === "wishlist" ? styles.active : undefined} aria-pressed={view === "wishlist"} aria-controls="account-panel" onClick={() => setView("wishlist")}><Heart aria-hidden="true" />Wishlist</button>
             <button className={view === "addresses" ? styles.active : undefined} aria-pressed={view === "addresses"} aria-controls="account-panel" onClick={() => setView("addresses")}><MapPin aria-hidden="true" />Jobsite Addresses</button>
             <button className={view === "quotes" ? styles.active : undefined} aria-pressed={view === "quotes"} aria-controls="account-panel" onClick={() => setView("quotes")}><FileText aria-hidden="true" />Quote Requests</button>
@@ -110,7 +113,8 @@ export function AccountSummary() {
       <div className={styles.content}>
         {error && <p role="alert" className={styles.error}>{error}</p>}
         {customer ? <>
-          {view === "wishlist" ? <AccountWishlist />
+          {view === "returns" ? <AccountReturns />
+            : view === "wishlist" ? <AccountWishlist />
             : view === "addresses" ? <AccountAddresses />
             : view === "quotes" ? <AccountQuotes />
             : view === "details" ? <AccountDetails customer={customer} onUpdated={(next) => setCustomer((current) => (current ? { ...current, ...next } : current))} />
