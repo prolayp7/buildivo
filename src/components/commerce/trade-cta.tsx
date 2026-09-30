@@ -1,23 +1,9 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { DotPattern } from "@/components/ui/dot-pattern";
-import { fetchTradeCtaContent, type TradeCtaContent } from "@/lib/api";
+import type { TradeCtaContent } from "@/lib/api";
 
-export default function TradeCTA() {
-    const [tradeCta, setTradeCta] = useState<TradeCtaContent | null>(null);
-
-    useEffect(() => {
-        const getTradeCtaContent = async () => {
-            const content = await fetchTradeCtaContent();
-            setTradeCta(content);
-        };
-        getTradeCtaContent();
-    }, []);
-
-    if (!tradeCta) return null;
-
+// Rendered on the server: the page fetches the admin-managed content and passes it in.
+export default function TradeCTA({ content: tradeCta }: { content: TradeCtaContent }) {
     return (
         <section className="relative isolate w-full overflow-hidden bg-[#080f18] text-[#9aabba]" style={{ backgroundImage: "radial-gradient(ellipse at 72% 0%, rgba(100, 139, 171, 0.08), transparent 58%), linear-gradient(115deg, #070e16 0%, #111f2c 48%, #0b1520 76%, #070e16 100%)" }}>
             <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[linear-gradient(155deg,transparent_15%,rgba(213,234,250,0.025)_34%,transparent_52%)]" />

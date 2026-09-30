@@ -1,7 +1,8 @@
 "use client";
 
 import { CURRENCY } from "@/lib/format";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import Link from "next/link";
 
 // ---- Returns (order-item level: partial quantities, several returns per order) ----
@@ -109,14 +110,46 @@ export function ReturnTimeline({ ret }: { ret: ReturnView }) {
   );
 }
 
-/** Evidence photos are private: streamed through the signed-in session, never public URLs. */
-export function EvidencePhoto({ returnNumber, imageId }: { returnNumber: string; imageId: number }) {
-  const src = `/api/customer-session/returns/${encodeURIComponent(returnNumber)}/images/${imageId}`;
+/** Evidence photos are private: streamed through the signed-in session, never public URLs.
+ * Clicking a thumbnail opens an in-page viewer with previous/next. */
+export function EvidenceGallery({ returnNumber, imageIds }: { returnNumber: string; imageIds: number[] }) {
+  const [index, setIndex] = useState<number | null>(null);
+  const viewer = useRef<HTMLDialogElement>(null);
+  const src = (id: number) => `/api/customer-session/returns/${encodeURIComponent(returnNumber)}/images/${id}`;
+  const count = imageIds.length;
+  const open = (i: number) => { setIndex(i); viewer.current?.showModal(); };
+  const step = (by: number) => setIndex((current) => current === null ? current : Math.min(count - 1, Math.max(0, current + by)));
+  const control = "fixed grid h-11 w-11 place-items-center rounded-full bg-white/90 text-graphite-900 disabled:cursor-default disabled:opacity-35";
   return (
-    <a href={src} target="_blank" rel="noopener noreferrer" aria-label="Open photo" className="block h-20 w-20 overflow-hidden rounded-md border border-border-default bg-surface-sunken">
-      {/* eslint-disable-next-line @next/next/no-img-element -- private image behind the session route */}
-      <img src={src} alt="Return evidence" className="h-full w-full object-cover" />
-    </a>
+    <>
+      <span className="mt-2.5 flex flex-wrap gap-2.5">
+        {imageIds.map((id, i) => (
+          <button type="button" key={id} onClick={() => open(i)} aria-label={`View photo ${i + 1} of ${count}`} className="block h-20 w-20 cursor-zoom-in overflow-hidden rounded-md border border-border-default bg-surface-sunken">
+            {/* eslint-disable-next-line @next/next/no-img-element -- private image behind the session route */}
+            <img src={src(id)} alt="" className="h-full w-full object-cover" />
+          </button>
+        ))}
+      </span>
+      <dialog ref={viewer} aria-label="Return photos" onClose={() => setIndex(null)}
+        onClick={(event) => { if (event.target === event.currentTarget) viewer.current?.close(); }}
+        onKeyDown={(event) => { if (event.key === "ArrowLeft") step(-1); if (event.key === "ArrowRight") step(1); }}
+        className="m-0 h-screen max-h-none w-screen max-w-none bg-transparent p-0 backdrop:bg-graphite-900/85 open:grid open:place-items-center">
+        {index !== null ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element -- private image behind the session route */}
+            <img src={src(imageIds[index])} alt={`Return photo ${index + 1} of ${count}`} className="max-h-[82vh] max-w-[min(92vw,1100px)] rounded-lg bg-white object-contain" />
+            <button type="button" onClick={() => viewer.current?.close()} aria-label="Close" className={`${control} right-4 top-4`}><X size={22} /></button>
+            {count > 1 ? (
+              <>
+                <button type="button" onClick={() => step(-1)} disabled={index === 0} aria-label="Previous photo" className={`${control} left-4 top-1/2 -translate-y-1/2`}><ChevronLeft size={24} /></button>
+                <button type="button" onClick={() => step(1)} disabled={index === count - 1} aria-label="Next photo" className={`${control} right-4 top-1/2 -translate-y-1/2`}><ChevronRight size={24} /></button>
+                <p aria-live="polite" className="fixed bottom-5 left-1/2 m-0 -translate-x-1/2 text-[13px] font-semibold text-white">{index + 1} / {count}</p>
+              </>
+            ) : null}
+          </>
+        ) : null}
+      </dialog>
+    </>
   );
 }
 

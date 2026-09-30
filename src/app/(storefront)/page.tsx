@@ -9,7 +9,7 @@ import ProjectKits  from "@/components/commerce/project-kits";
 import TradeCTA  from "@/components/commerce/trade-cta";
 import { CalculatorsSection } from "@/components/home/calculators-section";
 import { EcosystemMatcherSection } from "@/components/home/ecosystem-matcher-section";
-import { fetchCalculatorsContent, fetchEcosystemMatcherContent, fetchFloatingBadge, fetchHeroSlides, fetchProjectKitsContent, fetchToolPlatforms, fetchTrustBadges, fetchVisibleHomepageSections } from "@/lib/api";
+import { fetchCalculatorsContent, fetchDepartments, fetchEcosystemMatcherContent, fetchFeaturedProducts, fetchFloatingBadge, fetchHeroSlides, fetchHomepageSections, fetchProjectKitsContent, fetchToolPlatforms, fetchTradeCtaContent, fetchTrustBadges, sectionHeader, type ApiHomepageSection } from "@/lib/api";
 
 export const metadata: Metadata = {
   title: "Buildivo — Pro-Grade Tools, Hardware & DIY Supplies",
@@ -17,8 +17,8 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const [visibleSections, heroSlides, trustBadges, floatingBadge, calculatorsContent, ecosystemMatcherContent, projectKitsContent, toolPlatforms] = await Promise.all([
-    fetchVisibleHomepageSections(),
+  const [sections, heroSlides, trustBadges, floatingBadge, calculatorsContent, ecosystemMatcherContent, projectKitsContent, toolPlatforms, departments, featuredProducts, tradeCtaContent] = await Promise.all([
+    fetchHomepageSections(),
     fetchHeroSlides(),
     fetchTrustBadges(),
     fetchFloatingBadge(),
@@ -26,6 +26,9 @@ export default async function HomePage() {
     fetchEcosystemMatcherContent(),
     fetchProjectKitsContent(),
     fetchToolPlatforms(),
+    fetchDepartments().catch(() => []),
+    fetchFeaturedProducts(4).catch(() => []),
+    fetchTradeCtaContent(),
   ]);
   const calculators = [
     { slug: "concrete-mortar", icon: calculatorsContent.calc1Icon, label: calculatorsContent.calc1Label, caption: calculatorsContent.calc1Caption },
@@ -33,39 +36,27 @@ export default async function HomePage() {
     { slug: "flooring-underlay", icon: calculatorsContent.calc3Icon, label: calculatorsContent.calc3Label, caption: calculatorsContent.calc3Caption },
   ];
   const projects = projectKitsContent.kits.filter((kit) => kit.active).map((kit) => ({ ...kit, slug: kit.id, categorySlug: "building-materials" }));
+
+  // Sections render in the order (and with the visibility) set on buildivo-admin's Homepage page.
+  function renderSection(section: ApiHomepageSection) {
+    switch (section.type) {
+      case "HERO": return heroSlides.length > 0 ? <HomeHero key="hero" slides={heroSlides} floatingBadge={floatingBadge} /> : null;
+      case "TRUST_STRIP": return trustBadges.length > 0 ? <TrustStrip key="trust" badges={trustBadges} /> : null;
+      case "DEPARTMENTS": return <ShopByDepartment key="departments" header={sectionHeader(section.config, { heading: "Shop by Department", linkLabel: "View all products", linkHref: "/c/power-tools" })} departments={departments} />;
+      case "FEATURED_PRODUCTS": return <FeaturedProducts key="featured" header={sectionHeader(section.config, { heading: "Featured Pro Tools", linkLabel: "Shop all Power Tools", linkHref: "/c/power-tools" })} products={featuredProducts} />;
+      case "PROJECT_KITS": return <ProjectKits key="kits" content={projectKitsContent} kits={projects} />;
+      case "TRADE_CTA": return <TradeCTA key="trade" content={tradeCtaContent} />;
+      case "CALCULATORS": return <CalculatorsSection key="calculators" content={calculatorsContent} calculators={calculators} />;
+      case "ECOSYSTEM_MATCHER": return <EcosystemMatcherSection key="ecosystem" content={ecosystemMatcherContent} platforms={toolPlatforms} />;
+      default: return null;
+    }
+  }
+
   return (
     <div className="flex flex-col">
       <JsonLd data={{ "@context": "https://schema.org", "@type": "Organization", name: SITE_NAME, url: absoluteUrl("/") }} />
       <JsonLd data={{ "@context": "https://schema.org", "@type": "WebSite", name: SITE_NAME, url: absoluteUrl("/"), potentialAction: { "@type": "SearchAction", target: absoluteUrl("/search?q={search_term_string}"), "query-input": "required name=search_term_string" } }} />
-      {visibleSections.has("HERO") && heroSlides.length > 0 && <HomeHero slides={heroSlides} floatingBadge={floatingBadge} />}
-
-      {visibleSections.has("TRUST_STRIP") && trustBadges.length > 0 && (
-      <TrustStrip badges={trustBadges} />
-      )}
-
-      {visibleSections.has("DEPARTMENTS") && (
-      <ShopByDepartment />
-      )}
-
-      {visibleSections.has("FEATURED_PRODUCTS") && (
-      <FeaturedProducts />
-      )}
-
-      {visibleSections.has("PROJECT_KITS") && (
-      <ProjectKits content={projectKitsContent} kits={projects} />
-      )}
-
-      {visibleSections.has("TRADE_CTA") && (
-      <TradeCTA />
-      )}
-
-      {visibleSections.has("CALCULATORS") && (
-      <CalculatorsSection content={calculatorsContent} calculators={calculators} />
-      )}
-
-      {visibleSections.has("ECOSYSTEM_MATCHER") && (
-      <EcosystemMatcherSection content={ecosystemMatcherContent} platforms={toolPlatforms} />
-      )}
+      {sections.map(renderSection)}
     </div>
   );
 }

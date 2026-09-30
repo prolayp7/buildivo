@@ -13,6 +13,7 @@ export type ProjectKit = {
   specLabel: string;
   specValue: string;
   est: string;
+  bundleSlug?: string;
 };
 
 
@@ -83,7 +84,7 @@ export default function ProjectKits({ content, kits }: { content: ProjectKitsCon
                   </div>
 
                   <Link
-                    href="/guides"
+                    href={project.bundleSlug ? `/bundles/${encodeURIComponent(project.bundleSlug)}` : "/guides"}
                     className="mt-auto flex min-h-10 items-center justify-center gap-2 rounded-xl bg-surface-white px-3 py-2.5 text-label-md font-label-md font-semibold text-text-primary transition-colors hover:bg-orange-500 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-500"
                   >
                     View Material List

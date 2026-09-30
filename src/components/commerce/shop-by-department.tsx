@@ -1,38 +1,15 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { fetchDepartments } from "@/lib/api";
+import type { Category } from "@/types";
+import type { SectionHeader } from "@/lib/api";
 
-type Department = {
-  slug: string;
-  icon: string;
-  name: string;
-  productCount: number;
-};
-
-export default function ShopByDepartment() {
-  const [departments, setDepartments] = useState<Department[]>([]);
-
-  useEffect(() => {
-    const loadDepartments = async () => {
-      try {
-        const data = await fetchDepartments();
-        setDepartments(data);
-      } catch (error) {
-        console.error("Error fetching departments:", error);
-      }
-    };
-
-    loadDepartments();
-  }, []);
-
+// Rendered on the server: the page fetches the departments (top-level categories) and passes them in.
+export default function ShopByDepartment({ header, departments }: { header: SectionHeader; departments: Category[] }) {
   return (
     <section id="departments" className="mx-auto w-full max-w-[1600px] scroll-mt-40 px-4 py-5 sm:py-10 sm:px-margin-desktop">
         <div className="mb-3 flex items-center justify-between gap-2 sm:mb-space-lg">
-          <h2 className="text-[18px] leading-6 font-headline-lg-mobile font-bold text-graphite-900 sm:text-headline-lg sm:font-headline-lg">Shop by Department</h2>
-          <Link href="/c/power-tools" className="shrink-0 whitespace-nowrap text-[10px] sm:text-label-lg font-label-lg font-semibold text-orange-600 hover:underline">
-            View all products
+          <h2 className="text-[18px] leading-6 font-headline-lg-mobile font-bold text-graphite-900 sm:text-headline-lg sm:font-headline-lg">{header.heading}</h2>
+          <Link href={header.linkHref} className="shrink-0 whitespace-nowrap text-[10px] sm:text-label-lg font-label-lg font-semibold text-orange-600 hover:underline">
+            {header.linkLabel}
           </Link>
         </div>
         <div aria-label="Departments" className="flex snap-x snap-proximity gap-2 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-3 sm:gap-3 sm:overflow-visible lg:grid-cols-5">

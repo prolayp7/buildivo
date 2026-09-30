@@ -62,7 +62,7 @@ export function HomeHero({ slides: heroSlides, floatingBadge }: { slides: HeroSl
                   </Link>
                 </ShimmerButton>
                 <Link
-                  href="/guides"
+                  href="/bundles"
                   className="flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-xl bg-surface-warm px-2 py-2.5 text-center sm:gap-2 sm:px-7 sm:py-3.5 font-label-lg text-xs sm:text-label-lg font-bold text-graphite-900 shadow-sm transition-all hover:bg-surface-dim"
                 >
                   <span aria-hidden className="material-symbols-outlined text-[20px] text-graphite-600">tune</span>

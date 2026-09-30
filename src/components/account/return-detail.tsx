@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { EvidencePhoto, formatAddress, money, RETURN_STATUS_MESSAGE, ReturnStatusBadge, ReturnTimeline, sessionRequest, type ReturnView } from "./returns-shared";
+import { EvidenceGallery, formatAddress, money, RETURN_STATUS_MESSAGE, ReturnStatusBadge, ReturnTimeline, sessionRequest, type ReturnView } from "./returns-shared";
 
 const METHOD: Record<string, string> = { STRIPE: "Card (Stripe)", PAYPAL: "PayPal", TWOCHECKOUT: "Card (2Checkout)" };
 const REFUND_STATUS: Record<string, string> = { PENDING: "Pending", PROCESSING: "Processing", PROCESSED: "Successful", FAILED: "Failed - we are retrying", CANCELLED: "Cancelled" };
@@ -91,7 +91,7 @@ export function ReturnDetail() {
                       {item.description ? <span className="mt-1 block text-[12.5px] text-text-secondary">{item.description}</span> : null}
                       {item.inspectionResult === "REJECTED" && item.inspectionRejectionReason ? <span className="mt-1 block text-[12.5px]"><b>Not accepted at inspection:</b> {item.inspectionRejectionReason}</span> : null}
                       {item.deductionAmount > 0 ? <span className="mt-1 block text-[12.5px]"><b>Deduction {money(item.deductionAmount)}:</b> {item.deductionReason}</span> : null}
-                      {item.imageIds.length ? <span className="mt-2.5 flex flex-wrap gap-2.5">{item.imageIds.map((id) => <EvidencePhoto key={id} returnNumber={ret.returnNumber} imageId={id} />)}</span> : null}
+                      {item.imageIds.length ? <EvidenceGallery returnNumber={ret.returnNumber} imageIds={item.imageIds} /> : null}
                     </span>
                     <span className="whitespace-nowrap font-bold tabular-nums">{money(item.refundAmount)}</span>
                   </div>

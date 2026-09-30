@@ -87,22 +87,25 @@ export async function fetchFooterMenu(): Promise<FooterColumn[]> {
   return menu ? toFooterColumns(menu.items) : [];
 }
 
-interface ApiHomepageSection {
+export interface ApiHomepageSection {
   type: string;
   config: Record<string, string>;
 }
 
-// Which homepage sections (src/app/(storefront)/page.tsx) are turned on and
-// their per-section content, set from buildivo-admin's Homepage page.
-// Layout/order stay fixed in code.
-async function fetchHomepageSections(): Promise<ApiHomepageSection[]> {
+// The visible homepage sections (src/app/(storefront)/page.tsx) in the order set on buildivo-admin's
+// Homepage page, with their per-section content.
+export async function fetchHomepageSections(): Promise<ApiHomepageSection[]> {
   const res = await apiGet<{ data: ApiHomepageSection[] }>("homepage-sections");
   return res.data;
 }
 
-export async function fetchVisibleHomepageSections(): Promise<Set<string>> {
-  const sections = await fetchHomepageSections();
-  return new Set(sections.map((section) => section.type));
+/** Heading and "view all" link of an automatic section; admin values override the built-in copy. */
+export interface SectionHeader { heading: string; linkLabel: string; linkHref: string }
+// Site paths or http(s) only, so a saved link can never become javascript: or //elsewhere.
+const safeLink = (value: unknown) => (typeof value === "string" && /^(\/(?!\/)|https?:\/\/)\S*$/i.test(value.trim()) ? value.trim() : null);
+export function sectionHeader(config: Record<string, unknown> | undefined, defaults: SectionHeader): SectionHeader {
+  const text = (key: keyof SectionHeader) => (typeof config?.[key] === "string" && (config[key] as string).trim() ? (config[key] as string).trim() : defaults[key]);
+  return { heading: text("heading"), linkLabel: text("linkLabel"), linkHref: safeLink(config?.linkHref) ?? defaults.linkHref };
 }
 
 export interface TradeCtaContent {
@@ -204,6 +207,8 @@ export interface ProjectKit {
   image: string;
   imageAlt?: string;
   active: boolean;
+  /** Product bundle the kit's "View Material List" opens; without one it links to /guides. */
+  bundleSlug?: string;
 }
 
 const PROJECT_KITS_DEFAULTS: ProjectKitsContent = {
