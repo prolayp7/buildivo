@@ -11,22 +11,24 @@ const YOUTUBE = /(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/)|youtu\.
 const escapeHtml = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 const options: sanitizeHtml.IOptions = {
-  allowedTags: ["p", "br", "hr", "h2", "h3", "h4", "ul", "ol", "li", "strong", "b", "em", "i", "u", "s", "blockquote", "code", "pre", "a", "img", "figure", "figcaption", "iframe", "table", "thead", "tbody", "tr", "th", "td"],
+  allowedTags: ["p", "br", "hr", "h2", "h3", "h4", "ul", "ol", "li", "strong", "b", "em", "i", "u", "s", "blockquote", "code", "pre", "a", "img", "figure", "figcaption", "iframe", "video", "table", "thead", "tbody", "tr", "th", "td"],
   allowedAttributes: {
     a: ["href", "title", "target", "rel"],
     img: ["src", "alt", "title", "width", "height", "loading"],
     iframe: ["src", "title", "allow", "allowfullscreen", "loading"],
+    video: ["src", "controls", "preload", "playsinline"],
     figure: ["class"],
   },
   allowedClasses: { figure: ["video"] },
   allowedSchemes: ["http", "https", "mailto", "tel"],
-  allowedSchemesByTag: { img: ["http", "https"] },
+  allowedSchemesByTag: { img: ["http", "https"], video: ["http", "https"] },
   allowProtocolRelative: false,
   allowedIframeHostnames: ["www.youtube-nocookie.com"],
   transformTags: {
     a: sanitizeHtml.simpleTransform("a", { rel: "noopener noreferrer" }),
     // Uploads are served by the API, not this app.
     img: (tagName, attribs) => ({ tagName, attribs: { ...attribs, src: resolveMediaUrl(API_ORIGIN, attribs.src) ?? "", loading: "lazy" } }),
+    video: (tagName, attribs) => ({ tagName, attribs: { ...attribs, src: resolveMediaUrl(API_ORIGIN, attribs.src) ?? "" } }),
   },
 };
 

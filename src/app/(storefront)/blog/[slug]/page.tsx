@@ -16,7 +16,6 @@ interface BlogPostPageProps {
 const date = (value: string | null) => (value ? new Date(value).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "");
 
 function readTime(post: BlogPost) {
-  if (post.estimatedTimeMinutes) return `${post.estimatedTimeMinutes} min read`;
   const words = (post.content ?? "").replace(/<[^>]*>/g, " ").trim().split(/\s+/).filter(Boolean).length;
   return `${Math.max(1, Math.ceil(words / 200))} min read`;
 }
