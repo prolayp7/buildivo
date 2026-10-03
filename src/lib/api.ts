@@ -569,6 +569,29 @@ export interface GeneralSettings {
   copyright?: string;
 }
 
+export interface StorefrontFaq {
+  id: number;
+  question: string;
+  answer: string;
+  sortOrder: number;
+}
+
+export interface StorefrontFaqCategory {
+  id: number;
+  name: string;
+  sortOrder: number;
+  faqs: StorefrontFaq[];
+}
+
+export async function fetchFaqCategories(): Promise<StorefrontFaqCategory[]> {
+  try {
+    const response = await apiGet<StorefrontFaqCategory[] | { data?: StorefrontFaqCategory[] }>("faqs", 60);
+    return Array.isArray(response) ? response : Array.isArray(response.data) ? response.data : [];
+  } catch {
+    return [];
+  }
+}
+
 export interface StorefrontTopBarSettings {
   tradeMessage: string;
   mobileTradeLabel: string;

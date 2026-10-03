@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
-import { ComingSoon } from "@/components/layout/coming-soon";
+import { HelpSupportCenter } from "@/components/help/help-support-center";
+import { fetchFaqCategories, fetchGeneralSettings } from "@/lib/api";
 
-export const metadata: Metadata = { title: "Help Center" };
+export const metadata: Metadata = {
+  title: "Help & Support",
+  description: "Find help with Buildivo orders, delivery, returns, payments, and products.",
+  alternates: { canonical: "/help" },
+};
 
-export default function Page() {
-  return <ComingSoon icon="help" title="Help Center" description="Support articles, returns and warranty info aren't built in this pass — contact your account manager for now." />;
+export default async function HelpPage() {
+  const [categories, settings] = await Promise.all([fetchFaqCategories(), fetchGeneralSettings()]);
+  return <HelpSupportCenter categories={categories} supportEmail={settings.supportEmail?.trim() ?? ""} supportPhone={settings.supportPhone1?.trim() ?? ""} />;
 }
