@@ -33,7 +33,7 @@ export default function ProjectKits({ content, kits }: { content: ProjectKitsCon
             </div>
             <p className="text-label-sm font-label-sm text-text-secondary">{content.footnote}</p>
           </div>
-          <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:pb-0 lg:grid-cols-4">
+          <div className="flex gap-4 overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory pb-2 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:pb-0 lg:grid-cols-4">
             {kits.map((project) => (
               <div
                 key={project.slug}

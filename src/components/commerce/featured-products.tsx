@@ -13,9 +13,9 @@ export default function FeaturedProducts({ header, products }: { header: Section
             {header.linkLabel}
           </Link>
         </div>
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:pb-0 lg:grid-cols-4">
           {products.map((product) => (
-            <ProductCard key={product.id} product={product} featured />
+            <ProductCard key={product.id} product={product} featured className="w-[80%] shrink-0 snap-start sm:w-auto sm:shrink" />
           ))}
         </div>
     </section>

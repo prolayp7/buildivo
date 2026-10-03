@@ -9,14 +9,17 @@
 .imageHeading > div { display: flex; flex-direction: column; align-items: start; gap: 8px; }
 .brandBadge { background: var(--color-orange-600); color: white; padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; }
 .model { font-size: 10px; color: var(--color-text-secondary); padding: 5px; background: var(--color-surface-warm); border-radius: 4px; overflow-wrap: anywhere; max-width: 45%; }
-.zoomButton { width: 100%; cursor: zoom-in; }
+.zoomButton { position: relative; display: block; width: 100%; cursor: crosshair; }
+.lens { position: absolute; pointer-events: none; border: 1px solid var(--color-orange-500); background: rgb(255 121 0 / .12); }
+.zoomPane { position: absolute; z-index: 30; top: 0; left: 0; overflow: hidden; pointer-events: none; border: 1px solid var(--color-border-default); border-radius: 12px; background: white; box-shadow: 0 12px 40px rgb(8 13 18 / .18); }
+.zoomPane img { position: absolute; top: 0; left: 0; max-width: none; object-fit: contain; }
 .mainImage { display: flex; align-items: center; justify-content: center; width: 100%; height: 420px; object-fit: contain; background: white; padding: 18px 0; }
 .galleryCaption { border-top: 1px solid var(--color-border-default); padding-top: 14px; font-size: 10px; color: var(--color-text-secondary); }
 .summarySpecs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 18px; }
 .summarySpecs > div { display: flex; flex-direction: column; justify-content: center; gap: 7px; min-height: 92px; background: white; border: 1px solid var(--color-border-default); border-radius: 8px; padding: 12px 8px; text-align: center; }
 .summarySpecs dt { font-size: 10px; color: var(--color-text-secondary); }
 .summarySpecs dd { font-size: 16px; font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; }
-.purchase { display: flex; flex-direction: column; gap: 16px; min-width: 0; padding: 23px; border: 1px solid var(--color-border-default); border-radius: 12px; background: white; }
+.purchase { position: relative; display: flex; flex-direction: column; gap: 16px; min-width: 0; padding: 23px; border: 1px solid var(--color-border-default); border-radius: 12px; background: white; }
 .title { font-size: 26px; line-height: 1.2; letter-spacing: -.025em; font-weight: 700; margin: 12px 0 10px; }
 .pricePanel { padding: 14px; background: var(--color-surface-warm); border: 1px solid var(--color-border-default); border-radius: 9px; }
 .price { font-size: 34px; line-height: 1.2; font-weight: 750; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
@@ -44,9 +47,16 @@
 .specifications dd { text-align: right; overflow-wrap: anywhere; }
 .section { margin-top: 32px; padding: 24px; background: white; border: 1px solid var(--color-border-default); border-radius: 16px; scroll-margin-top: 180px; }
 .reviewLayout { display: grid; grid-template-columns: minmax(180px, .7fr) minmax(0, 2fr); gap: 24px; align-items: start; }
+.reviewHeader { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.reviewTitle { min-width: 0; }
 .reviewScore { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; background: var(--color-surface-warm); border-radius: 12px; text-align: center; }
 .reviewCards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
 .reviewCard { padding: 20px; border: 1px solid var(--color-border-default); border-radius: 12px; }
+.relatedProducts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.relatedSlide { min-width: 0; }
+.relatedPagination { display: none; }
+@media (min-width: 640px) { .relatedProducts { gap: 16px; } }
+@media (min-width: 1024px) { .relatedProducts { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (max-width: 1100px) {
   .layout { grid-template-columns: minmax(0, 1.2fr) minmax(330px, 1fr); gap: 18px; }
   .gallery { grid-template-columns: 60px minmax(0, 1fr); gap: 10px; }
@@ -74,8 +84,41 @@
   .variants { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .buyRow { flex-wrap: wrap; }
   .sectionTitle { font-size: 24px; }
+  .reviewHeader { flex-direction: column; align-items: stretch; gap: 10px; }
+  .reviewTitle { font-size: 20px; line-height: 1.25; }
+  .reviewHeader :global(button) { width: 100%; min-height: 44px; }
+  .relatedProducts {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .relatedProducts::-webkit-scrollbar { display: none; }
+  .relatedSlide { flex: 0 0 100%; scroll-snap-align: start; scroll-snap-stop: always; }
+  .relatedPagination { display: flex; justify-content: center; gap: 2px; margin-top: 4px; }
+  .relatedPagination button { display: grid; width: 44px; min-height: 44px; place-items: center; border: 0; background: transparent; cursor: pointer; }
+  .relatedPagination button span { width: 7px; height: 7px; border-radius: 9999px; background: var(--color-graphite-200); transition: width 150ms ease, background-color 150ms ease; }
+  .relatedPagination button[aria-pressed="true"] span { width: 18px; background: var(--color-orange-600); }
+  .tabList {
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 12px;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tabList::-webkit-scrollbar { display: none; }
+  .tabList > button {
+    min-height: 44px;
+    padding-inline: 14px;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
 }
 
-@media (width < 640px) {
-  .relatedCard [data-card-specs] { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .relatedProducts { scroll-behavior: auto; }
+  .relatedPagination button span { transition: none; }
 }

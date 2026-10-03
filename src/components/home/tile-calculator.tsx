@@ -159,7 +159,7 @@ export function TileCalculator() {
         </label> : <p role={loadingAdhesives ? "status" : "note"} className="text-label-sm font-label-sm text-text-secondary">{loadingAdhesives ? "Loading adhesive products…" : adhesive ? "Uses current product coverage and price." : "No calculator-ready adhesive is available."}</p>}
         <Button
           type="button"
-          className="h-8 rounded-lg bg-orange-500 px-5 text-[12px] font-bold hover:bg-orange-600"
+          className="h-9 self-end rounded-lg bg-orange-500 px-5 text-[12px] font-bold hover:bg-orange-600"
           disabled={loadingAdhesives || !adhesive?.variantId || !result.adhesiveUnits || adding}
           onClick={() => void addAdhesive()}
         >

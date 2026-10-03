@@ -115,8 +115,8 @@ export default function CartPage() {
               if (!product) return null;
               return (
                 <li key={`${line.productId}-${line.variantId ?? "base"}`} className="flex flex-col gap-3 rounded-xl border border-border-default bg-surface-white p-4">
-                  <div className="flex gap-4">
-                    <div className="relative shrink-0">
+                  <div className="grid grid-cols-[96px_minmax(0,1fr)] gap-x-3 gap-y-2 sm:grid-cols-[96px_minmax(0,1fr)_auto] sm:gap-x-4">
+                    <div className="relative col-start-1 row-start-1 shrink-0">
                       {product.badges?.[0] && (
                         <span className="absolute -left-1 -top-1 z-10 rounded bg-graphite-900 px-1.5 py-0.5 text-label-sm font-label-sm font-semibold text-text-inverse">
                           {product.badges[0]}
@@ -124,7 +124,7 @@ export default function CartPage() {
                       )}
                       <ProductImage src={product.image} categorySlug={product.categorySlug} className="h-24 w-24 shrink-0 rounded-lg object-cover object-center" />
                     </div>
-                    <div className="flex flex-1 flex-col gap-1">
+                    <div className="col-start-2 row-start-1 flex min-w-0 flex-col gap-1">
                       <p className="text-label-sm font-label-sm text-text-secondary">
                         {product.brand} · SKU: {product.sku}
                       </p>
@@ -143,41 +143,39 @@ export default function CartPage() {
                           </p>
                         );
                       })()}
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                        <StockBadge status={product.stock} count={product.stockCount} />
-                        <span className="text-label-sm font-label-sm text-text-secondary">{product.deliveryEta}</span>
-                      </div>
+                      <StockBadge status={product.stock} count={product.stockCount} />
                       {product.tradePriceIncVat && (
                         <p className="text-label-sm font-label-sm text-graphite-600">
                           Trade price: <span className="font-semibold">{formatPrice(product.tradePriceIncVat)} ea.</span>
                         </p>
                       )}
                     </div>
-                    <div className="shrink-0 text-right">
-                      <Price priceIncVat={lineUnitPrice(line) * line.qty} compareAtIncVat={product.compareAtIncVat ? product.compareAtIncVat * line.qty : undefined} vatRate={product.vatRate} size="sm" />
+                    <div className="col-start-1 row-start-2 shrink-0 text-left sm:col-start-3 sm:row-start-1 sm:text-right">
+                      <Price priceIncVat={lineUnitPrice(line) * line.qty} compareAtIncVat={product.compareAtIncVat ? product.compareAtIncVat * line.qty : undefined} vatRate={product.vatRate} size="sm" className="whitespace-nowrap" />
                       {product.compareAtIncVat && (
                         <p className="text-label-sm font-label-sm font-semibold text-error-500">
                           -{Math.round((1 - product.priceIncVat / product.compareAtIncVat) * 100)}%
                         </p>
                       )}
                     </div>
+                    <span className="col-start-2 row-start-2 self-center justify-self-end text-label-sm font-label-sm text-text-secondary">
+                      {product.deliveryEta}
+                    </span>
                   </div>
-                  <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 sm:flex sm:flex-wrap sm:justify-between">
+                    <span className="flex min-w-0 items-center gap-1 text-label-sm font-label-sm text-text-secondary">
+                      <span aria-hidden className="material-symbols-outlined text-[16px]">local_shipping</span>
+                      Delivery options at checkout
+                    </span>
                     <QuantityInput value={line.qty} onChange={(qty) => setQty(line.productId, qty, line.variantId)} label={product.name} />
-                    <div className="ml-auto flex flex-wrap items-center gap-3">
-                      <span className="flex items-center gap-1 text-label-sm font-label-sm text-text-secondary">
-                        <span aria-hidden className="material-symbols-outlined text-[16px]">local_shipping</span>
-                        Delivery options at checkout
-                      </span>
-                      <button type="button" onClick={() => toggleSaveForLater(line.productId, line.variantId)} className="flex items-center gap-1 text-label-sm font-label-sm text-text-secondary hover:text-text-primary">
-                        <span aria-hidden className="material-symbols-outlined text-[16px]">bookmark</span>
-                        Save for Later
-                      </button>
-                      <button type="button" onClick={() => removeItem(line.productId, line.variantId)} className="flex items-center gap-1 text-label-sm font-label-sm text-error-500 hover:underline">
-                        <span aria-hidden className="material-symbols-outlined text-[16px]">delete</span>
-                        Remove
-                      </button>
-                    </div>
+                    <button type="button" onClick={() => toggleSaveForLater(line.productId, line.variantId)} className="flex items-center gap-1 text-label-sm font-label-sm text-text-secondary hover:text-text-primary">
+                      <span aria-hidden className="material-symbols-outlined text-[16px]">bookmark</span>
+                      Save for Later
+                    </button>
+                    <button type="button" onClick={() => removeItem(line.productId, line.variantId)} className="flex items-center gap-1 justify-self-end text-label-sm font-label-sm text-error-500 hover:underline">
+                      <span aria-hidden className="material-symbols-outlined text-[16px]">delete</span>
+                      Remove
+                    </button>
                   </div>
                 </li>
               );
@@ -203,13 +201,14 @@ export default function CartPage() {
               )}
               <div className="flex gap-2">
                 <Input
+                  className="h-10 px-3"
                   value={voucherInput}
                   onChange={(e) => setVoucherInput(e.target.value)}
                   placeholder="Have another promo code or trade voucher?"
                   aria-label="Promo code or trade voucher"
                   onKeyDown={(e) => e.key === "Enter" && applyVoucher()}
                 />
-                <Button type="button" variant="outline" onClick={applyVoucher} disabled={applying}>
+                <Button type="button" variant="outline" className="h-10 px-4" onClick={applyVoucher} disabled={applying}>
                   {applying ? "Checking…" : "Apply"}
                 </Button>
               </div>
@@ -285,7 +284,7 @@ export default function CartPage() {
           />
           <QuoteRequestDialog
             lines={activeLines.map((line) => ({ variantId: line.variantId, label: lineProduct(line)?.name ?? `Item ${line.variantId}`, quantity: line.qty }))}
-            className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-border-default bg-surface-white px-4 text-label-lg font-label-lg font-semibold text-graphite-900 transition-colors hover:border-orange-500 hover:text-orange-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-border-default bg-surface-white px-4 py-2 text-center text-label-lg leading-5 font-label-lg font-semibold text-graphite-900 transition-colors hover:border-orange-500 hover:text-orange-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <span aria-hidden className="material-symbols-outlined text-[20px]">request_quote</span>
             Buying in bulk? Request a quote for this order

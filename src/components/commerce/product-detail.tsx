@@ -1,7 +1,7 @@
 "use client";
 
 import styles from "./product-detail.module.css";
-import { useState } from "react";
+import { type UIEvent, useRef, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import type { Product, Review } from "@/types";
@@ -16,23 +16,28 @@ import { ProductCard } from "@/components/commerce/product-card";
 import { RecentlyViewed } from "@/components/commerce/recently-viewed";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { WriteReviewDialog } from "@/components/commerce/write-review-dialog";
 import { formatPrice } from "@/lib/format";
 import { useCartStore } from "@/lib/cart-store";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
+const ZOOM_SCALE = 2.5;
+
+// All values in px: the lens and photo are relative to the main image box, the pane to the buy box.
+type HoverZoom = { lensX: number; lensY: number; lensW: number; lensH: number; imgX: number; imgY: number; imgW: number; imgH: number; paneW: number; paneH: number; paneTop: number };
+
 interface ProductDetailProps {
   product: Product;
   related: Product[];
   productReviews: Review[];
   questions: ProductQuestion[];
-  platformMatches: Product[];
+  compatibleProducts: Product[];
 }
 
-export function ProductDetail({ product, related, productReviews, platformMatches, questions }: ProductDetailProps) {
+export function ProductDetail({ product, related, productReviews, compatibleProducts, questions }: ProductDetailProps) {
   const [activeImage, setActiveImage] = useState(0);
+  const [activeRelatedIndex, setActiveRelatedIndex] = useState(0);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   // Product identifiers shown at the top of the specifications tab (barcode and manufacturer part number).
   const identifiers = [
@@ -42,7 +47,9 @@ export function ProductDetail({ product, related, productReviews, platformMatche
   ].filter((row): row is { label: string; value: string } => row !== null);
   const [variantId, setVariantId] = useState(product.variants?.[0]?.id);
   const [qty, setQty] = useState(1);
-  const [zoomOpen, setZoomOpen] = useState(false);
+  const [hoverZoom, setHoverZoom] = useState<HoverZoom | null>(null);
+  const purchaseRef = useRef<HTMLDivElement>(null);
+  const relatedScrollerRef = useRef<HTMLDivElement>(null);
   const addItem = useCartStore((s) => s.addItem);
   const wishlist = useCartStore((s) => s.wishlist);
   const toggleWishlist = useCartStore((s) => s.toggleWishlist);
@@ -63,6 +70,41 @@ export function ProductDetail({ product, related, productReviews, platformMatche
   const selectedItem = galleryItems[activeImage] ?? galleryItems[0];
   const isWished = wishlist.includes(product.id);
 
+  // Hover zoom needs a real pointer and room beside the image for the pane.
+  function trackHover(event: React.MouseEvent<HTMLDivElement>) {
+    if (!window.matchMedia("(hover: hover) and (min-width: 1101px)").matches) return;
+    const button = event.currentTarget;
+    const img = button.querySelector("img");
+    const panel = button.closest("[data-image-panel]");
+    const purchase = purchaseRef.current;
+    if (!img || !panel || !purchase || !img.naturalWidth) return;
+    const box = button.getBoundingClientRect();
+    const el = img.getBoundingClientRect();
+    const panelRect = panel.getBoundingClientRect();
+    const purchaseRect = purchase.getBoundingClientRect();
+    // The photo as actually drawn inside the box (object-fit: contain).
+    const fit = Math.min(el.width / img.naturalWidth, el.height / img.naturalHeight);
+    const imgW = img.naturalWidth * fit;
+    const imgH = img.naturalHeight * fit;
+    const paneW = purchaseRect.width;
+    const paneH = panelRect.height;
+    const lensW = Math.min(paneW / ZOOM_SCALE, box.width);
+    const lensH = Math.min(paneH / ZOOM_SCALE, box.height);
+    setHoverZoom({
+      lensX: Math.min(Math.max(event.clientX - box.left - lensW / 2, 0), box.width - lensW),
+      lensY: Math.min(Math.max(event.clientY - box.top - lensH / 2, 0), box.height - lensH),
+      lensW,
+      lensH,
+      imgX: el.left - box.left + (el.width - imgW) / 2,
+      imgY: el.top - box.top + (el.height - imgH) / 2,
+      imgW,
+      imgH,
+      paneW,
+      paneH,
+      paneTop: panelRect.top - purchaseRect.top,
+    });
+  }
+
   function changeGalleryBy(delta: number) {
     setActiveImage((current) => Math.min(Math.max(current + delta, 0), galleryItems.length - 1));
   }
@@ -78,6 +120,31 @@ export function ProductDetail({ product, related, productReviews, platformMatche
     const targetVariantId = variantId ?? product.defaultVariantId;
     if (!targetVariantId) return;
     void addItem(targetVariantId, qty).then(() => router.push("/checkout"));
+  }
+
+  function updateRelatedIndex(event: UIEvent<HTMLDivElement>) {
+    const scroller = event.currentTarget;
+    const centerX = scroller.getBoundingClientRect().left + scroller.clientWidth / 2;
+    let closestIndex = 0;
+    let closestDistance = Number.POSITIVE_INFINITY;
+    Array.from(scroller.children).forEach((slide, index) => {
+      const rect = slide.getBoundingClientRect();
+      const distance = Math.abs(rect.left + rect.width / 2 - centerX);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestIndex = index;
+      }
+    });
+    setActiveRelatedIndex((current) => current === closestIndex ? current : closestIndex);
+  }
+
+  function scrollToRelated(index: number) {
+    const scroller = relatedScrollerRef.current;
+    const slide = scroller?.children.item(index);
+    if (!scroller || !(slide instanceof HTMLElement)) return;
+    const scrollerLeft = scroller.getBoundingClientRect().left;
+    const slideLeft = slide.getBoundingClientRect().left;
+    scroller.scrollTo({ left: scroller.scrollLeft + slideLeft - scrollerLeft });
   }
 
   return (
@@ -101,6 +168,7 @@ export function ProductDetail({ product, related, productReviews, platformMatche
                 key={i}
                 type="button"
                 onClick={() => setActiveImage(i)}
+                onMouseEnter={() => { if (item) setActiveImage(i); }}
                 aria-label={item?.kind === "video" ? `View video of ${product.name}` : `View image ${i + 1} of ${product.name}`}
                 aria-current={activeImage === i}
                 className={cn(
@@ -121,7 +189,7 @@ export function ProductDetail({ product, related, productReviews, platformMatche
           })}
         </div>
 
-        <div className={styles.imagePanel}>
+        <div className={styles.imagePanel} data-image-panel>
           <div className={styles.imageHeading}>
             <div><span className={styles.brandBadge}>{product.brand}</span><StockBadge status={product.stock} /></div>
             <span className={styles.model}>SKU: {product.sku}</span>
@@ -129,26 +197,17 @@ export function ProductDetail({ product, related, productReviews, platformMatche
           {selectedItem?.kind === "video" ? (
             <video key={selectedItem.url} src={selectedItem.url} controls className={styles.mainImage} />
           ) : (
-            <Dialog open={zoomOpen} onOpenChange={setZoomOpen}>
-              <DialogTrigger asChild>
-                <button type="button" className={styles.zoomButton} aria-label="Open image zoom" onTouchStart={(event) => setTouchStartX(event.changedTouches[0]?.clientX ?? null)} onTouchEnd={(event) => {
+            <div className={styles.zoomButton} onMouseMove={trackHover} onMouseLeave={() => setHoverZoom(null)} onTouchStart={(event) => setTouchStartX(event.changedTouches[0]?.clientX ?? null)} onTouchEnd={(event) => {
                   if (touchStartX === null) return;
                   const distance = event.changedTouches[0]?.clientX - touchStartX;
                   if (Math.abs(distance) > 40) changeGalleryBy(distance < 0 ? 1 : -1);
                   setTouchStartX(null);
                 }}>
                   <ProductImage src={selectedItem?.url} alt={selectedItem?.kind === "image" ? selectedItem.alt : product.name} categorySlug={product.categorySlug} loading="eager" className={styles.mainImage} iconClassName="text-[72px]" />
-                </button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>{product.name}</DialogTitle>
-                </DialogHeader>
-                <ProductImage src={selectedItem?.url} alt={selectedItem?.kind === "image" ? selectedItem.alt : product.name} categorySlug={product.categorySlug} className="flex aspect-square w-full items-center justify-center rounded-xl bg-white object-contain p-4" iconClassName="text-[96px]" />
-              </DialogContent>
-            </Dialog>
+                  {hoverZoom && <span aria-hidden className={styles.lens} style={{ width: hoverZoom.lensW, height: hoverZoom.lensH, left: hoverZoom.lensX, top: hoverZoom.lensY }} />}
+            </div>
           )}
-          <p className={styles.galleryCaption}>Model: {product.name} · {selectedItem?.kind === "video" ? "Product video" : "Click image to zoom"}</p>
+          <p className={styles.galleryCaption}>Model: {product.name} · {selectedItem?.kind === "video" ? "Product video" : "Hover to zoom"}</p>
         </div>
         </div>
         {product.specs.length > 0 && <dl className={styles.summarySpecs}>
@@ -156,7 +215,22 @@ export function ProductDetail({ product, related, productReviews, platformMatche
         </dl>}
         </div>
 
-        <div className={styles.purchase}>
+        <div className={styles.purchase} ref={purchaseRef}>
+          {hoverZoom && selectedItem?.kind === "image" && (
+            <div aria-hidden className={styles.zoomPane} style={{ top: hoverZoom.paneTop, width: hoverZoom.paneW, height: hoverZoom.paneH }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={selectedItem.url}
+                alt=""
+                style={{
+                  left: (hoverZoom.imgX - hoverZoom.lensX) * ZOOM_SCALE,
+                  top: (hoverZoom.imgY - hoverZoom.lensY) * ZOOM_SCALE,
+                  width: hoverZoom.imgW * ZOOM_SCALE,
+                  height: hoverZoom.imgH * ZOOM_SCALE,
+                }}
+              />
+            </div>
+          )}
           <div>
             <div className="mb-1 flex items-center gap-2 text-label-sm font-label-sm font-semibold uppercase tracking-wide text-orange-600">
               {product.brand}
@@ -339,20 +413,15 @@ export function ProductDetail({ product, related, productReviews, platformMatche
             </ul>
           </TabsContent>
           <TabsContent value="compat" className={styles.tabContent}>
-            {product.toolPlatform ? (
+            {product.toolPlatform || compatibleProducts.length > 0 ? (
               <div className="py-6">
-                <p className="text-body-sm font-body-sm text-text-secondary">
-                  Part of the <span className="font-semibold text-graphite-900">{product.toolPlatform}</span> platform. It works with any bare tool, battery or charger on the same platform.
-                </p>
-                {platformMatches.length > 0 ? (
+                {product.toolPlatform ? <p className="text-body-sm font-body-sm text-text-secondary">Part of the <span className="font-semibold text-graphite-900">{product.toolPlatform}</span> platform. Results include matching platform items and products explicitly linked as compatible.</p> : <p className="text-body-sm font-body-sm text-text-secondary">These products are explicitly linked as compatible or match the product&apos;s technical compatibility details.</p>}
+                {compatibleProducts.length > 0 ? (
                   <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
-                    {platformMatches.map((match) => <ProductCard key={match.id} product={match} />)}
+                    {compatibleProducts.map((match) => <ProductCard key={match.id} product={match} />)}
                   </div>
                 ) : <p className="mt-4 rounded-lg bg-surface-warm p-4 text-body-sm font-body-sm text-text-secondary">No verified products match this platform yet. Try another category or contact support before substituting a battery or charger.</p>}
-                <Link href={`/c/${product.categorySlug}?platform=${encodeURIComponent(product.toolPlatform)}`} className="mt-4 inline-flex items-center gap-1 text-label-sm font-label-sm font-semibold text-orange-600 hover:underline">
-                  Shop all {product.toolPlatform} tools
-                  <span aria-hidden className="material-symbols-outlined text-[16px]">arrow_forward</span>
-                </Link>
+                {product.toolPlatform ? <Link href={`/c/${product.categorySlug}?platform=${encodeURIComponent(product.toolPlatform)}`} className="mt-4 inline-flex items-center gap-1 text-label-sm font-label-sm font-semibold text-orange-600 hover:underline">Shop all {product.toolPlatform} tools<span aria-hidden className="material-symbols-outlined text-[16px]">arrow_forward</span></Link> : null}
               </div>
             ) : (
               <p className="py-6 text-body-sm font-body-sm text-text-secondary">
@@ -379,17 +448,20 @@ export function ProductDetail({ product, related, productReviews, platformMatche
       {related.length > 0 && (
         <section className={styles.section}>
           <h2 className="mb-4 text-headline-sm font-headline-sm font-bold text-graphite-900">You May Also Need</h2>
-          <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
-            {related.map((p) => (
-              <ProductCard key={p.id} product={p} mobileCategory className={styles.relatedCard} />
+          <div ref={relatedScrollerRef} className={styles.relatedProducts} onScroll={updateRelatedIndex} role="group" aria-roledescription="carousel" aria-label="You May Also Need">
+            {related.map((p, index) => (
+              <div key={p.id} className={styles.relatedSlide} role="group" aria-roledescription="slide" aria-label={`${index + 1} of ${related.length}: ${p.name}`}>
+                <ProductCard product={p} mobileCategory className={styles.relatedCard} />
+              </div>
             ))}
           </div>
+          {related.length > 1 ? <div className={styles.relatedPagination} role="group" aria-label="Choose a recommended product">{related.map((item, index) => <button key={item.id} type="button" onClick={() => scrollToRelated(index)} aria-label={`Show recommended product ${index + 1}: ${item.name}`} aria-pressed={activeRelatedIndex === index}><span /></button>)}</div> : null}
         </section>
       )}
 
       <section id="reviews" className={styles.section}>
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-headline-sm font-headline-sm font-bold text-graphite-900">Customer Reviews &amp; Ratings</h2>
+        <div className={`${styles.reviewHeader} mb-4`}>
+          <h2 className={`${styles.reviewTitle} text-headline-sm font-headline-sm font-bold text-graphite-900`}>Customer Reviews &amp; Ratings</h2>
           <WriteReviewDialog productId={product.id} productName={product.name} productSlug={product.slug} />
         </div>
         <div className={styles.reviewLayout}>

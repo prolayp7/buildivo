@@ -5,7 +5,7 @@ import { BreadcrumbJsonLd } from "@/components/seo/breadcrumb-json-ld";
 import { JsonLd } from "@/components/seo/json-ld";
 import { CURRENCY } from "@/lib/format";
 import { SITE_NAME, absoluteUrl } from "@/lib/site";
-import { fetchPlatformMatches, fetchProductBySlug, fetchProductQuestions, fetchRelatedProducts, fetchReviews, toReview } from "@/lib/api";
+import { fetchCompatibleProducts, fetchProductBySlug, fetchProductQuestions, fetchRelatedProducts, fetchReviews, toReview } from "@/lib/api";
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -36,7 +36,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const [related, apiReviews, platformMatches, questions] = await Promise.all([
     fetchRelatedProducts(slug),
     fetchReviews(product.id),
-    product.toolPlatform ? fetchPlatformMatches(slug) : Promise.resolve([]),
+    fetchCompatibleProducts(slug),
     fetchProductQuestions(slug),
   ]);
 
@@ -54,7 +54,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         offers: { "@type": "Offer", url: absoluteUrl(`/p/${product.slug}`), priceCurrency: CURRENCY, price: product.priceIncVat.toFixed(2), availability: `https://schema.org/${availability}`, itemCondition: product.itemCondition ? `https://schema.org/${product.itemCondition}` : undefined, seller: { "@type": "Organization", name: SITE_NAME } },
         aggregateRating: product.reviewCount > 0 ? { "@type": "AggregateRating", ratingValue: product.rating, reviewCount: product.reviewCount } : undefined,
       }} />
-      <ProductDetail product={product} related={related} productReviews={apiReviews.map(toReview)} platformMatches={platformMatches} questions={questions} />
+      <ProductDetail product={product} related={related} productReviews={apiReviews.map(toReview)} compatibleProducts={platformMatches} questions={questions} />
     </>
   );
 }

@@ -15,7 +15,7 @@ export function CategoryExtras({ accessories }: { accessories: Product[] }) {
  <h2 className="text-[20px] font-bold text-graphite-900">Frequently Paired Site Consumables &amp; Fixings</h2>
  <p className="text-sm text-text-secondary">Keep crews operational with high-cycle masonry bits, impact bits, and diamond blades</p>
  </div><Link href="/c/hardware-fixings" className="text-xs font-semibold text-orange-600 hover:underline">Explore All Accessories →</Link></div>
- {accessories.length > 0 && <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+ {accessories.length > 0 && <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
  {accessories.map((product) => <article key={product.id} className="flex items-center gap-3 rounded-lg border border-border-default bg-surface-warm p-3">
  <ProductImage src={product.image} categorySlug={product.categorySlug} className="size-16 shrink-0 rounded border border-border-default bg-white object-contain p-1" />
  <div className="min-w-0 flex-1"><p className="text-[10px] text-text-secondary">{product.sku}</p><h3 className="truncate text-xs font-bold" title={product.name}><Link href={`/p/${product.slug}`} className="hover:underline">{product.name}</Link></h3>

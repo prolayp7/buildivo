@@ -380,11 +380,16 @@ export async function fetchAssistantAdvice(q: string): Promise<{ answer: string;
   return { answer: res.data.answer, products: res.data.products.map((p) => toProduct(p, API_ORIGIN)) };
 }
 
-// Other products on the same battery/tool platform as this one (bare tool <->
-// its batteries/chargers) - the real data behind the compatibility finder.
-export async function fetchPlatformMatches(slug: string, limit = 6): Promise<Product[]> {
-  const res = await apiGet<{ data: ApiProductBase[] }>(`products/${encodeURIComponent(slug)}/platform-matches?limit=${limit}`).catch(() => ({ data: [] as ApiProductBase[] }));
-  return res.data.map((p) => toProduct(p, API_ORIGIN));
+// Combine explicit admin links, structured hardware matches and battery-platform matches.
+export async function fetchCompatibleProducts(slug: string, limit = 6): Promise<Product[]> {
+  const encodedSlug = encodeURIComponent(slug);
+  const [explicitAndFactMatches, platformMatches] = await Promise.all([
+    apiGet<{ data: ApiProductBase[] }>(`products/${encodedSlug}/compatible?limit=${limit}`).catch(() => ({ data: [] as ApiProductBase[] })),
+    apiGet<{ data: ApiProductBase[] }>(`products/${encodedSlug}/platform-matches?limit=${limit}`).catch(() => ({ data: [] as ApiProductBase[] })),
+  ]);
+  return [...new Map([...explicitAndFactMatches.data, ...platformMatches.data].map((product) => [product.id, product])).values()]
+    .slice(0, limit)
+    .map((product) => toProduct(product, API_ORIGIN));
 }
 
 export interface ToolPlatform {
@@ -563,6 +568,67 @@ export interface GeneralSettings {
   supportPhone1?: string;
   copyright?: string;
 }
+
+export interface StorefrontTopBarSettings {
+  tradeMessage: string;
+  mobileTradeLabel: string;
+  helpCenterLabel: string;
+  helpCenterUrl: string;
+  trackOrderLabel: string;
+  trackOrderUrl: string;
+  branchFinderLabel: string;
+  branchFinderUrl: string;
+  tradePortalLabel: string;
+  tradePortalUrl: string;
+}
+
+const DEFAULT_TOP_BAR: StorefrontTopBarSettings = {
+  tradeMessage: "Trade accounts save up to 15%",
+  mobileTradeLabel: "Pro Net 30",
+  helpCenterLabel: "Help Center",
+  helpCenterUrl: "/help",
+  trackOrderLabel: "Track Order",
+  trackOrderUrl: "/track-order",
+  branchFinderLabel: "Branch Finder",
+  branchFinderUrl: "/branches",
+  tradePortalLabel: "Trade Portal Net 30",
+  tradePortalUrl: "/trade",
+};
+
+function safeTopBarUrl(value: unknown, fallback: string): string {
+  if (typeof value !== "string") return fallback;
+  const candidate = value.trim();
+  try {
+    if (/^https:\/\//i.test(candidate)) return new URL(candidate).protocol === "https:" ? candidate : fallback;
+    if (!candidate.startsWith("/") || candidate.startsWith("//")) return fallback;
+    return new URL(candidate, "https://buildivo.invalid").origin === "https://buildivo.invalid" ? candidate : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+export async function fetchTopBarSettings(): Promise<StorefrontTopBarSettings> {
+  try {
+    const response = await apiGet<{ data: Record<string, unknown> }>("settings/general", 20);
+    const settings = response.data;
+    const text = (key: string, fallback: string) => typeof settings[key] === "string" ? (settings[key] as string).trim() : fallback;
+    return {
+      tradeMessage: text("topBarTradeMessage", DEFAULT_TOP_BAR.tradeMessage),
+      mobileTradeLabel: text("topBarMobileTradeLabel", DEFAULT_TOP_BAR.mobileTradeLabel),
+      helpCenterLabel: text("topBarHelpCenterLabel", DEFAULT_TOP_BAR.helpCenterLabel),
+      helpCenterUrl: safeTopBarUrl(settings.topBarHelpCenterUrl, DEFAULT_TOP_BAR.helpCenterUrl),
+      trackOrderLabel: text("topBarTrackOrderLabel", DEFAULT_TOP_BAR.trackOrderLabel),
+      trackOrderUrl: safeTopBarUrl(settings.topBarTrackOrderUrl, DEFAULT_TOP_BAR.trackOrderUrl),
+      branchFinderLabel: text("topBarBranchFinderLabel", DEFAULT_TOP_BAR.branchFinderLabel),
+      branchFinderUrl: safeTopBarUrl(settings.topBarBranchFinderUrl, DEFAULT_TOP_BAR.branchFinderUrl),
+      tradePortalLabel: text("topBarTradePortalLabel", DEFAULT_TOP_BAR.tradePortalLabel),
+      tradePortalUrl: safeTopBarUrl(settings.topBarTradePortalUrl, DEFAULT_TOP_BAR.tradePortalUrl),
+    };
+  } catch {
+    return DEFAULT_TOP_BAR;
+  }
+}
+
 export async function fetchGeneralSettings(): Promise<GeneralSettings> {
   try {
     const res = await apiGet<{ data: GeneralSettings }>("settings/general", 300);

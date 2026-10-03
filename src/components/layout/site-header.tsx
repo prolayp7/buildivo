@@ -11,12 +11,13 @@ import { MobileNav } from "@/components/layout/mobile-nav";
 import { MiniCart } from "@/components/layout/mini-cart";
 import { BuildivoLogo } from "@/components/layout/buildivo-logo";
 import type { MainMenuItem } from "@/lib/adapters";
+import type { StorefrontTopBarSettings } from "@/lib/api";
 import { useCartTotals } from "@/lib/cart-store";
 import { formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Category } from "@/types";
 
-export function SiteHeader({ departments, mainMenu }: { departments: Category[]; mainMenu: MainMenuItem[] }) {
+export function SiteHeader({ departments, mainMenu, topBarSettings }: { departments: Category[]; mainMenu: MainMenuItem[]; topBarSettings: StorefrontTopBarSettings }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const { subtotal, count } = useCartTotals();
@@ -40,7 +41,7 @@ export function SiteHeader({ departments, mainMenu }: { departments: Category[];
       <div className={styles.mobile}>
         <div className={styles.promo}>
           <p><span className={styles.status} /><FreeDeliveryOver strong /></p>
-          <Link href="/trade"><span aria-hidden className="material-symbols-outlined">verified</span>Pro Net 30</Link>
+          {topBarSettings.mobileTradeLabel ? <Link href={topBarSettings.tradePortalUrl}><span aria-hidden className="material-symbols-outlined">verified</span>{topBarSettings.mobileTradeLabel}</Link> : null}
         </div>
         <div className={styles.mainRow}>
           <button type="button" className={styles.menuButton} onClick={() => setMobileNavOpen(true)} aria-label="Open menu" aria-expanded={mobileNavOpen} aria-haspopup="dialog">
@@ -75,27 +76,25 @@ export function SiteHeader({ departments, mainMenu }: { departments: Category[];
           <div className="flex items-center gap-space-sm overflow-hidden text-ellipsis whitespace-nowrap">
             <span aria-hidden className="inline-block h-2 w-2 rounded-full bg-orange-500" />
             <span className="font-normal text-text-inverse-muted"><FreeDeliveryOver /></span>
-            <span className="text-graphite-600">·</span>
-            <span className="font-medium text-text-inverse">Trade accounts save up to 15%</span>
+            {topBarSettings.tradeMessage ? <><span className="text-graphite-600">·</span><span className="font-medium text-text-inverse">{topBarSettings.tradeMessage}</span></> : null}
           </div>
           <div className="hidden items-center gap-space-lg md:flex">
-            <Link href="/help" className="flex items-center gap-1 text-text-inverse-muted transition-colors hover:text-text-inverse">
+            {topBarSettings.helpCenterLabel ? <Link href={topBarSettings.helpCenterUrl} className="flex items-center gap-1 text-text-inverse-muted transition-colors hover:text-text-inverse">
               <span aria-hidden className="material-symbols-outlined text-[14px]">help</span>
-              Help Center
-            </Link>
-            <Link href="/track-order" className="flex items-center gap-1 text-text-inverse-muted transition-colors hover:text-text-inverse">
+              {topBarSettings.helpCenterLabel}
+            </Link> : null}
+            {topBarSettings.trackOrderLabel ? <Link href={topBarSettings.trackOrderUrl} className="flex items-center gap-1 text-text-inverse-muted transition-colors hover:text-text-inverse">
               <span aria-hidden className="material-symbols-outlined text-[14px]">local_shipping</span>
-              Track Order
-            </Link>
-            <Link href="/branches" className="flex items-center gap-1 text-text-inverse-muted transition-colors hover:text-text-inverse">
+              {topBarSettings.trackOrderLabel}
+            </Link> : null}
+            {topBarSettings.branchFinderLabel ? <Link href={topBarSettings.branchFinderUrl} className="flex items-center gap-1 text-text-inverse-muted transition-colors hover:text-text-inverse">
               <span aria-hidden className="material-symbols-outlined text-[14px]">store</span>
-              Branch Finder
-            </Link>
-            <span aria-hidden className="h-3 w-px bg-graphite-600" />
-            <Link href="/trade" className="flex items-center gap-1 font-semibold text-orange-500 transition-colors hover:text-orange-100">
+              {topBarSettings.branchFinderLabel}
+            </Link> : null}
+            {topBarSettings.tradePortalLabel ? <><span aria-hidden className="h-3 w-px bg-graphite-600" /><Link href={topBarSettings.tradePortalUrl} className="flex items-center gap-1 font-semibold text-orange-500 transition-colors hover:text-orange-100">
               <span aria-hidden className="material-symbols-outlined text-[14px]">engineering</span>
-              Trade Portal Net 30
-            </Link>
+              {topBarSettings.tradePortalLabel}
+            </Link></> : null}
           </div>
         </div>
       </div>
