@@ -1,4 +1,6 @@
 import { sessionFetch, sessionJson as json } from "@/lib/customer-session";
+import { API_ORIGIN } from "@/lib/api";
+import { resolveMediaUrl } from "@/lib/adapters";
 
 export async function GET(_req: Request, context: { params: Promise<{ uuid: string }> }) {
   const { uuid } = await context.params;
@@ -16,6 +18,24 @@ export async function GET(_req: Request, context: { params: Promise<{ uuid: stri
         return typeof toStatus === "string" && typeof createdAt === "string" ? [{ toStatus, createdAt }] : [];
       })
       : [];
-    return json({ history });
+    const shipment = Array.isArray(order.shipments) ? order.shipments[0] : undefined;
+    return json({
+      history,
+      order: {
+        uuid: order.uuid, orderNumber: order.orderNumber, email: order.email, status: order.status, paymentStatus: order.paymentStatus, placedAt: order.placedAt,
+        shippingFullName: order.shippingFullName, shippingCompanyName: order.shippingCompanyName,
+        shippingLine1: order.shippingLine1, shippingLine2: order.shippingLine2, shippingCity: order.shippingCity, shippingPostcode: order.shippingPostcode,
+        shippingMethodTitle: order.shippingMethod?.title ?? null,
+        trackingCarrier: order.trackingCarrier ?? shipment?.carrier ?? null, trackingNumber: order.trackingNumber ?? shipment?.trackingNumber ?? null,
+        trackingUrl: order.trackingUrl ?? shipment?.trackingUrl ?? null,
+        subtotal: order.subtotal, discountTotal: order.discountTotal, shippingCharge: order.shippingCharge, vatTotal: order.vatTotal,
+        giftCardDiscount: order.giftCardDiscount, total: order.total, couponCode: order.couponCode,
+        items: (order.items ?? []).map((item: Record<string, unknown>) => ({
+          id: item.id, productVariantId: item.productVariantId, titleSnapshot: item.titleSnapshot, variantTitleSnapshot: item.variantTitleSnapshot,
+          skuSnapshot: item.skuSnapshot, imageUrl: resolveMediaUrl(API_ORIGIN, item.imageUrl as string | null), quantity: item.quantity, unitPrice: item.unitPrice, subtotal: item.subtotal, vatAmount: item.vatAmount,
+          returnEligible: item.returnEligible, returnDeadline: item.returnDeadline, returnItems: item.returnItems ?? [],
+        })),
+      },
+    });
   } catch { return json({ message: "Orders are temporarily unavailable." }, 503); }
 }

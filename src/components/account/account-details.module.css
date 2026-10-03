@@ -19,3 +19,11 @@
 .bad { color: var(--color-error-500); }
 @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
 @media (max-width: 520px) { .grid { grid-template-columns: 1fr; } }
+
+.danger { grid-column: 1 / -1; }
+.requestDelete { align-self: flex-start; padding: 9px 16px; border: 1px solid var(--color-error-500); border-radius: 6px; background: white; color: var(--color-error-500); font-size: 13px; font-weight: 700; cursor: pointer; }
+.requestDelete:hover { background: #fdeeee; }
+.secondary { padding: 9px 16px; border: 1px solid var(--color-border-default); border-radius: 6px; background: white; font-size: 13px; font-weight: 700; cursor: pointer; }
+.pending, .confirm { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--color-border-default); border-radius: 8px; background: var(--color-surface-warm); }
+.pending span, .confirm p { margin: 0; color: var(--color-graphite-400); }
+.confirmActions { display: flex; flex-wrap: wrap; gap: 10px; }

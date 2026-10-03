@@ -496,6 +496,44 @@ export async function fetchRegisterPageContent(): Promise<RegisterPageContent | 
   return res?.data ?? null;
 }
 
+/** Admin-managed copy and pinned products of the /deals page. */
+export interface DealsPageContent {
+  hero: { badge: string; headline: string; highlight: string; headlineSuffix: string; description: string };
+  countdown: { enabled: boolean; label: string; endsAt: string; cutoff: string };
+  spotlight: { id: number; title: string } | null;
+  bulk: { enabled: boolean; kicker: string; heading: string; description: string; products: { id: number; title: string }[] };
+  clearance: { enabled: boolean; kicker: string; heading: string; items: { title: string; description: string }[] };
+}
+
+// Used only when the API is unreachable, so /deals still renders its original copy.
+const DEALS_PAGE_FALLBACK: DealsPageContent = {
+  hero: {
+    badge: "LIMITED TRADE ALLOCATION EVENT",
+    headline: "Flash Deals & Pro Clearance Event —",
+    highlight: "Save up to {discount}% Off",
+    headlineSuffix: "Industrial Overstock",
+    description: "Direct trade contractor access to tier-1 factory overstocks, discontinued platform lines, and bulk site consumables. 100% factory inspected and backed by full OEM warranties.",
+  },
+  countdown: { enabled: true, label: "TODAY’S DEALS REFRESH IN:", endsAt: "", cutoff: "Next-day pallet batch cut-off: 17:00" },
+  spotlight: null,
+  bulk: { enabled: true, kicker: "SITE-DIRECT PALLET LOGISTICS", heading: "Contractor Bulk Pallets & Job-Pack Overstocks", description: "Commercial-grade jobsite quantities discounted directly from Tier-1 trade suppliers. Invoiced on verified Trade Net-30 credit terms.", products: [] },
+  clearance: {
+    enabled: true,
+    kicker: "BUILDIVO PRO PROTECTION STANDARDS",
+    heading: "Trade Peace of Mind on All Clearance Stock",
+    items: [
+      { title: "Manufacturer warranty details", description: "Coverage and exclusions vary by product. Check the product details for applicable manufacturer terms." },
+      { title: "Item-specific return eligibility", description: "Eligible delivered items show their return window in your account. Conditions vary by item." },
+      { title: "Delivery options at checkout", description: "Available delivery methods and charges are shown before payment. Tracking appears when carrier details are available." },
+    ],
+  },
+};
+
+export async function fetchDealsPageContent(): Promise<DealsPageContent> {
+  const res = await apiGet<{ data: DealsPageContent }>("settings/deals-page").catch(() => null);
+  return res?.data ?? DEALS_PAGE_FALLBACK;
+}
+
 /** Products with calculator coverage data (set in the admin product form). */
 export async function fetchCalculatorProducts(): Promise<CalculatorProduct[]> {
   const res = await apiGet<{ data: CalculatorProduct[] }>("calculators/products").catch(() => ({ data: [] as CalculatorProduct[] }));

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ProductListing } from "@/components/commerce/product-listing";
+import { BrowsingHistory } from "@/components/commerce/browsing-history";
 import { BreadcrumbJsonLd } from "@/components/seo/breadcrumb-json-ld";
 import { fetchCategoryBySlug, fetchCategoryTree, fetchDepartments, fetchFreeDeliveryThreshold, fetchProducts, fetchToolPlatforms } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -216,6 +217,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
 
       <ProductListing initialProducts={initialProducts} categorySlug={activeSlug} categoryName={category.name} platform={platform} platforms={platforms} />
       {activeSlug === "power-tools" && <CategoryExtras accessories={accessories} />}
+      <BrowsingHistory />
     </div>
   );
 }

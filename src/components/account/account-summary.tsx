@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BadgeCheck, FileText, Heart, House, LayoutDashboard, MapPin, Package, RotateCcw, Truck, UserRound, Zap } from "lucide-react";
+import { BadgeCheck, FileText, Heart, House, LayoutDashboard, LogOut, MapPin, Package, RotateCcw, Truck, UserRound, Zap } from "lucide-react";
 import { stopWishlistSync } from "@/lib/cart-store";
 import styles from "./account-summary.module.css";
 import { AccountOrders } from "./account-orders";
@@ -27,7 +27,7 @@ const VIEW_LABELS: Record<View, string> = {
   overview: "Account Overview",
   orders: "Orders & Jobsite Dispatches",
   returns: "Returns & Refunds",
-  wishlist: "Wishlists & Saved Materials",
+  wishlist: "Saved Products",
   addresses: "Jobsite Addresses",
   quotes: "Quote Requests",
   details: "Account Details",
@@ -39,6 +39,11 @@ export function AccountSummary() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [view, setView] = useState<View>("overview");
+
+  useEffect(() => {
+    const tab = new URLSearchParams(window.location.search).get("tab");
+    if (tab && tab in VIEW_LABELS) setView(tab as View);
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -97,13 +102,14 @@ export function AccountSummary() {
                 <div><span className={styles.label}>Active transit</span><span className={styles.value}>Track your order</span></div>
               </button>
               <a className={styles.reorder} href="#fast-reorder"><Zap aria-hidden="true" />Fast Reorder</a>
+              <button className={styles.signout} disabled={busy} onClick={signOut}><LogOut aria-hidden="true" />{busy ? "Signing out…" : "Sign out"}</button>
             </div>
           </div>
           <nav className={styles.navigation} aria-label="Customer account">
             <button className={view === "overview" ? styles.active : undefined} aria-pressed={view === "overview"} aria-controls="account-panel" onClick={() => setView("overview")}><LayoutDashboard aria-hidden="true" />Account Overview</button>
             <button className={view === "orders" ? styles.active : undefined} aria-pressed={view === "orders"} aria-controls="account-panel" onClick={() => setView("orders")}><Package aria-hidden="true" />Orders &amp; Dispatches</button>
             <button className={view === "returns" ? styles.active : undefined} aria-pressed={view === "returns"} aria-controls="account-panel" onClick={() => setView("returns")}><RotateCcw aria-hidden="true" />Returns</button>
-            <button className={view === "wishlist" ? styles.active : undefined} aria-pressed={view === "wishlist"} aria-controls="account-panel" onClick={() => setView("wishlist")}><Heart aria-hidden="true" />Wishlist</button>
+            <button className={view === "wishlist" ? styles.active : undefined} aria-pressed={view === "wishlist"} aria-controls="account-panel" onClick={() => setView("wishlist")}><Heart aria-hidden="true" />Saved Products</button>
             <button className={view === "addresses" ? styles.active : undefined} aria-pressed={view === "addresses"} aria-controls="account-panel" onClick={() => setView("addresses")}><MapPin aria-hidden="true" />Jobsite Addresses</button>
             <button className={view === "quotes" ? styles.active : undefined} aria-pressed={view === "quotes"} aria-controls="account-panel" onClick={() => setView("quotes")}><FileText aria-hidden="true" />Quote Requests</button>
             <button className={view === "details" ? styles.active : undefined} aria-pressed={view === "details"} aria-controls="account-panel" onClick={() => setView("details")}><UserRound aria-hidden="true" />Account Details</button>

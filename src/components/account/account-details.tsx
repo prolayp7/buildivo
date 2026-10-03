@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { AlertCircle, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import styles from "./account-details.module.css";
 
@@ -19,6 +19,40 @@ export function AccountDetails({ customer, onUpdated }: { customer: Customer; on
   const [showPw, setShowPw] = useState(false);
   const [pwBusy, setPwBusy] = useState(false);
   const [pwMsg, setPwMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [deletion, setDeletion] = useState<{ requestedAt: string } | null>(null);
+  const [deletionLoading, setDeletionLoading] = useState(true);
+  const [deletionBusy, setDeletionBusy] = useState(false);
+  const [deletionConfirm, setDeletionConfirm] = useState(false);
+  const [deletionMsg, setDeletionMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/customer-session/deletion-request", { signal: controller.signal, cache: "no-store" })
+      .then(async (res) => {
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(body.message);
+        setDeletion(body.request ?? null);
+      })
+      .catch((error) => { if (!controller.signal.aborted) setDeletionMsg({ ok: false, text: error instanceof Error && error.message ? error.message : "Deletion request status could not be loaded." }); })
+      .finally(() => { if (!controller.signal.aborted) setDeletionLoading(false); });
+    return () => controller.abort();
+  }, []);
+
+  async function requestDeletion() {
+    if (deletionBusy) return;
+    setDeletionBusy(true); setDeletionMsg(null);
+    try {
+      const res = await fetch("/api/customer-session/deletion-request", { method: "POST" });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.message || "Your deletion request could not be submitted. Please try again.");
+      setDeletion(body.request);
+      setDeletionConfirm(false);
+      setDeletionMsg({ ok: body.emailSent !== false, text: body.emailSent === false
+        ? "Your request is recorded, but we couldn’t send the acknowledgment email. Please contact support."
+        : body.alreadyRequested ? "You already have a deletion request under review." : "Your request has been received. We sent an acknowledgment email." });
+    } catch (error) { setDeletionMsg({ ok: false, text: error instanceof Error ? error.message : "Your deletion request could not be submitted." }); }
+    finally { setDeletionBusy(false); }
+  }
 
   async function saveProfile(event: FormEvent) {
     event.preventDefault();
@@ -77,6 +111,23 @@ export function AccountDetails({ customer, onUpdated }: { customer: Customer; on
         {message(pwMsg)}
         <button className={styles.primary} disabled={pwBusy || !pw.current || !pw.next} type="submit">{pwBusy ? "Updating…" : "Update password"}</button>
       </form>
+
+      <section className={`${styles.card} ${styles.danger}`}>
+        <h2>Delete account</h2>
+        <p className={styles.sub}>You can request account deletion here. Your account stays active while our team reviews the request.</p>
+        {message(deletionMsg)}
+        {deletionLoading ? <p role="status">Checking for an existing request…</p> : deletion ? (
+          <div className={styles.pending} role="status"><strong>Deletion request under review</strong><span>Received {new Date(deletion.requestedAt).toLocaleDateString("en-GB")}. Your account remains active; we’ll email you when it has been deleted.</span></div>
+        ) : deletionConfirm ? (
+          <div className={styles.confirm}>
+            <p>This sends a request for our team to review. Your account will not be deleted immediately.</p>
+            <div className={styles.confirmActions}>
+              <button type="button" className={styles.secondary} disabled={deletionBusy} onClick={() => setDeletionConfirm(false)}>Keep account</button>
+              <button type="button" className={styles.primary} disabled={deletionBusy} onClick={() => void requestDeletion()}>{deletionBusy ? "Sending request…" : "Confirm request"}</button>
+            </div>
+          </div>
+        ) : <button type="button" className={styles.requestDelete} onClick={() => { setDeletionConfirm(true); setDeletionMsg(null); }}>Request account deletion</button>}
+      </section>
     </div>
   );
 }

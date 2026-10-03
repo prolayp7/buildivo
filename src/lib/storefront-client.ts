@@ -316,6 +316,11 @@ export async function fetchFrequentlyBoughtTogether(slug: string, limit = 3): Pr
   return res.map((p) => toProduct(p, apiOrigin()));
 }
 
+export async function fetchProductRecommendations(slug: string, limit = 4): Promise<Product[]> {
+  const res = await request<ApiProductBase[]>(`products/${encodeURIComponent(slug)}/recommendations?limit=${limit}`);
+  return res.map((p) => toProduct(p, apiOrigin()));
+}
+
 /* ------------------------- Header search suggestions ------------------------- */
 
 export async function fetchProductSuggestions(q: string, signal?: AbortSignal): Promise<Product[]> {

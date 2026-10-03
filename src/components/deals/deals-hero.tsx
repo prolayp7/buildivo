@@ -9,6 +9,7 @@ import { ProductImage } from "@/components/commerce/product-image";
 import { Rating } from "@/components/commerce/rating";
 import { useCartStore } from "@/lib/cart-store";
 import { formatPrice } from "@/lib/format";
+import type { DealsPageContent } from "@/lib/api";
 import type { Product } from "@/types";
 
 function msUntilMidnight(): number {
@@ -28,23 +29,24 @@ function formatCountdown(ms: number): { hours: string; minutes: string; seconds:
   };
 }
 
-// Resets nightly rather than pointing at a fixed campaign end date - there's
-// no "flash sale end time" concept in the catalog, so this counts down to
-// midnight instead of a fabricated countdown target.
-function useCountdownToMidnight(): string | null {
+// Counts down to the admin-set campaign end, or to midnight (a nightly reset) when none is set.
+function useCountdown(endsAt: string): { value: string | null; expired: boolean } {
   const [remainingMs, setRemainingMs] = useState<number | null>(null);
   useEffect(() => {
-    const timer = window.setTimeout(() => setRemainingMs(msUntilMidnight()), 0);
-    const id = window.setInterval(() => setRemainingMs(msUntilMidnight()), 1000);
+    const target = endsAt ? Date.parse(endsAt) : null;
+    const tick = () => setRemainingMs(target === null ? msUntilMidnight() : target - Date.now());
+    const timer = window.setTimeout(tick, 0);
+    const id = window.setInterval(tick, 1000);
     return () => { window.clearTimeout(timer); window.clearInterval(id); };
-  }, []);
-  if (remainingMs === null) return null;
+  }, [endsAt]);
+  if (remainingMs === null) return { value: null, expired: false };
+  if (endsAt && remainingMs <= 0) return { value: null, expired: true };
   const { hours, minutes, seconds } = formatCountdown(remainingMs);
-  return `${hours}:${minutes}:${seconds}`;
+  return { value: `${hours}:${minutes}:${seconds}`, expired: false };
 }
 
-export function DealsHero({ spotlight, dealsCount, maxDiscountPct }: { spotlight: Product | null; dealsCount: number; maxDiscountPct: number }) {
-  const countdown = useCountdownToMidnight();
+export function DealsHero({ spotlight, dealsCount, maxDiscountPct, spotlightPct, content }: { spotlight: Product | null; dealsCount: number; maxDiscountPct: number; spotlightPct: number; content: DealsPageContent }) {
+  const { value: countdown, expired } = useCountdown(content.countdown.endsAt);
   const addItem = useCartStore((s) => s.addItem);
 
   const wishlist = useCartStore((s) => s.wishlist);
@@ -60,22 +62,22 @@ export function DealsHero({ spotlight, dealsCount, maxDiscountPct }: { spotlight
   return <section className={styles.section}>
     <div className={styles.crumbs}><div className={styles.container}><nav aria-label="Breadcrumb"><Link href="/"><House size={12} />Home</Link><span>/</span><span>Trade Specials</span><span>/</span><strong><Flame size={12} />Deals &amp; Pro Clearance Hub</strong></nav><span><BadgeCheck size={13} />OEM Certified Overstock</span></div></div>
     <div className={styles.hero}><div className={`${styles.container} ${styles.heroGrid}`}>
-      <div className={styles.copy}><span className={styles.event}><Timer size={13} />LIMITED TRADE ALLOCATION EVENT</span>
-        <h1>Flash Deals &amp; Pro Clearance Event — <em>Save up to {maxDiscountPct}% Off</em> Industrial Overstock</h1>
-        <p>Direct trade contractor access to tier-1 factory overstocks, discontinued platform lines, and bulk site consumables. 100% factory inspected and backed by full OEM warranties.</p>
-        <div className={styles.countdown}><Flame size={21} /><span>TODAY’S DEALS REFRESH IN:</span><div>{(countdown ?? "--:--:--").split(":").map((part, index) => <span key={index}>{part}</span>)}</div><small>LOCAL</small><span className={styles.cutoff}>Next-day pallet batch cut-off: 17:00</span></div>
+      <div className={styles.copy}><span className={styles.event}><Timer size={13} />{content.hero.badge}</span>
+        <h1>{content.hero.headline} <em>{content.hero.highlight.replace("{discount}", String(maxDiscountPct))}</em> {content.hero.headlineSuffix}</h1>
+        <p>{content.hero.description}</p>
+        {content.countdown.enabled && !expired && <div className={styles.countdown}><Flame size={21} /><span>{content.countdown.label}</span><div>{(countdown ?? "--:--:--").split(":").map((part, index) => <span key={index}>{part}</span>)}</div><small>LOCAL</small>{content.countdown.cutoff && <span className={styles.cutoff}>{content.countdown.cutoff}</span>}</div>}
         <div className={styles.benefits}><span><BadgeCheck />{dealsCount} Verified Trade SKUs</span><span><CheckCheck />Direct OEM Price Match</span><span><Truck />Pre-10am Jobsite Delivery</span></div>
       </div>
       <aside className={styles.metric}><span className={styles.metricBadge}>CLEARANCE</span><h2>LIVE CLEARANCE CATALOG <i /></h2><div><span>Reduced Product Lines:</span><strong>{dealsCount.toLocaleString()}</strong></div><div className={styles.meter}><span style={{width: `${Math.min(100, maxDiscountPct)}%`}} /></div><p><span>Maximum saving: {maxDiscountPct}%</span><span>While stocks last</span></p><footer><span><CheckCheck size={12} />Live catalog pricing</span><a href="#clearance-deals">Browse all <ArrowDown size={12} /></a></footer></aside>
     </div></div>
     {spotlight && <div className={`${styles.container} ${styles.spotlightWrap}`}><article className={styles.spotlight}>
       <header><div><strong><BadgeCheck size={13} />DEAL OF THE DAY</strong><span>CLEARANCE LOT #{spotlight.sku}</span></div>{spotlight.stockCount !== undefined && <small>{spotlight.stockCount} Units Left at This Price</small>}</header>
-      <div className={styles.productLayout}><div className={styles.media}><span className={styles.saving}>SAVE {formatPrice(Math.max(0,(spotlight.compareAtIncVat ?? spotlight.priceIncVat)-spotlight.priceIncVat))} ({maxDiscountPct}% OFF)</span><Link href={`/p/${spotlight.slug}`} aria-label={spotlight.name}><ProductImage src={spotlight.image} categorySlug={spotlight.categorySlug} className={styles.image} /></Link><p><BadgeCheck size={13} />{spotlight.stock === "out-of-stock" ? "Out of stock" : "In Regional Stock"}<span>SKU: <b>{spotlight.sku}</b></span></p></div>
+      <div className={styles.productLayout}><div className={styles.media}><span className={styles.saving}>SAVE {formatPrice(Math.max(0,(spotlight.compareAtIncVat ?? spotlight.priceIncVat)-spotlight.priceIncVat))} ({spotlightPct}% OFF)</span><Link href={`/p/${spotlight.slug}`} aria-label={spotlight.name}><ProductImage src={spotlight.image} categorySlug={spotlight.categorySlug} className={styles.image} /></Link><p><BadgeCheck size={13} />{spotlight.stock === "out-of-stock" ? "Out of stock" : "In Regional Stock"}<span>SKU: <b>{spotlight.sku}</b></span></p></div>
         <div className={styles.productCopy}><div className={styles.review}><span>{spotlight.brand} TRADE SERIES</span><Rating value={spotlight.rating} count={spotlight.reviewCount} /></div><h2><Link href={`/p/${spotlight.slug}`}>{spotlight.name}</Link></h2>
         <p className={styles.description}>{spotlight.description.replace(/<[^>]*>/g, " ")}</p>
         <dl className={styles.specs}>{spotlight.specs.slice(0,4).map((spec) => <div key={spec.label}><dt>{spec.label}</dt><dd>{spec.value}</dd></div>)}</dl>
         <p className={styles.stock}>{spotlight.stockCount !== undefined ? `${spotlight.stockCount} available at clearance price` : spotlight.deliveryEta}</p>
-        <div className={styles.price}><strong>{formatPrice(spotlight.priceIncVat)}</strong>{spotlight.compareAtIncVat && <s>RRP {formatPrice(spotlight.compareAtIncVat)}</s>}<span>SAVE {maxDiscountPct}%</span></div><p className={styles.delivery}>{formatPrice(spotlight.priceIncVat / (1 + spotlight.vatRate))} ex. VAT · {spotlight.deliveryEta}</p>
+        <div className={styles.price}><strong>{formatPrice(spotlight.priceIncVat)}</strong>{spotlight.compareAtIncVat && <s>RRP {formatPrice(spotlight.compareAtIncVat)}</s>}<span>SAVE {spotlightPct}%</span></div><p className={styles.delivery}>{formatPrice(spotlight.priceIncVat / (1 + spotlight.vatRate))} ex. VAT · {spotlight.deliveryEta}</p>
         <div className={styles.buy}><button onClick={claimDeal} disabled={busy || spotlight.stock === "out-of-stock" || !spotlight.defaultVariantId}><ShoppingCart size={18} />{busy ? "Adding…" : "Claim Deal & Add to Basket"}</button><button aria-label="Save deal" aria-pressed={wishlist.includes(spotlight.id)} onClick={() => toggleWishlist(spotlight.id)}><Bookmark size={18} fill={wishlist.includes(spotlight.id) ? "currentColor" : "none"} /></button></div>
         </div>
       </div>

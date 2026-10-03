@@ -4,6 +4,9 @@ import { request } from "./storefront-client";
 
 export type PaymentProvider = "STRIPE" | "PAYPAL";
 
+// Where the checkout page restores an order from after the provider redirects back.
+export const CHECKOUT_RETURN_KEY = "buildivo.checkoutReturn";
+
 export interface PaymentMethodInfo {
   provider: string;
   enabled: boolean;

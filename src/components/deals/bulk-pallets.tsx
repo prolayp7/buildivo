@@ -5,6 +5,7 @@ import { Archive, Download, FileText } from "lucide-react";
 import { toast } from "sonner";
 import type { Product } from "@/types";
 import { formatPrice } from "@/lib/format";
+import type { DealsPageContent } from "@/lib/api";
 import { useCartStore } from "@/lib/cart-store";
 import { submitQuoteRequest } from "@/lib/storefront-client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -23,14 +24,14 @@ function downloadSpecs(products: Product[]) {
   const url = URL.createObjectURL(new Blob([pdf], { type: "application/pdf" })); const link = document.createElement("a"); link.href = url; link.download = "buildivo-bulk-specifications.pdf"; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export function BulkPallets({ products }: { products: Product[] }) {
+export function BulkPallets({ products, content }: { products: Product[]; content: DealsPageContent["bulk"] }) {
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [selected, setSelected] = useState<string>(String(products[0]?.defaultVariantId ?? ""));
   const [error, setError] = useState("");
   const [confirmation, setConfirmation] = useState("");
   return <section className={styles.section} aria-labelledby="bulk-heading"><div className={styles.container}>
-    <header className={styles.header}><div><span className={styles.kicker}><Archive size={16} />SITE-DIRECT PALLET LOGISTICS</span><h2 id="bulk-heading">Contractor Bulk Pallets &amp; Job-Pack Overstocks</h2><p>Commercial-grade jobsite quantities discounted directly from Tier-1 trade suppliers.<br />Invoiced on verified Trade Net-30 credit terms.</p></div><div className={styles.headerActions}><button disabled={!products.length} onClick={() => downloadSpecs(products)}><Download size={17} />Download Pallet Spec Sheet<br />(PDF)</button><button disabled={!products.some((p) => p.defaultVariantId)} onClick={() => { setError(""); setConfirmation(""); setOpen(true); }}><FileText size={17} />RFQ Bulk Quotation</button></div></header>
+    <header className={styles.header}><div><span className={styles.kicker}><Archive size={16} />{content.kicker}</span><h2 id="bulk-heading">{content.heading}</h2><p>{content.description}</p></div><div className={styles.headerActions}><button disabled={!products.length} onClick={() => downloadSpecs(products)}><Download size={17} />Download Pallet Spec Sheet<br />(PDF)</button><button disabled={!products.some((p) => p.defaultVariantId)} onClick={() => { setError(""); setConfirmation(""); setOpen(true); }}><FileText size={17} />RFQ Bulk Quotation</button></div></header>
     <div className={styles.grid}>{products.map((product) => <BulkCard key={product.id} product={product} />)}</div>
     {!products.length && <p className={styles.empty}>Bulk offers are currently unavailable. Please check back soon.</p>}
     <Dialog open={open} onOpenChange={setOpen}><DialogContent><DialogHeader><DialogTitle>Request a bulk quotation</DialogTitle></DialogHeader>{confirmation ? <p role="status">Your request has been received. Reference: {confirmation}</p> : <form className={styles.form} onSubmit={async (event) => { event.preventDefault(); const data = new FormData(event.currentTarget); setSubmitting(true); setError(""); try { const result = await submitQuoteRequest({ contactName: String(data.get("name")), email: String(data.get("email")), companyName: String(data.get("company")), message: String(data.get("message")), items: [{ productVariantId: Number(selected), quantity: Number(data.get("quantity")) }] }); setConfirmation(result.uuid); } catch { setError("We could not submit your request. Please try again."); } finally { setSubmitting(false); } }}>

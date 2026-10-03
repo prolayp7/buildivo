@@ -15,7 +15,7 @@ import { StepProcessing } from "@/components/checkout/steps/step-processing";
 import { StepFailed } from "@/components/checkout/steps/step-failed";
 import { useCartStore, useCartTotals } from "@/lib/cart-store";
 import { fetchShippingQuotes, placeOrder as placeOrderApi, type PlacedOrder, type ShippingQuote } from "@/lib/storefront-client";
-import { capturePaymentAttempt, createPaymentAttempt } from "@/lib/payments";
+import { CHECKOUT_RETURN_KEY, capturePaymentAttempt, createPaymentAttempt } from "@/lib/payments";
 import type { Address } from "@/types";
 
 const emptyAddress: Address = { fullName: "", line1: "", line2: "", city: "", postcode: "", phone: "" };
@@ -26,7 +26,7 @@ const PROVIDER = { stripe: "STRIPE", paypal: "PAYPAL" } as const;
 const PROVIDER_LABEL = { stripe: "Stripe", paypal: "PayPal" } as const;
 // The provider sends the customer back to /checkout?<provider>Attempt=<id>; the order
 // (already created, so the cart is empty by then) is kept here across the redirect.
-const RETURN_KEY = "buildivo.checkoutReturn";
+const RETURN_KEY = CHECKOUT_RETURN_KEY;
 const CHECKOUT_KEY = "buildivo.checkoutIdempotencyKey";
 type SavedCheckout = { order: PlacedOrder; email: string; method: PaymentMethodId; attemptId?: string };
 

@@ -25,6 +25,9 @@
 .transit .statusIcon { background: var(--color-orange-500); color: white; }
 .reorder { display: flex; align-items: center; gap: 5px; min-height: 36px; padding: 0 14px; background: var(--color-graphite-900); color: white; border-radius: 5px; font-size: 14.5px; font-weight: 600; }
 .reorder svg { width: 11px; height: 11px; color: var(--color-orange-500); }
+.signout { display: flex; align-items: center; gap: 5px; min-height: 36px; padding: 0 14px; border: 1px solid var(--color-border-default); border-radius: 5px; background: #fff; font-size: 14.5px; font-weight: 600; }
+.signout svg { width: 13px; height: 13px; color: var(--color-orange-700); }
+.signout:hover:not(:disabled) { border-color: var(--color-orange-500); color: var(--color-orange-700); }
 .navigation { display: flex; align-items: center; justify-content: space-between; gap: 4px; overflow-x: auto; padding: 0 0 10px; scrollbar-width: thin; }
 .navigation a, .navigation button { display: flex; flex-shrink: 0; align-items: center; justify-content: center; gap: 5px; min-height: 36px; padding: 6px 14px; border-radius: 5px; white-space: nowrap; font-size: 15px; color: var(--color-graphite-400); }
 .navigation svg { width: 15px; height: 15px; }
