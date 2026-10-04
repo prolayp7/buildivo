@@ -1,4 +1,4 @@
-import { backendErrorMessage, sessionFetch, sessionJson as json } from "@/lib/customer-session";
+import { backendErrorMessage, isSameOriginRequest, sessionFetch, sessionJson as json } from "@/lib/customer-session";
 
 type OrderItem = { id: number; productId: number };
 type Order = { status: string; placedAt: string; items: OrderItem[] };
@@ -7,7 +7,7 @@ type Order = { status: string; placedAt: string; items: OrderItem[] };
 // purchase (which is what makes it a "verified buyer" review); otherwise it is an ordinary, unverified review.
 // Reviews are held for moderation by the API either way.
 export async function POST(req: Request) {
-  if (req.headers.get("origin") !== new URL(req.url).origin) return json({ message: "Invalid request origin" }, 403);
+  if (!isSameOriginRequest(req)) return json({ message: "Invalid request origin" }, 403);
   let input: { productId?: unknown; rating?: unknown; title?: unknown; comment?: unknown };
   try { input = await req.json(); } catch { return json({ message: "Invalid request" }, 400); }
   const { productId, rating } = input;

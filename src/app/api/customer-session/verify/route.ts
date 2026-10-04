@@ -1,7 +1,7 @@
-import { apiBase, backendErrorMessage, saveSession, sessionJson as json } from "@/lib/customer-session";
+import { apiBase, backendErrorMessage, isSameOriginRequest, saveSession, sessionJson as json } from "@/lib/customer-session";
 
 export async function POST(req: Request) {
-  if (req.headers.get("origin") !== new URL(req.url).origin) return json({ message: "Invalid request origin" }, 403);
+  if (!isSameOriginRequest(req)) return json({ message: "Invalid request origin" }, 403);
   let input;
   try { input = await req.json(); } catch { return json({ message: "Invalid request" }, 400); }
   if (typeof input.email !== "string" || typeof input.code !== "string" || !input.code) return json({ message: "Enter the code sent to your email." }, 400);

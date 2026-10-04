@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { apiBase, backendErrorMessage, sessionFetch, sessionJson } from "@/lib/customer-session";
+import { apiBase, backendErrorMessage, isSameOriginRequest, sessionFetch, sessionJson } from "@/lib/customer-session";
 
 export async function GET(request: Request) {
   const token = (await cookies()).get("buildivo.access")?.value;
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
 // Submits a quote request server-side so a signed-in customer's httpOnly session cookie is
 // attached and the request shows up in their account; guests fall through unauthenticated.
 export async function POST(request: Request) {
-  if (request.headers.get("origin") !== new URL(request.url).origin) return sessionJson({ message: "Invalid request origin" }, 403);
+  if (!isSameOriginRequest(request)) return sessionJson({ message: "Invalid request origin" }, 403);
   const body = await request.text();
   try {
     let response = await sessionFetch("quotes", { method: "POST", body });

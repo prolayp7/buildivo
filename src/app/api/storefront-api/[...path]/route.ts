@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { apiBase } from "@/lib/customer-session";
+import { apiBase, isSameOriginRequest } from "@/lib/customer-session";
 
 type Context = { params: Promise<{ path: string[] }> };
 
@@ -23,7 +23,7 @@ async function proxy(request: NextRequest, { params }: Context) {
   if (!isAllowedRequest(request.method, path)) {
     return NextResponse.json({ message: "Unsupported storefront request." }, { status: 404 });
   }
-  if (request.method !== "GET" && request.headers.get("origin") !== new URL(request.url).origin) {
+  if (request.method !== "GET" && !isSameOriginRequest(request)) {
     return NextResponse.json({ message: "Invalid request origin." }, { status: 403 });
   }
 

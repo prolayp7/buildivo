@@ -1,4 +1,4 @@
-import { sessionFetch, sessionJson } from "@/lib/customer-session";
+import { isSameOriginRequest, sessionFetch, sessionJson } from "@/lib/customer-session";
 
 // Mirrors the browser wishlist (a list of product ids) to the signed-in customer's account.
 // A guest is not an error: GET answers { signedIn: false } so the client can skip syncing quietly.
@@ -16,7 +16,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  if (req.headers.get("origin") !== new URL(req.url).origin) return sessionJson({ message: "Invalid request origin" }, 403);
+  if (!isSameOriginRequest(req)) return sessionJson({ message: "Invalid request origin" }, 403);
   let input: { productId?: unknown; saved?: unknown };
   try { input = await req.json(); } catch { return sessionJson({ message: "Invalid request" }, 400); }
   if (!Number.isInteger(input.productId) || (input.productId as number) < 1 || typeof input.saved !== "boolean") return sessionJson({ message: "Invalid request" }, 400);

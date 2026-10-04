@@ -1,4 +1,4 @@
-import { backendErrorMessage, sessionFetch, sessionJson as json } from "@/lib/customer-session";
+import { backendErrorMessage, isSameOriginRequest, sessionFetch, sessionJson as json } from "@/lib/customer-session";
 
 export async function GET() {
   try {
@@ -12,7 +12,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  if (req.headers.get("origin") !== new URL(req.url).origin) return json({ message: "Invalid request origin" }, 403);
+  if (!isSameOriginRequest(req)) return json({ message: "Invalid request origin" }, 403);
   try {
     const response = await sessionFetch("me/deletion-request", { method: "POST", body: "{}" });
     if (!response) return json({ message: "Please sign in." }, 401);

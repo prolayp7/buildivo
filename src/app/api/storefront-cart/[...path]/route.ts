@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { apiBase, sessionFetch } from "@/lib/customer-session";
+import { apiBase, isSameOriginRequest, sessionFetch } from "@/lib/customer-session";
 
 type Context = { params: Promise<{ path: string[] }> };
 
@@ -14,7 +14,7 @@ function allowedMethod(path: string[], method: string) {
 async function proxy(request: NextRequest, { params }: Context) {
   const { path } = await params;
   if (!allowedMethod(path, request.method)) return NextResponse.json({ message: "Unsupported cart request." }, { status: 404 });
-  if (request.method !== "GET" && request.headers.get("origin") !== new URL(request.url).origin) {
+  if (request.method !== "GET" && !isSameOriginRequest(request)) {
     return NextResponse.json({ message: "Invalid request origin." }, { status: 403 });
   }
 

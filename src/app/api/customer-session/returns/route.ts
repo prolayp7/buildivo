@@ -1,4 +1,4 @@
-import { backendErrorMessage, sessionFetch, sessionJson as json } from "@/lib/customer-session";
+import { backendErrorMessage, isSameOriginRequest, sessionFetch, sessionJson as json } from "@/lib/customer-session";
 
 // The signed-in customer's return requests.
 export async function GET() {
@@ -15,7 +15,7 @@ export async function GET() {
 
 // Creates a return: multipart with the details as JSON ("data") and each item's photos as evidence_<index>.
 export async function POST(req: Request) {
-  if (req.headers.get("origin") !== new URL(req.url).origin) return json({ message: "Invalid request origin" }, 403);
+  if (!isSameOriginRequest(req)) return json({ message: "Invalid request origin" }, 403);
   const contentType = req.headers.get("content-type") ?? "";
   if (!contentType.startsWith("multipart/form-data")) return json({ message: "Invalid request" }, 400);
   try {
