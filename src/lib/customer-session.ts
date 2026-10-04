@@ -3,6 +3,22 @@ import { NextResponse } from "next/server";
 
 export const apiBase = () => (process.env.BUILDIVO_API_URL ?? "http://localhost:3000/api/v1").replace(/\/$/, "");
 
+export function isSameOriginRequest(request: Request): boolean {
+  const origin = request.headers.get("origin");
+  if (!origin) return false;
+
+  try {
+    const requestUrl = new URL(request.url);
+    const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0].trim();
+    const host = forwardedHost || request.headers.get("host") || requestUrl.host;
+    const forwardedProtocol = request.headers.get("x-forwarded-proto")?.split(",")[0].trim();
+    const protocol = (forwardedProtocol || requestUrl.protocol).replace(/:$/, "");
+    return new URL(origin).origin === new URL(`${protocol}://${host}`).origin;
+  } catch {
+    return false;
+  }
+}
+
 const options = { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax" as const, path: "/" };
 
 export async function saveSession(data: { accessToken: string; refreshToken: string }, remember: boolean) {

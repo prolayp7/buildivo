@@ -1,8 +1,8 @@
 import { cookies } from "next/headers";
-import { apiBase, backendErrorMessage, clearSession, saveSession, sessionJson as json } from "@/lib/customer-session";
+import { apiBase, backendErrorMessage, clearSession, isSameOriginRequest, saveSession, sessionJson as json } from "@/lib/customer-session";
 
 export async function POST(req: Request) {
-  if (req.headers.get("origin") !== new URL(req.url).origin) return json({ message: "Invalid request origin" }, 403);
+  if (!isSameOriginRequest(req)) return json({ message: "Invalid request origin" }, 403);
   let input;
   try { input = await req.json(); } catch { return json({ message: "Invalid request" }, 400); }
   if (typeof input.email !== "string" || typeof input.password !== "string" || !input.password || input.password.length > 128) return json({ message: "Enter your email and password." }, 400);
@@ -31,7 +31,7 @@ export async function GET() {
   } catch { return json({ message: "Your account is temporarily unavailable." }, 503); }
 }
 export async function DELETE(req: Request) {
-  if (req.headers.get("origin") !== new URL(req.url).origin) return json({ message: "Invalid request origin" }, 403);
+  if (!isSameOriginRequest(req)) return json({ message: "Invalid request origin" }, 403);
   const token = (await cookies()).get("buildivo.refresh")?.value;
   if (token) { try { await fetch(`${apiBase()}/auth/logout`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ refreshToken: token }), signal: AbortSignal.timeout(10000) }); } catch { /* Clear the local session even when the API is unavailable. */ } }
   await clearSession(); return json({ ok: true });
