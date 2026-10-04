@@ -16,6 +16,7 @@ const contentSecurityPolicy = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  allowedDevOrigins: ["200.97.171.85"],
   async headers() {
     return [
       {
