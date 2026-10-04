@@ -141,7 +141,6 @@ export function StepIdentity({ email, onContinue }: StepIdentityProps) {
               "Instant 1-click reordering by industrial SKU",
               "Live dispatch tracking & SMS delivery windows",
               "Saved project material lists & fleet tool registries",
-              "Trade pricing and credit terms depend on account eligibility",
             ].map((item) => (
               <li key={item} className="flex items-start gap-2">
                 <span aria-hidden className="material-symbols-outlined text-[16px] text-success-500">check_circle</span>

@@ -57,13 +57,6 @@ export function CategoryExtras({ accessories }: { accessories: Product[] }) {
             Use 2.0Ah–3.0Ah compact packs for overhead electrical drilling to reduce wrist torque strain. Shift to 5.0Ah–8.0Ah high-output tabular cells for continuous heavy grinding and circular rip cuts.
           </p>
 </div>
-<div className="bg-surface-white border border-border-default rounded-xl p-4">
-<div className="w-8 h-8 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center font-mono font-bold text-label-md mb-3">04</div>
-<h3 className="font-headline-sm text-[16px] font-bold text-graphite-900 mb-1.5">Trade Credit &amp; Fleet Logistics</h3>
-<p className="font-body-sm text-body-sm text-text-secondary leading-relaxed">
-            Consolidate your firm&apos;s power tools under a single Net-30 Trade Account. Benefit from tiered 15% trade discounts, centralized serial warranty tracking, and rapid job-site van deliveries.
-          </p>
-</div>
 </div>
 <div className="mt-6 flex items-center justify-between flex-wrap gap-4 pt-4 border-t border-border-default">
 <div className="flex items-center gap-2 text-label-sm font-label-sm text-graphite-600">

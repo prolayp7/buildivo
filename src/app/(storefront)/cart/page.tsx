@@ -144,11 +144,6 @@ export default function CartPage() {
                         );
                       })()}
                       <StockBadge status={product.stock} count={product.stockCount} />
-                      {product.tradePriceIncVat && (
-                        <p className="text-label-sm font-label-sm text-graphite-600">
-                          Trade price: <span className="font-semibold">{formatPrice(product.tradePriceIncVat)} ea.</span>
-                        </p>
-                      )}
                     </div>
                     <div className="col-start-1 row-start-2 shrink-0 text-left sm:col-start-3 sm:row-start-1 sm:text-right">
                       <Price priceIncVat={lineUnitPrice(line) * line.qty} compareAtIncVat={product.compareAtIncVat ? product.compareAtIncVat * line.qty : undefined} vatRate={product.vatRate} size="sm" className="whitespace-nowrap" />
@@ -158,21 +153,21 @@ export default function CartPage() {
                         </p>
                       )}
                     </div>
-                    <span className="col-start-2 row-start-2 self-center justify-self-end text-label-sm font-label-sm text-text-secondary">
+                    <span className="col-start-2 row-start-2 self-center justify-self-end text-label-sm font-label-sm text-text-secondary sm:col-start-3 sm:row-start-2 sm:justify-self-end sm:text-right">
                       {product.deliveryEta}
                     </span>
                   </div>
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 sm:flex sm:flex-wrap sm:justify-between">
-                    <span className="flex min-w-0 items-center gap-1 text-label-sm font-label-sm text-text-secondary">
+                    <span className="flex min-w-0 items-center gap-1 text-label-sm font-label-sm text-text-secondary sm:order-2">
                       <span aria-hidden className="material-symbols-outlined text-[16px]">local_shipping</span>
                       Delivery options at checkout
                     </span>
-                    <QuantityInput value={line.qty} onChange={(qty) => setQty(line.productId, qty, line.variantId)} label={product.name} />
-                    <button type="button" onClick={() => toggleSaveForLater(line.productId, line.variantId)} className="flex items-center gap-1 text-label-sm font-label-sm text-text-secondary hover:text-text-primary">
+                    <QuantityInput value={line.qty} onChange={(qty) => setQty(line.productId, qty, line.variantId)} label={product.name} className="sm:order-1" />
+                    <button type="button" onClick={() => toggleSaveForLater(line.productId, line.variantId)} className="flex items-center gap-1 text-label-sm font-label-sm text-text-secondary hover:text-text-primary sm:order-3">
                       <span aria-hidden className="material-symbols-outlined text-[16px]">bookmark</span>
                       Save for Later
                     </button>
-                    <button type="button" onClick={() => removeItem(line.productId, line.variantId)} className="flex items-center gap-1 justify-self-end text-label-sm font-label-sm text-error-500 hover:underline">
+                    <button type="button" onClick={() => removeItem(line.productId, line.variantId)} className="flex items-center gap-1 justify-self-end text-label-sm font-label-sm text-error-500 hover:underline sm:order-4">
                       <span aria-hidden className="material-symbols-outlined text-[16px]">delete</span>
                       Remove
                     </button>
@@ -185,7 +180,7 @@ export default function CartPage() {
           {activeLines.length > 0 && (
             <div className="mt-8 rounded-xl border border-border-default bg-surface-white p-5">
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-body-lg font-body-lg font-bold text-graphite-900">Vouchers, Trade Discounts &amp; Offers</h2>
+                <h2 className="text-body-lg font-body-lg font-bold text-graphite-900">Vouchers &amp; Offers</h2>
               </div>
               {couponNotice && <p role="status" className="mb-3 rounded-lg bg-orange-50 px-3 py-2 text-label-sm font-label-sm text-orange-700">{couponNotice}</p>}
               {coupon ? (
@@ -197,14 +192,14 @@ export default function CartPage() {
                   </button>
                 </span>
               ) : (
-                <p className="mb-3 text-label-sm font-label-sm text-text-secondary">No vouchers or trade discounts applied yet.</p>
+                <p className="mb-3 text-label-sm font-label-sm text-text-secondary">No vouchers or offers applied yet.</p>
               )}
               <div className="flex gap-2">
                 <Input
                   className="h-10 px-3"
                   value={voucherInput}
                   onChange={(e) => setVoucherInput(e.target.value)}
-                  placeholder="Have another promo code or trade voucher?"
+                  placeholder="Have a promo code?"
                   aria-label="Promo code or trade voucher"
                   onKeyDown={(e) => e.key === "Enter" && applyVoucher()}
                 />

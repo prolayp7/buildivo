@@ -189,8 +189,12 @@ export interface MainMenuItem {
   href: string;
   icon: string;
 }
+function isTradePortalHref(href: string) {
+  try { return new URL(href, "https://storefront.invalid").pathname.replace(/\/+$/, "").toLowerCase() === "/trade"; }
+  catch { return false; }
+}
 export function toMainMenuItem(api: ApiMenuItem): MainMenuItem | null {
-  if (!api.category && !api.href) return null;
+  if ((!api.category && !api.href) || (api.href && isTradePortalHref(api.href))) return null;
   return {
     label: api.label,
     href: api.category ? `/c/${api.category.slug}` : api.href!,
@@ -208,10 +212,11 @@ export interface FooterColumn {
   links: { label: string; href: string }[];
 }
 export function toFooterColumns(items: ApiFooterMenuItem[]): FooterColumn[] {
-  return items.map((column) => ({
-    title: column.label,
-    links: column.children.map(toMainMenuItem).filter((link): link is MainMenuItem => link !== null),
-  }));
+  return items.flatMap((column) => {
+    if (/^(trade portal(?: net 30)?|trade & wholesale)$/i.test(column.label.trim())) return [];
+    const links = column.children.map(toMainMenuItem).filter((link): link is MainMenuItem => link !== null);
+    return [{ title: column.label, links }];
+  });
 }
 
 function variantLabel(variant: ApiVariant): string {

@@ -16,7 +16,6 @@ const tabs = [
   { label: "Flash Clearance", matches: (p: Product) => (p.badges ?? []).some((b) => /flash|clearance/i.test(b)) },
   { label: "Tool Combo Bundles", matches: (p: Product) => /kit|combo|bundle/i.test(p.name) },
   { label: "Pallet & Site Bulk Packs", matches: (p: Product) => /pallet|bulk|pack/i.test(p.name) || Boolean(p.quantityTiers?.length) },
-  { label: "Trade Exclusives (Net 30)", matches: (p: Product) => p.tradePriceIncVat !== undefined },
   { label: "Factory Refurbished", matches: (p: Product) => /refurbished|reconditioned/i.test(`${p.name} ${p.badges?.join(" ") ?? ""}`) },
 ];
 const filters = ["Discounts 40%+", "Under £50", "18V Cordless", "DeWalt", "Milwaukee", "Makita"];

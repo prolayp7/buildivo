@@ -1,0 +1,5 @@
+@media (min-width: 701px) and (max-width: 1000px) {
+  .tabletStack {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}

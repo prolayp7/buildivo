@@ -6,10 +6,9 @@ import { HomeHero } from "@/components/home/hero/home-hero";
 import ShopByDepartment  from "@/components/commerce/shop-by-department";
 import FeaturedProducts  from "@/components/commerce/featured-products";
 import ProjectKits  from "@/components/commerce/project-kits";
-import TradeCTA  from "@/components/commerce/trade-cta";
 import { CalculatorsSection } from "@/components/home/calculators-section";
 import { EcosystemMatcherSection } from "@/components/home/ecosystem-matcher-section";
-import { fetchCalculatorsContent, fetchDepartments, fetchEcosystemMatcherContent, fetchFeaturedProducts, fetchFloatingBadge, fetchHeroSlides, fetchHomepageSections, fetchProjectKitsContent, fetchToolPlatforms, fetchTradeCtaContent, fetchTrustBadges, sectionHeader, type ApiHomepageSection } from "@/lib/api";
+import { fetchCalculatorsContent, fetchDepartments, fetchEcosystemMatcherContent, fetchFeaturedProducts, fetchFloatingBadge, fetchHeroSlides, fetchHomepageSections, fetchProjectKitsContent, fetchToolPlatforms, fetchTrustBadges, sectionHeader, type ApiHomepageSection } from "@/lib/api";
 
 export const metadata: Metadata = {
   title: "Buildivo — Pro-Grade Tools, Hardware & DIY Supplies",
@@ -17,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const [sections, heroSlides, trustBadges, floatingBadge, calculatorsContent, ecosystemMatcherContent, projectKitsContent, toolPlatforms, departments, featuredProducts, tradeCtaContent] = await Promise.all([
+  const [sections, heroSlides, trustBadges, floatingBadge, calculatorsContent, ecosystemMatcherContent, projectKitsContent, toolPlatforms, departments, featuredProducts] = await Promise.all([
     fetchHomepageSections(),
     fetchHeroSlides(),
     fetchTrustBadges(),
@@ -28,7 +27,6 @@ export default async function HomePage() {
     fetchToolPlatforms(),
     fetchDepartments().catch(() => []),
     fetchFeaturedProducts(4).catch(() => []),
-    fetchTradeCtaContent(),
   ]);
   const calculators = [
     { slug: "concrete-mortar", icon: calculatorsContent.calc1Icon, label: calculatorsContent.calc1Label, caption: calculatorsContent.calc1Caption },
@@ -45,7 +43,6 @@ export default async function HomePage() {
       case "DEPARTMENTS": return <ShopByDepartment key="departments" header={sectionHeader(section.config, { heading: "Shop by Department", linkLabel: "View all products", linkHref: "/c/power-tools" })} departments={departments} />;
       case "FEATURED_PRODUCTS": return <FeaturedProducts key="featured" header={sectionHeader(section.config, { heading: "Featured Pro Tools", linkLabel: "Shop all Power Tools", linkHref: "/c/power-tools" })} products={featuredProducts} />;
       case "PROJECT_KITS": return <ProjectKits key="kits" content={projectKitsContent} kits={projects} />;
-      case "TRADE_CTA": return <TradeCTA key="trade" content={tradeCtaContent} />;
       case "CALCULATORS": return <CalculatorsSection key="calculators" content={calculatorsContent} calculators={calculators} />;
       case "ECOSYSTEM_MATCHER": return <EcosystemMatcherSection key="ecosystem" content={ecosystemMatcherContent} platforms={toolPlatforms} />;
       default: return null;

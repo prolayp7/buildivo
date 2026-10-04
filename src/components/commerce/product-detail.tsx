@@ -260,16 +260,6 @@ export function ProductDetail({ product, related, productReviews, compatibleProd
           <p className={styles.netPrice}><strong>{formatPrice(price / (1 + product.vatRate))} ex. VAT</strong><span>Price includes {Math.round(product.vatRate * 100)}% VAT</span></p>
           </div>
 
-          {product.tradePriceIncVat && (
-            <div className="rounded-lg border border-graphite-700 bg-graphite-800 p-3 text-text-inverse">
-              <p className="text-label-sm font-label-sm font-semibold uppercase tracking-wide text-orange-500">Trade Account Tier 2 Pricing</p>
-              <p className="text-headline-sm font-headline-sm font-bold">{formatPrice(product.tradePriceIncVat)}</p>
-              <Link href="/trade" className="text-label-sm font-label-sm text-orange-400 hover:underline">
-                Sign in to Trade Account
-              </Link>
-            </div>
-          )}
-
           {quantityTiers && quantityTiers.length > 0 && (
             <div className="overflow-hidden rounded-lg border border-border-default">
               <table className="w-full text-label-sm font-label-sm">

@@ -27,7 +27,8 @@ export function SiteHeader({ departments, mainMenu, topBarSettings }: { departme
   // Category links render as plain tabs; special pages (Deals, Top Brands,
   // etc.) render as the bolder icon+label style already designed for them.
   const categoryLinks = mainMenu.filter((item) => item.href.startsWith("/c/"));
-  const pageLinks = mainMenu.filter((item) => !item.href.startsWith("/c/"));
+  const dealsLink = mainMenu.find((item) => item.href === "/deals");
+  const pageLinks = mainMenu.filter((item) => !item.href.startsWith("/c/") && item.href !== "/deals");
 
   return (
     <header className="fixed left-0 right-0 top-0 z-50 flex flex-col">
@@ -41,7 +42,6 @@ export function SiteHeader({ departments, mainMenu, topBarSettings }: { departme
       <div className={styles.mobile}>
         <div className={styles.promo}>
           <p><span className={styles.status} /><FreeDeliveryOver strong /></p>
-          {topBarSettings.mobileTradeLabel ? <Link href={topBarSettings.tradePortalUrl}><span aria-hidden className="material-symbols-outlined">verified</span>{topBarSettings.mobileTradeLabel}</Link> : null}
         </div>
         <div className={styles.mainRow}>
           <button type="button" className={styles.menuButton} onClick={() => setMobileNavOpen(true)} aria-label="Open menu" aria-expanded={mobileNavOpen} aria-haspopup="dialog">
@@ -76,9 +76,12 @@ export function SiteHeader({ departments, mainMenu, topBarSettings }: { departme
           <div className="flex items-center gap-space-sm overflow-hidden text-ellipsis whitespace-nowrap">
             <span aria-hidden className="inline-block h-2 w-2 rounded-full bg-orange-500" />
             <span className="font-normal text-text-inverse-muted"><FreeDeliveryOver /></span>
-            {topBarSettings.tradeMessage ? <><span className="text-graphite-600">·</span><span className="font-medium text-text-inverse">{topBarSettings.tradeMessage}</span></> : null}
           </div>
           <div className="hidden items-center gap-space-lg md:flex">
+            {dealsLink ? <Link href={dealsLink.href} className="flex items-center gap-1 text-orange-500 transition-colors hover:text-orange-400" aria-current={pathname === dealsLink.href || pathname?.startsWith(`${dealsLink.href}/`) ? "page" : undefined}>
+              <span aria-hidden className="material-symbols-outlined text-[14px]">{dealsLink.icon}</span>
+              {dealsLink.label}
+            </Link> : null}
             {topBarSettings.helpCenterLabel ? <Link href={topBarSettings.helpCenterUrl} className="flex items-center gap-1 text-text-inverse-muted transition-colors hover:text-text-inverse">
               <span aria-hidden className="material-symbols-outlined text-[14px]">help</span>
               {topBarSettings.helpCenterLabel}
@@ -91,10 +94,6 @@ export function SiteHeader({ departments, mainMenu, topBarSettings }: { departme
               <span aria-hidden className="material-symbols-outlined text-[14px]">store</span>
               {topBarSettings.branchFinderLabel}
             </Link> : null}
-            {topBarSettings.tradePortalLabel ? <><span aria-hidden className="h-3 w-px bg-graphite-600" /><Link href={topBarSettings.tradePortalUrl} className="flex items-center gap-1 font-semibold text-orange-500 transition-colors hover:text-orange-100">
-              <span aria-hidden className="material-symbols-outlined text-[14px]">engineering</span>
-              {topBarSettings.tradePortalLabel}
-            </Link></> : null}
           </div>
         </div>
       </div>
@@ -128,10 +127,6 @@ export function SiteHeader({ departments, mainMenu, topBarSettings }: { departme
           </button>
 
           <div className="ml-auto flex shrink-0 items-center gap-space-md md:ml-0">
-            <Link href="/trade" className="group hidden flex-col items-center text-text-secondary transition-colors hover:text-text-primary md:flex">
-              <span aria-hidden className="material-symbols-outlined text-[22px] group-hover:text-orange-500">badge</span>
-              <span className="text-label-sm font-label-sm">Trade</span>
-            </Link>
             <Link href="/wishlist" className="group hidden flex-col items-center text-text-secondary transition-colors hover:text-text-primary sm:flex">
               <span aria-hidden className="material-symbols-outlined text-[22px] group-hover:text-orange-500">favorite</span>
               <span className="hidden text-label-sm font-label-sm lg:inline">Saved</span>

@@ -14,7 +14,6 @@ import type { ApiTrustBadge } from "@/lib/api";
 
 const heroCtas = [
   { icon: "local_shipping", title: "Tracked Delivery", caption: "", href: "/help", color: "text-orange-600" },
-  { icon: "credit_card", title: "Apply for Trade Net 30", caption: "Instant credit decision", href: "/trade", color: "text-graphite-600" },
   { icon: "near_me", title: "Track Your Order", caption: "Live status updates", href: "/track-order", color: "text-success-500" },
 ];
 

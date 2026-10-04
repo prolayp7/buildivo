@@ -13,7 +13,6 @@ interface MobileNavProps {
 }
 
 const utilityLinks = [
-  { href: "/trade", label: "Trade Portal Net 30", icon: "engineering" },
   { href: "/help", label: "Help Center", icon: "help" },
   { href: "/track-order", label: "Track Order", icon: "local_shipping" },
   { href: "/branches", label: "Branch Finder", icon: "store" },

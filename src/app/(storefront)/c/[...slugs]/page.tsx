@@ -19,7 +19,6 @@ const POWER_TOOLS_DESCRIPTION =
   "Industrial cordless platforms, brushless SDS rotary hammers, high-torque impact drivers, and precision cutting tools certified to EN 60745 industrial site standards.";
 
 const POWER_TOOLS_FEATURES = [
-  { icon: "receipt_long", title: "15% Trade Net 30", caption: "Direct billing available" },
   { icon: "verified_user", title: "3-Yr Warranty", caption: "Direct manufacturer backed" },
 ];
 
@@ -30,7 +29,7 @@ export async function generateMetadata({ params, searchParams }: CategoryPagePro
   if (!category) return { title: "Category" };
   const seo = category.seo;
   const title = seo?.title?.trim() || category.name;
-  const description = seo?.description?.trim() || `Shop ${category.name} at Buildivo${category.productCount ? ` - ${category.productCount} products` : ""} with fast delivery and trade pricing.`;
+  const description = seo?.description?.trim() || `Shop ${category.name} at Buildivo${category.productCount ? ` - ${category.productCount} products` : ""} with fast delivery.`;
   const socialTitle = seo?.ogTitle?.trim() || title;
   const socialDescription = seo?.ogDescription?.trim() || description;
   const socialImage = seo?.ogImage || seo?.twitterImage;

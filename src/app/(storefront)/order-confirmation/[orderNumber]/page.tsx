@@ -1,9 +1,8 @@
 "use client";
 
-import { use, useState, useSyncExternalStore } from "react";
+import { use, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ProductImage } from "@/components/commerce/product-image";
 import { formatPrice } from "@/lib/format";
 import { useCartStore, type LastOrder } from "@/lib/cart-store";
@@ -27,8 +26,6 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
   const receiptJson = useSyncExternalStore(subscribeToBrowser, getReceiptSnapshot, () => null);
   let savedReceipt: LastOrder | null = null;
   try { savedReceipt = receiptJson ? JSON.parse(receiptJson) as LastOrder : null; } catch { savedReceipt = null; }
-  const [password, setPassword] = useState("");
-  const [activated, setActivated] = useState(false);
 
   const receipt = lastOrder?.orderNumber === orderNumber
     ? lastOrder
@@ -62,7 +59,7 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
   return (
     <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-margin-desktop">
       <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1 text-label-sm font-label-sm text-text-secondary">
-        <span>Trade Depot</span>
+        <span>Buildivo</span>
         <span aria-hidden>/</span>
         <span>Secure Checkout</span>
         <span aria-hidden>/</span>
@@ -151,39 +148,6 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
             </div>
           </div>
 
-          <div className="rounded-xl border border-graphite-700 bg-graphite-900 p-6 text-text-inverse">
-            <p className="mb-1 text-label-sm font-label-sm font-semibold uppercase tracking-wide text-orange-500">Pro Contractor Portal Fast-Track</p>
-            <h2 className="mb-1 text-body-lg font-body-lg font-bold">Create a password to activate your Buildivo Pro Portal</h2>
-            <p className="mb-4 text-body-sm font-body-sm text-text-inverse-muted">
-              Retain automated warranty claims, schedule Net-30 invoicing, and sync this purchase to your crew&apos;s live tool register.
-            </p>
-            {activated ? (
-              <p className="flex items-center gap-2 text-body-sm font-body-sm font-semibold text-success-500">
-                <span aria-hidden className="material-symbols-outlined text-[18px]">check_circle</span>
-                Trade portal activated — sign in any time with this password.
-              </p>
-            ) : (
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Input
-                  type="password"
-                  placeholder="Min. 8 characters with numbers"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="bg-graphite-800 text-text-inverse"
-                />
-                <Button
-                  className="shrink-0 bg-orange-500 font-label-lg text-label-lg font-bold hover:bg-orange-600"
-                  disabled={password.length < 8}
-                  onClick={() => {
-                    setActivated(true);
-                    toast.success("Trade portal activated");
-                  }}
-                >
-                  Save &amp; Activate
-                </Button>
-              </div>
-            )}
-          </div>
         </div>
 
         <div className="flex flex-col gap-4">

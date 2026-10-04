@@ -11,7 +11,7 @@ import { Price } from "@/components/commerce/price";
 import { StockBadge } from "@/components/commerce/stock-badge";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/lib/cart-store";
-import { formatPrice, CURRENCY_SYMBOL } from "@/lib/format";
+import { formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 interface ProductCardProps {
@@ -126,11 +126,6 @@ export function ProductCard({ product, layout = "grid", className, mobileCategor
           <div className="flex flex-col sm:items-end">
             <StockBadge status={product.stock} className="mb-1" />
             <Price priceIncVat={product.priceIncVat} compareAtIncVat={product.compareAtIncVat} vatRate={product.vatRate} size="sm" />
-            {product.tradePriceIncVat && (
-              <p className="text-label-sm font-label-sm text-graphite-600">
-                Trade: <span className="font-semibold">{CURRENCY_SYMBOL}{product.tradePriceIncVat.toFixed(2)}</span>
-              </p>
-            )}
           </div>
           <div className="flex items-center gap-3">
             {wishlistButton}
@@ -198,7 +193,7 @@ export function ProductCard({ product, layout = "grid", className, mobileCategor
             </div>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-1 text-[10px] leading-4">
               <span className="text-text-secondary">Inc. {Math.round(product.vatRate * 100)}% VAT</span>
-              <span className="font-semibold text-graphite-900">{product.tradePriceIncVat !== undefined ? "Trade: " : ""}{formatPrice((product.tradePriceIncVat ?? product.priceIncVat) / (1 + product.vatRate))} <span data-vat-suffix>ex. VAT</span></span>
+              <span className="font-semibold text-graphite-900">{formatPrice(product.priceIncVat / (1 + product.vatRate))} <span data-vat-suffix>ex. VAT</span></span>
             </div>
             <div className="grid grid-cols-[minmax(0,1fr)_40px] gap-2">
               <Button type="button" onClick={handleAddToCart} disabled={product.stock === "out-of-stock"} className="h-10 cursor-pointer rounded-xl bg-orange-500 px-2 text-[12px] font-semibold text-white hover:bg-orange-600">

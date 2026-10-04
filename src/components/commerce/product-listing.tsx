@@ -129,12 +129,6 @@ export function ProductListing({ initialProducts, categorySlug, searchQuery, cat
 
   const filterPanel = (
     <div className="flex flex-col gap-6">
-      <div className="rounded-xl border border-orange-500/30 bg-orange-50 p-4">
-        <p className="text-label-md font-label-md font-bold uppercase tracking-wide text-orange-700">Trade Account</p>
-        <p className="text-body-md font-body-md font-bold text-graphite-900">15% Trade Discount</p>
-        <p className="text-label-sm font-label-sm text-text-secondary">Trade credit tier unlocks net pricing and jobsite pallet deliveries.</p>
-      </div>
-
       <div className="flex items-center justify-between">
         <p className="text-label-lg font-label-lg font-bold text-graphite-900">Refine Results</p>
         <button type="button" onClick={reset} className="text-label-sm font-label-sm text-orange-600 hover:underline">
