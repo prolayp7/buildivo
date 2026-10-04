@@ -6,7 +6,13 @@ import { BackToTop } from "@/components/layout/back-to-top";
 import { fetchDepartments, fetchFooterMenu, fetchFooterSettings, fetchMainMenu, fetchTopBarSettings } from "@/lib/api";
 
 export default async function StorefrontLayout({ children }: LayoutProps<"/">) {
-  const [departments, mainMenu, footerColumns, footerSettings, topBarSettings] = await Promise.all([fetchDepartments(), fetchMainMenu(), fetchFooterMenu(), fetchFooterSettings(), fetchTopBarSettings()]);
+  const [departments, mainMenu, footerColumns, footerSettings, topBarSettings] = await Promise.all([
+    fetchDepartments().catch(() => []),
+    fetchMainMenu().catch(() => []),
+    fetchFooterMenu().catch(() => []),
+    fetchFooterSettings(),
+    fetchTopBarSettings(),
+  ]);
   return (
     <>
       <SiteHeader departments={departments} mainMenu={mainMenu} topBarSettings={topBarSettings} />
