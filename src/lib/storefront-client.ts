@@ -288,7 +288,7 @@ export async function fetchProductsByIds(ids: number[]): Promise<Product[]> {
 // `data`, discarding `meta` (facets, pagination), which a filtered/paginated
 // listing needs, so this fetches directly rather than going through it.
 export async function fetchProductsPage(queryString: string, signal?: AbortSignal): Promise<{ items: Product[]; meta: ProductListMeta }> {
-  const res = await fetch(apiUrl(`products?${queryString}`), { signal });
+  const res = await fetch(`/api/storefront/products?${queryString}`, { signal });
   if (!res.ok) throw new Error(`Request failed (${res.status})`);
   const body = (await res.json()) as { data: ApiProductBase[]; meta: ProductListMeta };
   const origin = apiOrigin();

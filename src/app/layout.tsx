@@ -33,12 +33,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" data-scroll-behavior="smooth" className={`${inter.variable} ${sora.variable} h-full antialiased`}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {/* Material Symbols is an icon font with variation axes next/font/google
             doesn't model; app/layout.tsx is the app-router equivalent of
             _document.js, so loading it here (not per-page) is correct. */}
-        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+        {/* eslint-disable-next-line @next/next/no-page-custom-font, @next/next/google-font-display -- block prevents icon ligatures from flashing as text */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block"
           rel="stylesheet"
         />
       </head>
