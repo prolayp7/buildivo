@@ -48,7 +48,7 @@ export class ApiError extends Error {
 }
 
 function apiUrl(path: string): string {
-  const base = process.env.BUILDIVO_API_URL ?? "http://localhost:3000/api/v1";
+  const base = process.env.NEXT_PUBLIC_BUILDIVO_API_URL ?? "http://localhost:3000/api/v1";
   return `${base.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
 }
 
