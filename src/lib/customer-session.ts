@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { NextResponse } from "next/server";
 
 export const apiBase = () => (process.env.BUILDIVO_API_URL ?? "http://localhost:3000/api/v1").replace(/\/$/, "");
@@ -19,9 +19,21 @@ export function isSameOriginRequest(request: Request): boolean {
   }
 }
 
-const options = { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax" as const, path: "/" };
-
 export async function saveSession(data: { accessToken: string; refreshToken: string }, remember: boolean) {
+  const requestHeaders = await headers();
+  const forwardedProtocol = requestHeaders.get("x-forwarded-proto")?.split(",")[0].trim();
+  const browserUrl = requestHeaders.get("origin") ?? requestHeaders.get("referer");
+  let secure = process.env.NODE_ENV === "production";
+  if (forwardedProtocol) secure = forwardedProtocol === "https";
+  else if (browserUrl) {
+    try {
+      secure = new URL(browserUrl).protocol === "https:";
+    } catch {
+      // Keep the production default if the browser URL is malformed.
+    }
+  }
+
+  const options = { httpOnly: true, secure, sameSite: "lax" as const, path: "/" };
   const jar = await cookies();
   jar.set("buildivo.access", data.accessToken, { ...options, ...(remember ? { maxAge: 30 * 86400 } : {}) });
   jar.set("buildivo.refresh", data.refreshToken, { ...options, ...(remember ? { maxAge: 30 * 86400 } : {}) });
