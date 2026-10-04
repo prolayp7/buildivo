@@ -60,7 +60,7 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   const guestToken = readGuestToken();
   if (guestToken) headers.set("X-Guest-Token", guestToken);
 
-  const url = isCartRequest(path) ? `/api/storefront-cart/${path}` : apiUrl(path);
+  const url = isCartRequest(path) ? `/api/storefront-cart/${path}` : `/api/storefront-api/${path.replace(/^\//, "")}`;
   const res = await fetch(url, { ...init, headers });
   if (res.status === 204) return undefined as T;
   const body = await res.json().catch(() => ({}));
