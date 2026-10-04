@@ -1,0 +1,2 @@
+export const STOREFRONT_CATALOG_CACHE_TAG = "storefront-catalog";
+export const STOREFRONT_CATALOG_REVALIDATE_SECONDS = 300;

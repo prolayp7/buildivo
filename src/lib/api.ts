@@ -7,6 +7,7 @@
  * fetchers in lib/storefront-client.ts.
  */
 import type { Category, Product } from "@/types";
+import { STOREFRONT_CATALOG_CACHE_TAG, STOREFRONT_CATALOG_REVALIDATE_SECONDS } from "./cache-tags";
 import type { CalculatorProduct } from "./storefront-client";
 import { type ApiHeroSlide, type HeroSlide, toHeroSlide } from "@/components/home/hero/hero-slides";
 import { ECOSYSTEM_MATCHER_DEFAULTS, type EcosystemMatcherContent } from "@/components/home/ecosystem-matcher-content";
@@ -36,13 +37,23 @@ function apiUrl(path: string): string {
 }
 
 async function apiGet<T>(path: string, revalidateSeconds = 20): Promise<T> {
-  const res = await fetch(apiUrl(path), { next: { revalidate: revalidateSeconds } });
+  const isCatalogRequest = /^(categories|products)(?:[/?]|$)/.test(path);
+  const res = await fetch(apiUrl(path), {
+    next: isCatalogRequest
+      ? { revalidate: STOREFRONT_CATALOG_REVALIDATE_SECONDS, tags: [STOREFRONT_CATALOG_CACHE_TAG] }
+      : { revalidate: revalidateSeconds },
+  });
   if (!res.ok) throw new Error(`Buildivo API request failed: GET ${path} -> ${res.status}`);
   return res.json() as Promise<T>;
 }
 
 async function apiGetOrNull<T>(path: string, revalidateSeconds = 20): Promise<T | null> {
-  const res = await fetch(apiUrl(path), { next: { revalidate: revalidateSeconds } });
+  const isCatalogRequest = /^(categories|products)(?:[/?]|$)/.test(path);
+  const res = await fetch(apiUrl(path), {
+    next: isCatalogRequest
+      ? { revalidate: STOREFRONT_CATALOG_REVALIDATE_SECONDS, tags: [STOREFRONT_CATALOG_CACHE_TAG] }
+      : { revalidate: revalidateSeconds },
+  });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Buildivo API request failed: GET ${path} -> ${res.status}`);
   const json = (await res.json()) as { data: T };
