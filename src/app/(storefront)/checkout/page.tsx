@@ -14,7 +14,7 @@ import { StepReview } from "@/components/checkout/steps/step-review";
 import { StepProcessing } from "@/components/checkout/steps/step-processing";
 import { StepFailed } from "@/components/checkout/steps/step-failed";
 import { useCartStore, useCartTotals } from "@/lib/cart-store";
-import { fetchShippingQuotes, placeOrder as placeOrderApi, type PlacedOrder, type ShippingQuote } from "@/lib/storefront-client";
+import { createIdempotencyKey, fetchShippingQuotes, placeOrder as placeOrderApi, type PlacedOrder, type ShippingQuote } from "@/lib/storefront-client";
 import { CHECKOUT_RETURN_KEY, capturePaymentAttempt, createPaymentAttempt } from "@/lib/payments";
 import type { Address } from "@/types";
 
@@ -41,7 +41,7 @@ function saveCheckout(checkout: SavedCheckout): boolean {
 function checkoutIdempotencyKey(): string {
   const existing = sessionStorage.getItem(CHECKOUT_KEY);
   if (existing) return existing;
-  const key = crypto.randomUUID();
+  const key = createIdempotencyKey();
   sessionStorage.setItem(CHECKOUT_KEY, key);
   return key;
 }

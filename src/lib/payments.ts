@@ -1,6 +1,6 @@
 "use client";
 
-import { request } from "./storefront-client";
+import { createIdempotencyKey, request } from "./storefront-client";
 
 export type PaymentProvider = "STRIPE" | "PAYPAL";
 
@@ -31,7 +31,7 @@ export interface PaymentAttempt {
  * cancelled payment should get a new provider session, not the old (possibly
  * expired) one back. */
 export function createPaymentAttempt(input: { orderUuid: string; email: string; provider: PaymentProvider }): Promise<PaymentAttempt> {
-  return request("payments/attempts", { method: "POST", body: JSON.stringify(input), headers: { "Idempotency-Key": crypto.randomUUID() } });
+  return request("payments/attempts", { method: "POST", body: JSON.stringify(input), headers: { "Idempotency-Key": createIdempotencyKey() } });
 }
 
 export function capturePaymentAttempt(attemptId: string, email: string): Promise<PaymentAttempt> {
